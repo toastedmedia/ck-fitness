@@ -1,0 +1,797 @@
+<title>CK Fitness Admin Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+  rel="stylesheet"
+/>
+<style>
+  /* Layout: a desktop browser window showing the real admin portal. Sidebar left, content right. Matches apps/web/src/app/admin. */
+  :root {
+    --bg: #eceef5;
+    --surface: #ffffff;
+    --fg: #1b1b36;
+    --muted: #5b6075;
+    --line: #dfe2ec;
+    --page: #f3f4f9;
+    --brand: #1b1b36;
+    --on-brand: #ffffff;
+    --accent: #c8a84b;
+    --accent-strong: #8a6d1a;
+    --success: #1f8a4c;
+    --success-soft: #e6f6ec;
+    --warn-bg: #f6efd6;
+    --warn-fg: #6f5712;
+    --bad-bg: #f6dcd7;
+    --bad-fg: #b3402f;
+    --side-text: #c9cbe0;
+    --font: "Plus Jakarta Sans", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1020;
+      --surface: #181a30;
+      --fg: #eceefa;
+      --muted: #a2a8c4;
+      --line: #2a2d4a;
+      --page: #121428;
+      --brand: #0b0c1c;
+      --accent-strong: #d9bb62;
+      --success: #5fd08f;
+      --success-soft: #1d3b2d;
+      --warn-bg: #3b3216;
+      --warn-fg: #e6c872;
+      --bad-bg: #43211d;
+      --bad-fg: #f0a79d;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1020;
+    --surface: #181a30;
+    --fg: #eceefa;
+    --muted: #a2a8c4;
+    --line: #2a2d4a;
+    --page: #121428;
+    --brand: #0b0c1c;
+    --accent-strong: #d9bb62;
+    --success: #5fd08f;
+    --success-soft: #1d3b2d;
+    --warn-bg: #3b3216;
+    --warn-fg: #e6c872;
+    --bad-bg: #43211d;
+    --bad-fg: #f0a79d;
+    color-scheme: dark;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.5;
+    padding-inline: 16px;
+    padding-block: 28px 48px;
+  }
+  button {
+    font: inherit;
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .wrap {
+    max-width: 1120px;
+    margin-inline: auto;
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-strong);
+    font-weight: 700;
+  }
+  h1.title {
+    font-size: clamp(24px, 4.5vw, 34px);
+    line-height: 1.15;
+    margin: 6px 0;
+    letter-spacing: -0.02em;
+    font-weight: 800;
+    text-wrap: balance;
+  }
+  .lede {
+    color: var(--muted);
+    max-width: 64ch;
+    margin: 0 0 18px;
+  }
+
+  .win {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 18px 50px rgba(10, 10, 40, 0.14);
+  }
+  .chrome {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--page);
+  }
+  .chrome i {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--line);
+  }
+  .url {
+    margin-left: 10px;
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 3px 10px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .app {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    min-height: 640px;
+    background: var(--page);
+  }
+  .side {
+    background: var(--brand);
+    color: var(--side-text);
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .brandmark {
+    font-weight: 800;
+    font-size: 19px;
+    letter-spacing: -0.02em;
+    color: #fff;
+    padding: 4px 10px 16px;
+  }
+  .brandmark small {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .nav {
+    background: transparent;
+    border: 0;
+    color: var(--side-text);
+    text-align: left;
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 13.5px;
+    min-height: 42px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .nav[aria-current="true"] {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+  }
+  .nav .badge {
+    background: var(--accent);
+    color: #1b1b36;
+    border-radius: 99px;
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 1px 7px;
+  }
+  .who {
+    margin-top: auto;
+    padding: 12px 10px 4px;
+    font-size: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  .who b {
+    display: block;
+    color: #fff;
+    font-size: 13px;
+  }
+  .main {
+    padding: 22px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  h2.pg {
+    margin: 0;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    font-weight: 800;
+  }
+  .sub {
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+  }
+  .tile {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 14px 16px;
+  }
+  .tile b {
+    display: block;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+  .tile span {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .tile .delta {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--success);
+  }
+  .tile .delta.bad {
+    color: var(--bad-fg);
+  }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 16px;
+    min-width: 0;
+  }
+  .panel h3 {
+    margin: 0 0 10px;
+    font-size: 14px;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel h3 small {
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--muted);
+  }
+  .grid2 {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 12px;
+  }
+  .scrollx {
+    overflow-x: auto;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13px;
+    min-width: 520px;
+  }
+  th {
+    text-align: left;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  td {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: middle;
+    font-variant-numeric: tabular-nums;
+  }
+  tr:last-child td {
+    border-bottom: 0;
+  }
+  .st {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .st.ok {
+    background: var(--success-soft);
+    color: var(--success);
+  }
+  .st.warn {
+    background: var(--warn-bg);
+    color: var(--warn-fg);
+  }
+  .st.bad {
+    background: var(--bad-bg);
+    color: var(--bad-fg);
+  }
+  .st.mute {
+    background: var(--page);
+    color: var(--muted);
+  }
+  .btn {
+    border: 1.5px solid var(--line);
+    background: var(--surface);
+    color: var(--fg);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-weight: 700;
+    font-size: 12px;
+    min-height: 34px;
+  }
+  .btn.primary {
+    background: var(--brand);
+    color: #fff;
+    border-color: var(--brand);
+  }
+  .btn.gold {
+    background: var(--accent);
+    color: #1b1b36;
+    border-color: var(--accent);
+  }
+  .avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--page);
+    display: inline-grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 11px;
+    color: var(--muted);
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  .bars {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 12.5px;
+  }
+  .bars .row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 8px;
+  }
+  .bars .row div.t {
+    grid-column: 1 / -1;
+    height: 7px;
+    border-radius: 9px;
+    background: var(--page);
+    overflow: hidden;
+  }
+  .bars .row div.t i {
+    display: block;
+    height: 100%;
+    background: var(--brand);
+    border-radius: 9px;
+  }
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+  }
+  .kpi b {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    display: block;
+  }
+  .kpi .nm {
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .kpi p {
+    margin: 4px 0 0;
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .tree {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 13px;
+  }
+  .tree div {
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+  .tree .l2 {
+    padding-left: 22px;
+    color: var(--muted);
+  }
+  .tree .l3 {
+    padding-left: 36px;
+    color: var(--muted);
+  }
+  .tree .sel {
+    background: var(--page);
+    color: var(--fg);
+    font-weight: 700;
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+  .form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .form .f {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .form .f.full {
+    grid-column: 1 / -1;
+  }
+  .form .f div {
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 8px 12px;
+    color: var(--fg);
+    font-size: 13px;
+    font-weight: 500;
+    min-height: 38px;
+    background: var(--surface);
+  }
+  .flow {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 12.5px;
+  }
+  .flow span {
+    padding: 4px 11px;
+    border-radius: 99px;
+    border: 1px solid var(--line);
+  }
+  .flow span.on {
+    background: var(--brand);
+    color: #fff;
+    border-color: var(--brand);
+  }
+  .flow span.done {
+    background: var(--success-soft);
+    color: var(--success);
+    border-color: transparent;
+  }
+  .reply {
+    background: var(--page);
+    border-radius: 14px;
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  .note {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 6px 0 0;
+  }
+  .banner {
+    background: var(--warn-bg);
+    color: var(--warn-fg);
+    border-radius: 14px;
+    padding: 10px 14px;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .tabs {
+    display: none;
+  }
+  @media (max-width: 800px) {
+    .app {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .side {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .brandmark {
+      width: 100%;
+      padding-bottom: 6px;
+    }
+    .who {
+      display: none;
+    }
+    .grid2,
+    .form {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">CK Fitness · Admin portal · Design preview</p>
+  <h1 class="title">What Kv and Chanveer will see every day</h1>
+  <p class="lede">
+    The real admin layout, filled with sample data. Click the sidebar to look at each
+    page. Numbers and names are made up for illustration.
+  </p>
+
+  <div class="win">
+    <div class="chrome">
+      <i></i><i></i><i></i
+      ><span class="url" id="url">app.chardikalafitness.com/admin</span>
+    </div>
+    <div class="app">
+      <nav class="side" aria-label="Admin" id="side"></nav>
+      <div class="main" id="main"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const PAGES = {
+    dash: {
+      label: "Dashboard",
+      url: "/admin",
+      render: () => `
+      <div class="head"><div><h2 class="pg">Good morning, Kv</h2><span class="sub">Saturday 10 October · sample data</span></div><button class="btn gold">Create announcement</button></div>
+      <div class="tiles">
+        <div class="tile"><b>412</b><span>Free members</span><span class="delta">+18 this week</span></div>
+        <div class="tile"><b>87</b><span>Active members</span><span class="delta">+6 this week</span></div>
+        <div class="tile"><b>198</b><span>Active in 7 days</span><span class="delta">48% of members</span></div>
+        <div class="tile"><b>23</b><span>Quiet 7+ days</span><span class="delta bad">+4 vs last week</span></div>
+        <div class="tile"><b>$2,609</b><span>Est. monthly revenue</span><span class="delta">87 × $29.99</span></div>
+        <div class="tile"><b>5</b><span>Open help requests</span></div>
+      </div>
+      <div class="grid2">
+        <div class="panel"><h3>New sign-ups <small>last 14 days</small></h3>${bars([6, 9, 14, 11, 18, 22, 16, 12, 9, 15, 19, 24, 17, 14])}</div>
+        <div class="panel"><h3>Program starts and completions <small>7 days</small></h3>
+          <div class="bars">${[
+            ["5-Day Core & Pelvic", 64, 41],
+            ["12-Week Transformation", 29, 3],
+            ["Foundation Strength", 22, 5],
+          ]
+            .map(
+              ([n, s, c]) =>
+                `<div class="row"><span>${n}</span><span class="sub">${s} started · ${c} done</span><div class="t"><i style="width:${Math.round((c / s) * 100)}%"></i></div></div>`,
+            )
+            .join("")}</div></div>
+      </div>
+      <div class="panel"><h3>Needs attention <small>3 items</small></h3><div class="scrollx"><table><thead><tr><th>Member</th><th>Issue</th><th>When</th><th></th></tr></thead><tbody>
+        <tr><td><span class="avatar">AK</span>Anita Kaur</td><td><span class="st warn">Billing problem</span> Card was declined</td><td>Today</td><td><button class="btn">Open</button></td></tr>
+        <tr><td><span class="avatar">MS</span>Meera Singh</td><td><span class="st bad">Asked for help</span> "Knee hurts on lunges, can I swap…"</td><td>Yesterday</td><td><button class="btn">Reply</button></td></tr>
+        <tr><td><span class="avatar">HD</span>Harleen Dhillon</td><td><span class="st bad">Paid, quiet 14 days</span></td><td>16 days ago</td><td><button class="btn">Open</button></td></tr>
+      </tbody></table></div></div>`,
+    },
+
+    kpis: {
+      label: "KPIs",
+      url: "/admin/kpis",
+      render: () => `
+      <div class="head"><div><h2 class="pg">KPIs</h2><span class="sub">Last 30 days · sample data</span></div></div>
+      <div class="kpis">${[
+        [
+          "Activation rate",
+          "62%",
+          "31 of 50 new accounts finished onboarding and took a first action",
+        ],
+        [
+          "Free to paid conversion",
+          "10.4%",
+          "47 became members of 452 eligible free members",
+        ],
+        ["7-day active rate", "48%", "198 of 412 members returned this week"],
+        ["Paid program start rate", "83%", "72 of 87 paid members started a program"],
+        ["Weekly adherence", "71%", "142 of 200 planned workouts completed"],
+        ["Weekly check-in completion", "56%", "111 check-ins from 198 active members"],
+        ["At-risk rate (paid)", "9%", "8 of 87 paid members quiet for 7+ days"],
+        ["Monthly membership churn", "4.3%", "4 memberships ended in the last 30 days"],
+        ["Coaching lead rate", "3.5%", "7 members asked about coaching"],
+      ]
+        .map(
+          ([n, v, d]) =>
+            `<div class="panel kpi"><b>${v}</b><span class="nm">${n}</span><p>${d}</p></div>`,
+        )
+        .join("")}</div>
+      <div class="panel"><h3>Video cost guard</h3><div class="tiles"><div class="tile"><b>212</b><span>Video minutes delivered per paying member (month)</span></div><div class="tile"><b>18,450</b><span>Minutes delivered this month</span></div></div><p class="note">If this number jumps, check for autoplay, preloading or abuse.</p></div>`,
+    },
+
+    programs: {
+      label: "Programs",
+      url: "/admin/programs/5-day-core",
+      render: () => `
+      <div class="head"><div><h2 class="pg">5-Day Core &amp; Pelvic Foundation</h2><span class="sub">Free · 5 days · Beginner</span></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn">Preview as Free</button><button class="btn">Preview as Member</button><span class="st warn" style="align-self:center">Draft</span></div></div>
+      <div class="panel"><h3>Publish</h3><div class="flow"><span class="done">1 Draft saved</span>›<span class="on">2 Preview as Free and Member</span>›<span>3 Check required fields</span>›<span>4 Publish</span></div>
+        <p class="note">Unpublish hides a program immediately. No code deployment needed.</p><div style="margin-top:10px;display:flex;gap:8px;align-items:center"><label style="font-size:13px"><input type="checkbox" checked /> Tell members who opted in</label><button class="btn primary">Check and publish</button></div></div>
+      <div class="grid2">
+        <div class="panel"><h3>Structure</h3><div class="tree"><div>Your five days</div><div class="l2">Day 1 · Breathe and brace · 8 min</div><div class="l2">Day 2 · Pelvic floor connection · 10 min</div><div class="l2 sel">Day 3 · Deep core control · 12 min</div><div class="l2">Day 4 · Gentle strength · 14 min</div><div class="l2">Day 5 · Put it together · 15 min</div></div><button class="btn" style="margin-top:8px">Add lesson</button></div>
+        <div class="panel"><h3>Lesson <span class="st ok">Published</span></h3><div class="form">
+          <div class="f full">Title<div>Deep core control</div></div><div class="f">Access<div>Same as the program (Free)</div></div><div class="f">Duration<div>12 minutes</div></div>
+          <div class="f full">Video ID (Cloudflare Stream)<div>a41f0c9e… <span class="st ok" style="margin-left:6px">ready</span></div></div>
+          <div class="f full">Written instructions<div>Exhale as you draw your ribs down. Keep the neck long and the jaw soft.</div></div>
+          <div class="f full">Safety note<div>Stop if you feel sharp pain.</div></div></div>
+          <div style="margin-top:10px;display:flex;gap:8px"><button class="btn primary">Save lesson</button><button class="btn">Duplicate</button></div></div>
+      </div>`,
+    },
+
+    users: {
+      label: "Users",
+      url: "/admin/users",
+      render: () => `
+      <div class="head"><div><h2 class="pg">Users</h2><span class="sub">Search members. Health data is never shown here.</span></div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><div class="panel" style="flex:1;min-width:200px;padding:9px 14px;color:var(--muted)">Search by name or email</div><button class="btn primary">All</button><button class="btn">Members</button><button class="btn">Free</button><button class="btn">Quiet 7+ days</button></div>
+      <div class="panel"><div class="scrollx"><table><thead><tr><th>Name</th><th>Plan</th><th>Onboarding</th><th>Program</th><th>Last active</th><th>Status</th></tr></thead><tbody>
+        ${[
+          [
+            "PS",
+            "Priya Sharma",
+            "ok",
+            "Member",
+            "Complete",
+            "5-Day Core · 40%",
+            "Today",
+            "-",
+          ],
+          [
+            "AK",
+            "Anita Kaur",
+            "warn",
+            "Billing problem",
+            "Complete",
+            "12-Week · 18%",
+            "Today",
+            "-",
+          ],
+          [
+            "MS",
+            "Meera Singh",
+            "ok",
+            "Member",
+            "Complete",
+            "Strength · 55%",
+            "Yesterday",
+            "-",
+          ],
+          [
+            "JG",
+            "Jasleen Gill",
+            "mute",
+            "Free",
+            "Step 3 of 5",
+            "None",
+            "2 days ago",
+            "-",
+          ],
+          [
+            "HD",
+            "Harleen Dhillon",
+            "ok",
+            "Member",
+            "Complete",
+            "12-Week · 31%",
+            "16 days ago",
+            "bad|Quiet 14d",
+          ],
+          [
+            "RB",
+            "Ravi Bains",
+            "mute",
+            "Free",
+            "Complete",
+            "5-Day Core · 80%",
+            "4 days ago",
+            "warn|Quiet 3d",
+          ],
+        ]
+          .map(
+            ([i, n, t, p, o, pr, l, s]) =>
+              `<tr><td><span class="avatar">${i}</span><b>${n}</b></td><td><span class="st ${t}">${p}</span></td><td>${o}</td><td>${pr}</td><td>${l}</td><td>${s === "-" ? "-" : `<span class="st ${s.split("|")[0]}">${s.split("|")[1]}</span>`}</td></tr>`,
+          )
+          .join("")}
+      </tbody></table></div></div>
+      <div class="panel"><h3>Privacy</h3><p class="note" style="margin:0">Weight, measurements and safety answers are private to each member and are not shown to staff. Every change to access or roles is written to the audit log.</p></div>`,
+    },
+
+    support: {
+      label: "Support",
+      url: "/admin/support",
+      badge: "5",
+      render: () => `
+      <div class="head"><div><h2 class="pg">Support requests</h2><span class="sub">5 open</span></div></div>
+      <div class="panel"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="st bad">help</span><span class="st bad">open</span><b>Meera Singh</b><span class="sub">meera@example.com · yesterday 4:12 PM</span></div>
+        <p>Knee hurts on lunges. Can I swap them for something else in week 2?</p>
+        <div class="form" style="grid-template-columns:1fr auto;align-items:start"><div class="f"><div style="min-height:70px;font-weight:400;color:var(--muted)">Write a reply. Meera is notified in the app.</div></div>
+          <div style="display:flex;flex-direction:column;gap:8px"><div class="f"><div>In progress</div></div><button class="btn primary">Send reply</button></div></div></div>
+      <div class="panel"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="st warn">coaching</span><span class="st bad">open</span><b>Priya Sharma</b><span class="sub">Interested in the 12-Week program with coaching</span></div>
+        <p class="note">Also queued in Toasted Media CRM as a coaching opportunity.</p></div>`,
+    },
+
+    crm: {
+      label: "CRM sync",
+      url: "/admin/crm",
+      render: () => `
+      <div class="head"><div><h2 class="pg">Toasted Media CRM sync</h2><span class="sub">What the app has sent to the CRM</span></div><button class="btn primary">Run sync now</button></div>
+      <div class="banner">1 event failed and is retrying. The rest are up to date.</div>
+      <div class="panel"><div class="scrollx"><table><thead><tr><th>When</th><th>Event</th><th>Member</th><th>Status</th><th></th></tr></thead><tbody>
+        <tr><td>9:12 AM</td><td><code>membership_started</code></td><td>Priya S.</td><td><span class="st ok">sent</span></td><td></td></tr>
+        <tr><td>8:47 AM</td><td><code>onboarding_completed</code></td><td>Jasleen G.</td><td><span class="st ok">sent</span></td><td></td></tr>
+        <tr><td>8:00 AM</td><td><code>at_risk_14d</code></td><td>Harleen D.</td><td><span class="st ok">sent</span></td><td></td></tr>
+        <tr><td>7:31 AM</td><td><code>help_requested</code></td><td>Meera S.</td><td><span class="st bad">failed</span> <span class="sub">timeout, retry in 5 min</span></td><td><button class="btn">Retry</button></td></tr>
+      </tbody></table></div><p class="note">Only lifecycle events are sent. Weight, measurements and health answers never leave the app.</p></div>`,
+    },
+  };
+
+  function bars(vals) {
+    const w = 420,
+      h = 130,
+      max = Math.max(...vals),
+      bw = (w - 20) / vals.length - 6;
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" role="img" aria-label="New sign-ups per day for the last 14 days, peaking at ${max}">
+      <g stroke="currentColor" stroke-opacity="0.1"><line x1="10" x2="${w - 10}" y1="20" y2="20"/><line x1="10" x2="${w - 10}" y1="65" y2="65"/><line x1="10" x2="${w - 10}" y1="110" y2="110"/></g>
+      ${vals
+        .map((v, i) => {
+          const x = 10 + i * (bw + 6),
+            bh = (v / max) * 90;
+          const hi = i === vals.indexOf(max);
+          return `<rect x="${x}" y="${110 - bh}" width="${bw}" height="${bh}" rx="5" fill="${hi ? "#c8a84b" : "var(--brand)"}"/>${hi ? `<text x="${x + bw / 2}" y="${104 - bh}" font-size="11" font-weight="700" text-anchor="middle" fill="currentColor">${v}</text>` : ""}`;
+        })
+        .join("")}
+      <text x="10" y="126" font-size="10" fill="currentColor" fill-opacity="0.6">14 days ago</text><text x="${w - 10}" y="126" font-size="10" text-anchor="end" fill="currentColor" fill-opacity="0.6">Today</text></svg>`;
+  }
+
+  let current = "dash";
+  function render() {
+    document.getElementById("side").innerHTML =
+      `<div class="brandmark">CK Fitness<small>Admin</small></div>` +
+      Object.entries(PAGES)
+        .map(
+          ([k, p]) =>
+            `<button class="nav" data-p="${k}" aria-current="${k === current}">${p.label}${p.badge ? `<span class="badge">${p.badge}</span>` : ""}</button>`,
+        )
+        .join("") +
+      ["Users", "Notifications", "Settings", "Audit log"]
+        .filter((l) => !PAGES[l.toLowerCase()])
+        .map((l) => `<span class="nav" style="opacity:.5;cursor:default">${l}</span>`)
+        .join("") +
+      `<div class="who"><b>Kv (owner)</b>Staff access</div>`;
+    document.getElementById("main").innerHTML = PAGES[current].render();
+    document.getElementById("url").textContent =
+      "app.chardikalafitness.com" + PAGES[current].url;
+  }
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-p]");
+    if (b) {
+      current = b.dataset.p;
+      render();
+    }
+  });
+  render();
+</script>
