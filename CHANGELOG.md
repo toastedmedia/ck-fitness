@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-12: Milestone 1D
+- Programs: Discover, My Programs, Free, Member Library, Categories; filters by goal, level, home/gym; program cards with locks and progress.
+- Program detail (weeks, lessons, progress, paywall or coaching CTA) and lesson player (written steps, safety note, PDF via signed link, complete, previous/next, "I cannot do this today").
+- Secure video: /api/video-token checks access twice (database policy + core rule) and returns a 10-minute Cloudflare Stream signed link; nothing loads until she taps Play; position is saved and resumed.
+- Migration 0004: memberships, programs, sections, lessons, enrollments, progress, tags, `lesson_outline` view, `current_entitlement()` and `access_allowed()` database functions, row-level security. Migration 0005: storage buckets and rules. Development seed with sample programs.
+
 ## 2026-10-11: Milestone 1C
 
 - App shell with bottom navigation (phone) and sidebar (desktop).
