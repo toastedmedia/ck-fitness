@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-10-10: Milestone 1B
+
+- Email/password sign-up, log in, log out, forgot and reset password, email confirmation callback.
+- Route guards (middleware): /home and /onboarding need login; /login and /signup redirect signed-in users.
+- 5-step onboarding (about you, goal, training setup, lifestyle, safety and commitment) with per-step saving, resume, adults 18+ check, supportive safety guidance.
+- Placeholder Home showing name, date, starting weight and BMI (full Home is 1C).
+- Migration 0002: onboarding_profiles, notification_preferences, auto-create profile on signup, all with row-level security.
+- Core logic and 11 new tests in packages/core. Single-file theme (theme.css), navy/gold brand look, final Home design in docs/design.
+
 ## 2026-10-09: Milestone 1A
 
 - Monorepo: `apps/web` (Next.js 15, TypeScript, Tailwind), `packages/core` (access rules), `packages/design-tokens` (CK colours).

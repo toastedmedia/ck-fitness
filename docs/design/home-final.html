@@ -1,128 +1,763 @@
 <title>CK Fitness Home Screen</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link
+  href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+  rel="stylesheet"
+/>
 <style>
   /* Layout: a phone showing the real Home screen on the left; on wide screens a notes panel on the right explains how each part behaves. */
   :root {
     /* page chrome */
-    --bg: #eceef5; --surface: #ffffff; --fg: #1b1b36; --muted: #5b6075; --line: #dcdfeb; --gold: #8a6d1a;
+    --bg: #eceef5;
+    --surface: #ffffff;
+    --fg: #1b1b36;
+    --muted: #5b6075;
+    --line: #dcdfeb;
+    --gold: #8a6d1a;
     /* the app being shown: same roles as packages/design-tokens/src/theme.css */
-    --brand: #1b1b36; --brand-soft: #2a2a4a; --on-brand: #ffffff;
-    --accent: #c8a84b; --accent-strong: #8a6d1a; --on-accent: #1b1b36;
-    --page: #f3f4f9; --card: #ffffff; --rule: #dfe2ec; --text: #1b1b36; --text-muted: #5b6075;
-    --success: #1f8a4c; --success-soft: #e6f6ec; --danger: #b3402f;
+    --brand: #1b1b36;
+    --brand-soft: #2a2a4a;
+    --on-brand: #ffffff;
+    --accent: #c8a84b;
+    --accent-strong: #8a6d1a;
+    --on-accent: #1b1b36;
+    --page: #f3f4f9;
+    --card: #ffffff;
+    --rule: #dfe2ec;
+    --text: #1b1b36;
+    --text-muted: #5b6075;
+    --success: #1f8a4c;
+    --success-soft: #e6f6ec;
+    --danger: #b3402f;
     --font: "Plus Jakarta Sans", system-ui, sans-serif;
-    --r-card: 22px; --r-btn: 999px;
+    --r-card: 22px;
+    --r-btn: 999px;
   }
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) { --bg: #0f1020; --surface: #181a30; --fg: #eceefa; --muted: #a2a8c4; --line: #2a2d4a; --gold: #d9bb62; color-scheme: dark; }
+    :root:not([data-theme="light"]) {
+      --bg: #0f1020;
+      --surface: #181a30;
+      --fg: #eceefa;
+      --muted: #a2a8c4;
+      --line: #2a2d4a;
+      --gold: #d9bb62;
+      color-scheme: dark;
+    }
   }
-  :root[data-theme="dark"] { --bg: #0f1020; --surface: #181a30; --fg: #eceefa; --muted: #a2a8c4; --line: #2a2d4a; --gold: #d9bb62; color-scheme: dark; }
+  :root[data-theme="dark"] {
+    --bg: #0f1020;
+    --surface: #181a30;
+    --fg: #eceefa;
+    --muted: #a2a8c4;
+    --line: #2a2d4a;
+    --gold: #d9bb62;
+    color-scheme: dark;
+  }
 
-  * { box-sizing: border-box; }
-  body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 14px; line-height: 1.5; padding-inline: 16px; padding-block: 28px 48px; }
-  button { font: inherit; cursor: pointer; }
-  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-  .wrap { max-width: 980px; margin-inline: auto; }
-  .eyebrow { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); font-weight: 700; }
-  h1.title { font-size: clamp(24px, 4.5vw, 34px); line-height: 1.15; margin: 6px 0 6px; letter-spacing: -0.02em; font-weight: 800; text-wrap: balance; }
-  .lede { color: var(--muted); max-width: 60ch; margin: 0; }
-  .scen { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 20px 4px; align-items: center; }
-  .scen > span { font-size: 12px; color: var(--muted); font-weight: 600; margin-right: 4px; }
-  .sbtn { border: 1.5px solid var(--line); background: var(--surface); color: var(--fg); padding: 8px 14px; border-radius: 999px; font-weight: 600; font-size: 13px; min-height: 40px; }
-  .sbtn[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
-  .stage { display: grid; grid-template-columns: minmax(0, 372px) minmax(0, 1fr); gap: 36px; align-items: start; justify-content: center; margin-top: 18px; }
-  .notes { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 16px; min-width: 0; }
-  .notes h2 { font-size: 15px; margin: 0; font-weight: 700; }
-  .note { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
-  .note p { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; }
-  .note b { font-size: 13.5px; }
-  table.w { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 6px; }
-  table.w td { padding: 5px 0; border-bottom: 1px solid var(--line); } table.w td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
-  .later { display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; background: var(--line); color: var(--muted); padding: 2px 8px; border-radius: 99px; margin-left: 6px; vertical-align: 1px; }
-  @media (max-width: 860px) { .stage { grid-template-columns: minmax(0, 1fr); justify-items: center; } .notes { position: static; width: 100%; max-width: 560px; } }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.5;
+    padding-inline: 16px;
+    padding-block: 28px 48px;
+  }
+  button {
+    font: inherit;
+    cursor: pointer;
+  }
+  :focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .wrap {
+    max-width: 980px;
+    margin-inline: auto;
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 700;
+  }
+  h1.title {
+    font-size: clamp(24px, 4.5vw, 34px);
+    line-height: 1.15;
+    margin: 6px 0 6px;
+    letter-spacing: -0.02em;
+    font-weight: 800;
+    text-wrap: balance;
+  }
+  .lede {
+    color: var(--muted);
+    max-width: 60ch;
+    margin: 0;
+  }
+  .scen {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-block: 20px 4px;
+    align-items: center;
+  }
+  .scen > span {
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .sbtn {
+    border: 1.5px solid var(--line);
+    background: var(--surface);
+    color: var(--fg);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 13px;
+    min-height: 40px;
+  }
+  .sbtn[aria-pressed="true"] {
+    background: var(--fg);
+    color: var(--bg);
+    border-color: var(--fg);
+  }
+  .stage {
+    display: grid;
+    grid-template-columns: minmax(0, 372px) minmax(0, 1fr);
+    gap: 36px;
+    align-items: start;
+    justify-content: center;
+    margin-top: 18px;
+  }
+  .notes {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: sticky;
+    top: 16px;
+    min-width: 0;
+  }
+  .notes h2 {
+    font-size: 15px;
+    margin: 0;
+    font-weight: 700;
+  }
+  .note {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 16px;
+  }
+  .note p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+  .note b {
+    font-size: 13.5px;
+  }
+  table.w {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13px;
+    margin-top: 6px;
+  }
+  table.w td {
+    padding: 5px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  table.w td:last-child {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+  .later {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--line);
+    color: var(--muted);
+    padding: 2px 8px;
+    border-radius: 99px;
+    margin-left: 6px;
+    vertical-align: 1px;
+  }
+  @media (max-width: 860px) {
+    .stage {
+      grid-template-columns: minmax(0, 1fr);
+      justify-items: center;
+    }
+    .notes {
+      position: static;
+      width: 100%;
+      max-width: 560px;
+    }
+  }
 
   /* ---------- Phone ---------- */
-  .phone { width: min(100%, 372px); background: #0a0a18; border-radius: 44px; padding: 10px; box-shadow: 0 24px 60px rgba(10, 10, 40, 0.28); }
-  .screen { background: var(--page); color: var(--text); border-radius: 34px; height: 760px; overflow: hidden; display: flex; flex-direction: column; font-size: 12.5px; position: relative; }
-  .status { height: 32px; flex: none; display: flex; justify-content: space-between; align-items: center; padding-inline: 24px; font-size: 11px; font-weight: 700; }
-  .scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 2px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
-  .app p { margin: 0; } .app h1, .app h2, .app h3 { margin: 0; letter-spacing: -0.02em; font-weight: 700; color: var(--brand); line-height: 1.2; }
-  .app h1 { font-size: 19px; } .app h2 { font-size: 15px; } .app h3 { font-size: 13px; }
-  .muted { color: var(--text-muted); } .tiny { font-size: 10.5px; }
-  .cap { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: var(--accent-strong); }
-  .row { display: flex; align-items: center; gap: 8px; } .between { justify-content: space-between; } .grow { flex: 1; min-width: 0; }
-  .card { background: var(--card); border: 1px solid var(--rule); border-radius: var(--r-card); padding: 12px 14px; }
-  .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding-inline: 16px; border-radius: var(--r-btn); border: 0; background: var(--brand); color: var(--on-brand); font-weight: 700; font-size: 12px; }
-  .btn.gold { background: var(--accent); color: var(--on-accent); } .btn.ghost { background: transparent; color: var(--brand); border: 1.5px solid var(--rule); }
-  .btn.sm { min-height: 36px; padding-inline: 12px; font-size: 11.5px; }
-  .ico { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .phone {
+    width: min(100%, 372px);
+    background: #0a0a18;
+    border-radius: 44px;
+    padding: 10px;
+    box-shadow: 0 24px 60px rgba(10, 10, 40, 0.28);
+  }
+  .screen {
+    background: var(--page);
+    color: var(--text);
+    border-radius: 34px;
+    height: 760px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    font-size: 12.5px;
+    position: relative;
+  }
+  .status {
+    height: 32px;
+    flex: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-inline: 24px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 2px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .app p {
+    margin: 0;
+  }
+  .app h1,
+  .app h2,
+  .app h3 {
+    margin: 0;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    color: var(--brand);
+    line-height: 1.2;
+  }
+  .app h1 {
+    font-size: 19px;
+  }
+  .app h2 {
+    font-size: 15px;
+  }
+  .app h3 {
+    font-size: 13px;
+  }
+  .muted {
+    color: var(--text-muted);
+  }
+  .tiny {
+    font-size: 10.5px;
+  }
+  .cap {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--accent-strong);
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .between {
+    justify-content: space-between;
+  }
+  .grow {
+    flex: 1;
+    min-width: 0;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-card);
+    padding: 12px 14px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding-inline: 16px;
+    border-radius: var(--r-btn);
+    border: 0;
+    background: var(--brand);
+    color: var(--on-brand);
+    font-weight: 700;
+    font-size: 12px;
+  }
+  .btn.gold {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  .btn.ghost {
+    background: transparent;
+    color: var(--brand);
+    border: 1.5px solid var(--rule);
+  }
+  .btn.sm {
+    min-height: 36px;
+    padding-inline: 12px;
+    font-size: 11.5px;
+  }
+  .ico {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex: none;
+  }
 
-  .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--brand); color: var(--on-brand); display: grid; place-items: center; font-weight: 700; font-size: 13px; flex: none; }
-  .bell { position: relative; width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--rule); background: var(--card); display: grid; place-items: center; color: var(--brand); }
-  .bell i { position: absolute; top: 7px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); border: 2px solid var(--card); }
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--brand);
+    color: var(--on-brand);
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: 13px;
+    flex: none;
+  }
+  .bell {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid var(--rule);
+    background: var(--card);
+    display: grid;
+    place-items: center;
+    color: var(--brand);
+  }
+  .bell i {
+    position: absolute;
+    top: 7px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--card);
+  }
 
-  .remind { display: flex; gap: 10px; align-items: center; background: #fbf5e1; border: 1px solid #ecdca4; border-radius: 16px; padding: 10px 10px 10px 12px; }
-  .remind .dotw { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; flex: none; }
-  .remind b { font-size: 12px; color: var(--brand); display: block; line-height: 1.3; } .remind span.s { font-size: 11px; color: var(--text-muted); }
-  .remind .x { border: 0; background: transparent; color: var(--text-muted); width: 32px; height: 32px; border-radius: 50%; font-size: 16px; flex: none; }
-  .remind.info { background: #eef0fa; border-color: #d9ddf2; } .remind.info .dotw { background: var(--brand); color: var(--on-brand); }
+  .remind {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background: #fbf5e1;
+    border: 1px solid #ecdca4;
+    border-radius: 16px;
+    padding: 10px 10px 10px 12px;
+  }
+  .remind .dotw {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--on-accent);
+    display: grid;
+    place-items: center;
+    flex: none;
+  }
+  .remind b {
+    font-size: 12px;
+    color: var(--brand);
+    display: block;
+    line-height: 1.3;
+  }
+  .remind span.s {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .remind .x {
+    border: 0;
+    background: transparent;
+    color: var(--text-muted);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 16px;
+    flex: none;
+  }
+  .remind.info {
+    background: #eef0fa;
+    border-color: #d9ddf2;
+  }
+  .remind.info .dotw {
+    background: var(--brand);
+    color: var(--on-brand);
+  }
 
-  .hero { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 12px; align-items: center; }
-  .bigring { position: relative; width: 132px; height: 132px; }
-  .bigring svg { width: 100%; height: 100%; display: block; }
-  .bigring .mid { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  .bigring .mid b { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--brand); font-variant-numeric: tabular-nums; }
-  .bigring .mid span { font-size: 10px; color: var(--text-muted); margin-top: 3px; font-weight: 600; }
-  #arc { transition: stroke-dashoffset 0.9s cubic-bezier(0.22, 0.8, 0.3, 1); }
-  .tasks { display: flex; flex-direction: column; gap: 6px; }
-  .task { display: flex; align-items: center; gap: 8px; border: 0; background: transparent; padding: 4px 0; text-align: left; color: var(--text); min-height: 32px; width: 100%; }
-  .task .tick { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--rule); flex: none; display: grid; place-items: center; color: transparent; }
-  .task.done .tick { background: var(--success); border-color: var(--success); color: #fff; }
-  .task .tx { flex: 1; min-width: 0; font-weight: 600; font-size: 12px; } .task .tx small { display: block; font-weight: 500; color: var(--text-muted); font-size: 10.5px; }
-  .task .pts { font-size: 10px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .hero {
+    display: grid;
+    grid-template-columns: 132px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+  }
+  .bigring {
+    position: relative;
+    width: 132px;
+    height: 132px;
+  }
+  .bigring svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .bigring .mid {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .bigring .mid b {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--brand);
+    font-variant-numeric: tabular-nums;
+  }
+  .bigring .mid span {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 3px;
+    font-weight: 600;
+  }
+  #arc {
+    transition: stroke-dashoffset 0.9s cubic-bezier(0.22, 0.8, 0.3, 1);
+  }
+  .tasks {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .task {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 0;
+    background: transparent;
+    padding: 4px 0;
+    text-align: left;
+    color: var(--text);
+    min-height: 32px;
+    width: 100%;
+  }
+  .task .tick {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--rule);
+    flex: none;
+    display: grid;
+    place-items: center;
+    color: transparent;
+  }
+  .task.done .tick {
+    background: var(--success);
+    border-color: var(--success);
+    color: #fff;
+  }
+  .task .tx {
+    flex: 1;
+    min-width: 0;
+    font-weight: 600;
+    font-size: 12px;
+  }
+  .task .tx small {
+    display: block;
+    font-weight: 500;
+    color: var(--text-muted);
+    font-size: 10.5px;
+  }
+  .task .pts {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
 
-  .water { display: flex; align-items: center; gap: 12px; }
-  .wring { position: relative; width: 56px; height: 56px; flex: none; } .wring svg { width: 100%; height: 100%; }
-  .wring b { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; color: var(--brand); font-weight: 800; }
-  .track { stroke: var(--rule); }
-  .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .big { font-size: 24px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; color: var(--brand); font-variant-numeric: tabular-nums; }
-  .pill { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 99px; background: var(--success-soft); color: var(--success); }
-  .pill.n { background: #eef0fa; color: var(--brand); } .pill.g { background: #f6efd6; color: #6f5712; }
-  .cycle { display: flex; gap: 4px; margin-top: 8px; } .cycle i { flex: 1; height: 5px; border-radius: 9px; background: var(--rule); } .cycle i.on { background: var(--accent); }
-  .link { border: 0; background: transparent; color: var(--brand); font-weight: 700; font-size: 11px; padding: 6px 0; min-height: 32px; text-decoration: underline; text-underline-offset: 3px; }
-  .health { display: flex; align-items: center; gap: 10px; border: 1.5px dashed var(--rule); border-radius: var(--r-card); padding: 10px 14px; background: transparent; }
-  .health .hi { width: 34px; height: 34px; border-radius: 10px; background: var(--rule); color: var(--text-muted); display: grid; place-items: center; flex: none; }
-  .navy { background: var(--brand); color: var(--on-brand); border-color: var(--brand); } .navy h2 { color: var(--on-brand); } .navy .cap { color: var(--accent); } .navy .muted { color: #b9bddb; }
-  .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-size: 10px; color: var(--text-muted); }
-  .week div { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-  .week i { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--rule); display: grid; place-items: center; color: transparent; font-style: normal; }
-  .week i.d { background: var(--success); border-color: var(--success); color: #fff; } .week i.p { border-color: var(--accent); } .week i.now { border-color: var(--brand); background: var(--brand); color: var(--on-brand); }
-  .tabbar { flex: none; display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--rule); background: var(--card); padding: 4px 4px 12px; }
-  .tab { border: 0; background: transparent; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 9.5px; min-height: 48px; justify-content: center; font-weight: 500; }
-  .tab[aria-current="true"] { color: var(--brand); font-weight: 700; }
-  .sheet { position: absolute; inset: 0; background: rgba(15, 16, 40, 0.45); display: flex; align-items: flex-end; z-index: 5; }
-  .sheet .panel { background: var(--card); width: 100%; border-radius: 26px 26px 0 0; padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 12px; }
-  .stepper { display: flex; align-items: center; justify-content: center; gap: 18px; }
-  .stepper button { width: 48px; height: 48px; border-radius: 50%; border: 1.5px solid var(--rule); background: var(--card); color: var(--brand); font-size: 22px; font-weight: 600; }
-  .stepper b { font-size: 34px; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; color: var(--brand); min-width: 5.2ch; text-align: center; }
-  .done-banner { background: linear-gradient(120deg, var(--accent), #e3cc7e); color: var(--on-accent); border: 0; }
-  .done-banner h2 { color: var(--on-accent); }
-  @media (prefers-reduced-motion: reduce) { #arc { transition: none; } }
+  .water {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .wring {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    flex: none;
+  }
+  .wring svg {
+    width: 100%;
+    height: 100%;
+  }
+  .wring b {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    color: var(--brand);
+    font-weight: 800;
+  }
+  .track {
+    stroke: var(--rule);
+  }
+  .twocol {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .big {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    color: var(--brand);
+    font-variant-numeric: tabular-nums;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 99px;
+    background: var(--success-soft);
+    color: var(--success);
+  }
+  .pill.n {
+    background: #eef0fa;
+    color: var(--brand);
+  }
+  .pill.g {
+    background: #f6efd6;
+    color: #6f5712;
+  }
+  .cycle {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+  }
+  .cycle i {
+    flex: 1;
+    height: 5px;
+    border-radius: 9px;
+    background: var(--rule);
+  }
+  .cycle i.on {
+    background: var(--accent);
+  }
+  .link {
+    border: 0;
+    background: transparent;
+    color: var(--brand);
+    font-weight: 700;
+    font-size: 11px;
+    padding: 6px 0;
+    min-height: 32px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .health {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1.5px dashed var(--rule);
+    border-radius: var(--r-card);
+    padding: 10px 14px;
+    background: transparent;
+  }
+  .health .hi {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--rule);
+    color: var(--text-muted);
+    display: grid;
+    place-items: center;
+    flex: none;
+  }
+  .navy {
+    background: var(--brand);
+    color: var(--on-brand);
+    border-color: var(--brand);
+  }
+  .navy h2 {
+    color: var(--on-brand);
+  }
+  .navy .cap {
+    color: var(--accent);
+  }
+  .navy .muted {
+    color: #b9bddb;
+  }
+  .week {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  .week div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .week i {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--rule);
+    display: grid;
+    place-items: center;
+    color: transparent;
+    font-style: normal;
+  }
+  .week i.d {
+    background: var(--success);
+    border-color: var(--success);
+    color: #fff;
+  }
+  .week i.p {
+    border-color: var(--accent);
+  }
+  .week i.now {
+    border-color: var(--brand);
+    background: var(--brand);
+    color: var(--on-brand);
+  }
+  .tabbar {
+    flex: none;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    border-top: 1px solid var(--rule);
+    background: var(--card);
+    padding: 4px 4px 12px;
+  }
+  .tab {
+    border: 0;
+    background: transparent;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 9.5px;
+    min-height: 48px;
+    justify-content: center;
+    font-weight: 500;
+  }
+  .tab[aria-current="true"] {
+    color: var(--brand);
+    font-weight: 700;
+  }
+  .sheet {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 16, 40, 0.45);
+    display: flex;
+    align-items: flex-end;
+    z-index: 5;
+  }
+  .sheet .panel {
+    background: var(--card);
+    width: 100%;
+    border-radius: 26px 26px 0 0;
+    padding: 16px 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+  }
+  .stepper button {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1.5px solid var(--rule);
+    background: var(--card);
+    color: var(--brand);
+    font-size: 22px;
+    font-weight: 600;
+  }
+  .stepper b {
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+    color: var(--brand);
+    min-width: 5.2ch;
+    text-align: center;
+  }
+  .done-banner {
+    background: linear-gradient(120deg, var(--accent), #e3cc7e);
+    color: var(--on-accent);
+    border: 0;
+  }
+  .done-banner h2 {
+    color: var(--on-accent);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #arc {
+      transition: none;
+    }
+  }
 </style>
 
 <div class="wrap">
   <p class="eyebrow">CK Fitness · Final Home design</p>
   <h1 class="title">The Home screen, with live progress</h1>
-  <p class="lede">Everything on this screen works. Add water, tick off tasks, log a weigh-in, and watch the day ring fill. Names and numbers are sample content.</p>
+  <p class="lede">
+    Everything on this screen works. Add water, tick off tasks, log a weigh-in, and watch
+    the day ring fill. Names and numbers are sample content.
+  </p>
 
   <div class="scen" role="group" aria-label="Preview a time of day">
     <span>Preview:</span>
-    <button class="sbtn" data-scn="morning" aria-pressed="false" type="button">Morning</button>
-    <button class="sbtn" data-scn="midday" aria-pressed="true" type="button">Midday</button>
-    <button class="sbtn" data-scn="done" aria-pressed="false" type="button">Day complete</button>
+    <button class="sbtn" data-scn="morning" aria-pressed="false" type="button">
+      Morning
+    </button>
+    <button class="sbtn" data-scn="midday" aria-pressed="true" type="button">
+      Midday
+    </button>
+    <button class="sbtn" data-scn="done" aria-pressed="false" type="button">
+      Day complete
+    </button>
   </div>
 
   <div class="stage">
@@ -130,51 +765,165 @@
 
     <aside class="notes" aria-label="Design notes">
       <h2>How it works</h2>
-      <div class="note"><b>Your day ring</b>
-        <p>One ring shows the whole day. It fills as the member completes things, and water and steps count partially.</p>
-        <table class="w"><tbody>
-          <tr><td>Workout done</td><td>40%</td></tr><tr><td>Water (to daily target)</td><td>30%</td></tr>
-          <tr><td>Steps (to daily goal)</td><td>20%</td></tr><tr><td>Daily check-in</td><td>10%</td></tr></tbody></table>
-        <p>The split lives in one setting, so CK can change it later without a new app version.</p></div>
-      <div class="note"><b>Personal reminders</b>
-        <p>Up to two bars at the top, addressed by name: weigh-in every 7 days (appears from day 5), weekly check-in, and "pick up where you left off" after 3 quiet days. Members can dismiss them. Wording stays supportive.</p></div>
-      <div class="note"><b>Body snapshot</b>
-        <p>Weight, trend and BMI. BMI is information only and members can hide it. First weigh-in is captured in onboarding.</p></div>
-      <div class="note"><b>Apple Health<span class="later">iPhone app</span></b>
-        <p>A website cannot read Apple Health. Until the iPhone app ships, steps are entered by hand. The card shows where Apple Health will connect, so the layout will not change later.</p></div>
-      <div class="note"><b>Easy to restyle</b>
-        <p>Colours, fonts, corner shapes and spacing come from one theme file. New features can be added as extra cards under the ring.</p></div>
+      <div class="note">
+        <b>Your day ring</b>
+        <p>
+          One ring shows the whole day. It fills as the member completes things, and water
+          and steps count partially.
+        </p>
+        <table class="w">
+          <tbody>
+            <tr>
+              <td>Workout done</td>
+              <td>40%</td>
+            </tr>
+            <tr>
+              <td>Water (to daily target)</td>
+              <td>30%</td>
+            </tr>
+            <tr>
+              <td>Steps (to daily goal)</td>
+              <td>20%</td>
+            </tr>
+            <tr>
+              <td>Daily check-in</td>
+              <td>10%</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          The split lives in one setting, so CK can change it later without a new app
+          version.
+        </p>
+      </div>
+      <div class="note">
+        <b>Personal reminders</b>
+        <p>
+          Up to two bars at the top, addressed by name: weigh-in every 7 days (appears
+          from day 5), weekly check-in, and "pick up where you left off" after 3 quiet
+          days. Members can dismiss them. Wording stays supportive.
+        </p>
+      </div>
+      <div class="note">
+        <b>Body snapshot</b>
+        <p>
+          Weight, trend and BMI. BMI is information only and members can hide it. First
+          weigh-in is captured in onboarding.
+        </p>
+      </div>
+      <div class="note">
+        <b>Apple Health<span class="later">iPhone app</span></b>
+        <p>
+          A website cannot read Apple Health. Until the iPhone app ships, steps are
+          entered by hand. The card shows where Apple Health will connect, so the layout
+          will not change later.
+        </p>
+      </div>
+      <div class="note">
+        <b>Easy to restyle</b>
+        <p>
+          Colours, fonts, corner shapes and spacing come from one theme file. New features
+          can be added as extra cards under the ring.
+        </p>
+      </div>
     </aside>
   </div>
 </div>
 
 <script>
-  const SETTINGS = { waterTarget: 2500, stepGoal: 8000, heightCm: 168, weighInEveryDays: 7, remindFromDay: 5, weights: { workout: 40, water: 30, steps: 20, checkin: 10 } };
-  const NAME = 'Priya';
-  const SCN = {
-    morning: { water: 0, steps: 600, workout: false, checkin: false, daysSince: 6, weight: 67.2, reminders: { weigh: true, checkin: true }, hour: 'Good morning' },
-    midday: { water: 1250, steps: 4300, workout: false, checkin: false, daysSince: 6, weight: 67.2, reminders: { weigh: true, checkin: true }, hour: 'Good afternoon' },
-    done: { water: 2500, steps: 8400, workout: true, checkin: true, daysSince: 0, weight: 66.8, reminders: { weigh: false, checkin: false }, hour: 'Good evening' },
+  const SETTINGS = {
+    waterTarget: 2500,
+    stepGoal: 8000,
+    heightCm: 168,
+    weighInEveryDays: 7,
+    remindFromDay: 5,
+    weights: { workout: 40, water: 30, steps: 20, checkin: 10 },
   };
-  let S = null, prevPct = 0, sheet = null, draftW = 67.2, hideBMI = false, scn = 'midday';
+  const NAME = "Priya";
+  const SCN = {
+    morning: {
+      water: 0,
+      steps: 600,
+      workout: false,
+      checkin: false,
+      daysSince: 6,
+      weight: 67.2,
+      reminders: { weigh: true, checkin: true },
+      hour: "Good morning",
+    },
+    midday: {
+      water: 1250,
+      steps: 4300,
+      workout: false,
+      checkin: false,
+      daysSince: 6,
+      weight: 67.2,
+      reminders: { weigh: true, checkin: true },
+      hour: "Good afternoon",
+    },
+    done: {
+      water: 2500,
+      steps: 8400,
+      workout: true,
+      checkin: true,
+      daysSince: 0,
+      weight: 66.8,
+      reminders: { weigh: false, checkin: false },
+      hour: "Good evening",
+    },
+  };
+  let S = null,
+    prevPct = 0,
+    sheet = null,
+    draftW = 67.2,
+    hideBMI = false,
+    scn = "midday";
 
   const I = {
-    home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>', book: '<path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M4 19V5"/>',
-    chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>', check: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>', user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',
-    bell: '<path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/><path d="M10 21h4"/>', tick: '<path d="M5 12.5l4.5 4.5L19 7.5"/>', scale: '<rect x="3" y="4" width="18" height="16" rx="4"/><path d="M8 9a5 5 0 018 0"/><path d="M12 9l1.5-2"/>',
-    heart: '<path d="M12 20s-7-4.5-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.500-7 10-7 10z"/>', play: '<path d="M8 5l11 7-11 7z" fill="currentColor"/>', msg: '<path d="M4 5h16v11H9l-5 4z"/>'
+    home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>',
+    book: '<path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2z"/><path d="M4 19V5"/>',
+    chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    check: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>',
+    user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',
+    bell: '<path d="M6 16V11a6 6 0 0112 0v5l2 2H4z"/><path d="M10 21h4"/>',
+    tick: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    scale:
+      '<rect x="3" y="4" width="18" height="16" rx="4"/><path d="M8 9a5 5 0 018 0"/><path d="M12 9l1.5-2"/>',
+    heart:
+      '<path d="M12 20s-7-4.5-7-10a4 4 0 017-2.5A4 4 0 0119 10c0 5.500-7 10-7 10z"/>',
+    play: '<path d="M8 5l11 7-11 7z" fill="currentColor"/>',
+    msg: '<path d="M4 5h16v11H9l-5 4z"/>',
   };
-  const ic = (n) => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${I[n]}</svg>`;
+  const ic = (n) =>
+    `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${I[n]}</svg>`;
 
   const clamp = (v) => Math.max(0, Math.min(1, v));
   function pct() {
     const w = SETTINGS.weights;
-    return Math.round((S.workout ? w.workout : 0) + w.water * clamp(S.water / SETTINGS.waterTarget) + w.steps * clamp(S.steps / SETTINGS.stepGoal) + (S.checkin ? w.checkin : 0));
+    return Math.round(
+      (S.workout ? w.workout : 0) +
+        w.water * clamp(S.water / SETTINGS.waterTarget) +
+        w.steps * clamp(S.steps / SETTINGS.stepGoal) +
+        (S.checkin ? w.checkin : 0),
+    );
   }
   const bmi = () => S.weight / Math.pow(SETTINGS.heightCm / 100, 2);
-  const bmiLabel = (b) => (b < 18.5 ? 'Below typical range' : b < 25 ? 'Typical range' : b < 30 ? 'Above typical range' : 'Well above typical range');
-  const fmtL = (ml) => (ml / 1000).toFixed(ml % 1000 === 0 ? 0 : 2).replace(/0$/, '') + ' L';
-  const dateStr = new Date().toLocaleDateString('en-CA', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Vancouver' });
+  const bmiLabel = (b) =>
+    b < 18.5
+      ? "Below typical range"
+      : b < 25
+        ? "Typical range"
+        : b < 30
+          ? "Above typical range"
+          : "Well above typical range";
+  const fmtL = (ml) =>
+    (ml / 1000).toFixed(ml % 1000 === 0 ? 0 : 2).replace(/0$/, "") + " L";
+  const dateStr = new Date().toLocaleDateString("en-CA", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "America/Vancouver",
+  });
 
   function ringSvg(p) {
     const C = 2 * Math.PI * 56;
@@ -190,9 +939,14 @@
       <circle cx="28" cy="28" r="22" fill="none" stroke="#1f8a4c" stroke-width="6" stroke-linecap="round" transform="rotate(-90 28 28)" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - clamp(p))}"/></svg><b>${Math.round(clamp(p) * 100)}%</b></div>`;
   }
   const spark = (() => {
-    const pts = [68.4, 68.1, 68.0, 67.7, 67.5, 67.2]; const w = 120, h = 36;
-    const mn = 66.5, mx = 68.6, x = (i) => 4 + (i * (w - 8)) / 5, y = (v) => 4 + ((mx - v) / (mx - mn)) * (h - 8);
-    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="36" role="img" aria-label="Weight trend over six weeks, down 1.2 kilograms"><polyline fill="none" stroke="#1b1b36" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${pts.map((v, i) => x(i) + ',' + y(v)).join(' ')}"/><circle cx="${x(5)}" cy="${y(pts[5])}" r="3.5" fill="#c8a84b"/></svg>`;
+    const pts = [68.4, 68.1, 68.0, 67.7, 67.5, 67.2];
+    const w = 120,
+      h = 36;
+    const mn = 66.5,
+      mx = 68.6,
+      x = (i) => 4 + (i * (w - 8)) / 5,
+      y = (v) => 4 + ((mx - v) / (mx - mn)) * (h - 8);
+    return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="36" role="img" aria-label="Weight trend over six weeks, down 1.2 kilograms"><polyline fill="none" stroke="#1b1b36" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${pts.map((v, i) => x(i) + "," + y(v)).join(" ")}"/><circle cx="${x(5)}" cy="${y(pts[5])}" r="3.5" fill="#c8a84b"/></svg>`;
   })();
 
   function render() {
@@ -200,89 +954,210 @@
     const remaining = SETTINGS.weighInEveryDays - S.daysSince;
     const showWeigh = S.reminders.weigh && S.daysSince >= SETTINGS.remindFromDay;
     const tasks = [
-      { k: 'workout', t: 'Lower Body Strength', s: '32 min · Bands + mat', done: S.workout, pts: SETTINGS.weights.workout },
-      { k: 'water', t: 'Hydration', s: fmtL(S.water) + ' of ' + fmtL(SETTINGS.waterTarget), done: S.water >= SETTINGS.waterTarget, pts: SETTINGS.weights.water },
-      { k: 'steps', t: 'Steps', s: S.steps.toLocaleString('en-CA') + ' of ' + SETTINGS.stepGoal.toLocaleString('en-CA'), done: S.steps >= SETTINGS.stepGoal, pts: SETTINGS.weights.steps },
-      { k: 'checkin', t: 'Daily check-in', s: 'How are you feeling?', done: S.checkin, pts: SETTINGS.weights.checkin },
+      {
+        k: "workout",
+        t: "Lower Body Strength",
+        s: "32 min · Bands + mat",
+        done: S.workout,
+        pts: SETTINGS.weights.workout,
+      },
+      {
+        k: "water",
+        t: "Hydration",
+        s: fmtL(S.water) + " of " + fmtL(SETTINGS.waterTarget),
+        done: S.water >= SETTINGS.waterTarget,
+        pts: SETTINGS.weights.water,
+      },
+      {
+        k: "steps",
+        t: "Steps",
+        s:
+          S.steps.toLocaleString("en-CA") +
+          " of " +
+          SETTINGS.stepGoal.toLocaleString("en-CA"),
+        done: S.steps >= SETTINGS.stepGoal,
+        pts: SETTINGS.weights.steps,
+      },
+      {
+        k: "checkin",
+        t: "Daily check-in",
+        s: "How are you feeling?",
+        done: S.checkin,
+        pts: SETTINGS.weights.checkin,
+      },
     ];
     const b = bmi();
-    document.getElementById('screen').innerHTML = `
+    document.getElementById("screen").innerHTML = `
       <div class="status"><span>9:41</span><span>CK Fitness</span></div>
       <div class="scroll">
         <div class="row between"><div><p class="muted tiny" style="font-weight:600">${dateStr}</p><h1>${SCN[scn].hour}, ${NAME}</h1></div>
-          <div class="row"><div class="bell" aria-label="Notifications">${ic('bell')}<i></i></div><div class="avatar" aria-hidden="true">P</div></div></div>
+          <div class="row"><div class="bell" aria-label="Notifications">${ic("bell")}<i></i></div><div class="avatar" aria-hidden="true">P</div></div></div>
 
-        ${showWeigh ? `<div class="remind"><div class="dotw">${ic('scale')}</div><div class="grow"><b>${NAME}, it has been ${S.daysSince} days since your last weigh-in</b><span class="s">Log today's weight to keep your trend going.</span></div>
-          <button class="btn sm" data-act="weigh">Log</button><button class="x" data-act="dismiss-weigh" aria-label="Dismiss reminder">×</button></div>` : ''}
-        ${S.reminders.checkin ? `<div class="remind info"><div class="dotw">${ic('check')}</div><div class="grow"><b>Your weekly check-in is ready</b><span class="s">Takes about a minute.</span></div>
-          <button class="btn sm" data-act="checkin">Start</button><button class="x" data-act="dismiss-checkin" aria-label="Dismiss reminder">×</button></div>` : ''}
+        ${
+          showWeigh
+            ? `<div class="remind"><div class="dotw">${ic("scale")}</div><div class="grow"><b>${NAME}, it has been ${S.daysSince} days since your last weigh-in</b><span class="s">Log today's weight to keep your trend going.</span></div>
+          <button class="btn sm" data-act="weigh">Log</button><button class="x" data-act="dismiss-weigh" aria-label="Dismiss reminder">×</button></div>`
+            : ""
+        }
+        ${
+          S.reminders.checkin
+            ? `<div class="remind info"><div class="dotw">${ic("check")}</div><div class="grow"><b>Your weekly check-in is ready</b><span class="s">Takes about a minute.</span></div>
+          <button class="btn sm" data-act="checkin">Start</button><button class="x" data-act="dismiss-checkin" aria-label="Dismiss reminder">×</button></div>`
+            : ""
+        }
 
-        ${p >= 100 ? `<div class="card done-banner"><h2>All done today, ${NAME}.</h2><p style="margin-top:3px;font-size:11.5px;font-weight:500">Rest well. Tomorrow's session is Upper Body at 7:00 AM.</p></div>` : ''}
+        ${p >= 100 ? `<div class="card done-banner"><h2>All done today, ${NAME}.</h2><p style="margin-top:3px;font-size:11.5px;font-weight:500">Rest well. Tomorrow's session is Upper Body at 7:00 AM.</p></div>` : ""}
 
         <div class="card hero"><div class="bigring">${ringSvg(p)}<div class="mid"><b id="pctnum">${prevPct}%</b><span>of your day</span></div></div>
-          <div class="tasks">${tasks.map((t) => `<button class="task ${t.done ? 'done' : ''}" data-task="${t.k}" aria-pressed="${t.done}"><span class="tick">${ic('tick')}</span><span class="tx">${t.t}<small>${t.s}</small></span><span class="pts">${t.pts}%</span></button>`).join('')}</div></div>
+          <div class="tasks">${tasks.map((t) => `<button class="task ${t.done ? "done" : ""}" data-task="${t.k}" aria-pressed="${t.done}"><span class="tick">${ic("tick")}</span><span class="tx">${t.t}<small>${t.s}</small></span><span class="pts">${t.pts}%</span></button>`).join("")}</div></div>
 
         <div class="card navy"><div class="row between"><div><span class="cap">Today · Week 2, Day 2</span><h2 style="margin-top:3px">Lower Body Strength</h2><p class="muted tiny" style="margin-top:3px">32 min · Bands + mat · Scheduled 7:00 AM</p></div>
-          <button class="btn gold sm" data-task="workout" style="min-width:84px">${S.workout ? 'Done' : 'Start'}</button></div></div>
+          <button class="btn gold sm" data-task="workout" style="min-width:84px">${S.workout ? "Done" : "Start"}</button></div></div>
 
-        <div class="card"><div class="water">${miniRing(S.water / SETTINGS.waterTarget, 'Water ' + Math.round(clamp(S.water / SETTINGS.waterTarget) * 100) + ' percent')}
+        <div class="card"><div class="water">${miniRing(S.water / SETTINGS.waterTarget, "Water " + Math.round(clamp(S.water / SETTINGS.waterTarget) * 100) + " percent")}
           <div class="grow"><div class="row between"><h3>Water</h3><span class="tiny muted">${fmtL(S.water)} / ${fmtL(SETTINGS.waterTarget)}</span></div>
             <div class="row" style="margin-top:8px"><button class="btn ghost sm grow" data-water="250">+250 mL</button><button class="btn ghost sm grow" data-water="500">+500 mL</button></div></div></div></div>
 
         <div class="twocol">
           <div class="card"><div class="row between"><span class="cap">Weight</span><span class="pill">↓ 1.2 kg</span></div>
             <div class="big" style="margin-top:6px">${S.weight.toFixed(1)}<span class="muted" style="font-size:12px;font-weight:600"> kg</span></div>${spark}
-            <div class="cycle" aria-label="Next weigh-in cycle">${Array.from({ length: 7 }, (_, i) => `<i class="${i < S.daysSince ? 'on' : ''}"></i>`).join('')}</div>
-            <p class="tiny muted" style="margin-top:5px">${remaining > 0 ? 'Next weigh-in in ' + remaining + ' day' + (remaining > 1 ? 's' : '') : 'Weigh-in due today'}</p>
+            <div class="cycle" aria-label="Next weigh-in cycle">${Array.from({ length: 7 }, (_, i) => `<i class="${i < S.daysSince ? "on" : ""}"></i>`).join("")}</div>
+            <p class="tiny muted" style="margin-top:5px">${remaining > 0 ? "Next weigh-in in " + remaining + " day" + (remaining > 1 ? "s" : "") : "Weigh-in due today"}</p>
             <button class="link" data-act="weigh">Log weight</button></div>
-          <div class="card"><div class="row between"><span class="cap">BMI</span><button class="link" data-act="bmi" style="min-height:0;padding:0;font-size:10px">${hideBMI ? 'Show' : 'Hide'}</button></div>
-            ${hideBMI ? `<p class="muted" style="margin-top:12px;font-size:11.5px">Hidden. You can show it any time.</p>` : `<div class="big" style="margin-top:6px">${b.toFixed(1)}</div><span class="pill n" style="margin-top:8px">${bmiLabel(b)}</span>
-            <p class="tiny muted" style="margin-top:8px">An information-only number, not a diagnosis. Based on ${SETTINGS.heightCm} cm.</p>`}</div>
+          <div class="card"><div class="row between"><span class="cap">BMI</span><button class="link" data-act="bmi" style="min-height:0;padding:0;font-size:10px">${hideBMI ? "Show" : "Hide"}</button></div>
+            ${
+              hideBMI
+                ? `<p class="muted" style="margin-top:12px;font-size:11.5px">Hidden. You can show it any time.</p>`
+                : `<div class="big" style="margin-top:6px">${b.toFixed(1)}</div><span class="pill n" style="margin-top:8px">${bmiLabel(b)}</span>
+            <p class="tiny muted" style="margin-top:8px">An information-only number, not a diagnosis. Based on ${SETTINGS.heightCm} cm.</p>`
+            }</div>
         </div>
 
         <div class="card"><div class="row between"><h3>This week</h3><span class="pill g">3 days in a row</span></div>
-          <div class="week" style="margin-top:10px">${['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => `<div>${d}<i class="${i < 2 ? 'd' : i === 5 ? 'now' : i === 3 || i === 4 ? 'p' : ''}">${ic('tick').replace('class="ico"', 'class="ico" style="width:13px;height:13px"')}</i></div>`).join('')}</div>
+          <div class="week" style="margin-top:10px">${["M", "T", "W", "T", "F", "S", "S"].map((d, i) => `<div>${d}<i class="${i < 2 ? "d" : i === 5 ? "now" : i === 3 || i === 4 ? "p" : ""}">${ic("tick").replace('class="ico"', 'class="ico" style="width:13px;height:13px"')}</i></div>`).join("")}</div>
           <div class="bar" style="margin-top:10px"><div class="row between tiny muted"><span>2 of 4 workouts</span><span>Consistency 50%</span></div></div></div>
 
-        <div class="health"><div class="hi">${ic('heart')}</div><div class="grow"><b style="font-size:12px;color:var(--brand)">Apple Health</b><p class="tiny muted">Connect to fill steps automatically. Arrives with the iPhone app.</p></div><span class="pill n">Soon</span></div>
+        <div class="health"><div class="hi">${ic("heart")}</div><div class="grow"><b style="font-size:12px;color:var(--brand)">Apple Health</b><p class="tiny muted">Connect to fill steps automatically. Arrives with the iPhone app.</p></div><span class="pill n">Soon</span></div>
       </div>
-      <div class="tabbar">${[['home', 'Home'], ['book', 'Programs'], ['chart', 'Progress'], ['check', 'Accountability'], ['user', 'Profile']].map(([i, l], k) => `<button class="tab" aria-current="${k === 0}">${ic(i)}<span>${l}</span></button>`).join('')}</div>
-      ${sheet === 'weigh' ? `<div class="sheet" data-act="close-sheet"><div class="panel" role="dialog" aria-label="Log weight">
+      <div class="tabbar">${[
+        ["home", "Home"],
+        ["book", "Programs"],
+        ["chart", "Progress"],
+        ["check", "Accountability"],
+        ["user", "Profile"],
+      ]
+        .map(
+          ([i, l], k) =>
+            `<button class="tab" aria-current="${k === 0}">${ic(i)}<span>${l}</span></button>`,
+        )
+        .join("")}</div>
+      ${
+        sheet === "weigh"
+          ? `<div class="sheet" data-act="close-sheet"><div class="panel" role="dialog" aria-label="Log weight">
         <div><h2>Log your weight, ${NAME}</h2><p class="muted" style="margin-top:3px">Last: ${S.weight.toFixed(1)} kg ${S.daysSince} days ago. No pressure to weigh in more than weekly.</p></div>
         <div class="stepper"><button data-step="-0.1" aria-label="Decrease by 0.1">−</button><b>${draftW.toFixed(1)} kg</b><button data-step="0.1" aria-label="Increase by 0.1">+</button></div>
-        <button class="btn" data-act="save-weight" style="min-height:46px">Save weight</button><button class="link" data-act="close-sheet-btn">Cancel</button></div></div>` : ''}`;
+        <button class="btn" data-act="save-weight" style="min-height:46px">Save weight</button><button class="link" data-act="close-sheet-btn">Cancel</button></div></div>`
+          : ""
+      }`;
     // animate the ring from its previous value
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      const arc = document.getElementById('arc'); if (!arc) return;
-      const C = +arc.dataset.c; arc.style.strokeDashoffset = C * (1 - p / 100);
-      const el = document.getElementById('pctnum'); const from = prevPct, t0 = performance.now();
-      const tick = (t) => { const k = Math.min(1, (t - t0) / 900); el.textContent = Math.round(from + (p - from) * k) + '%'; if (k < 1) requestAnimationFrame(tick); else prevPct = p; };
-      requestAnimationFrame(tick);
-    }));
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        const arc = document.getElementById("arc");
+        if (!arc) return;
+        const C = +arc.dataset.c;
+        arc.style.strokeDashoffset = C * (1 - p / 100);
+        const el = document.getElementById("pctnum");
+        const from = prevPct,
+          t0 = performance.now();
+        const tick = (t) => {
+          const k = Math.min(1, (t - t0) / 900);
+          el.textContent = Math.round(from + (p - from) * k) + "%";
+          if (k < 1) requestAnimationFrame(tick);
+          else prevPct = p;
+        };
+        requestAnimationFrame(tick);
+      }),
+    );
   }
 
-  function setScenario(k) { scn = k; S = JSON.parse(JSON.stringify(SCN[k])); draftW = S.weight; sheet = null; prevPct = k === 'done' ? 0 : prevPct; render();
-    document.querySelectorAll('.sbtn').forEach((b) => b.setAttribute('aria-pressed', b.dataset.scn === k)); }
+  function setScenario(k) {
+    scn = k;
+    S = JSON.parse(JSON.stringify(SCN[k]));
+    draftW = S.weight;
+    sheet = null;
+    prevPct = k === "done" ? 0 : prevPct;
+    render();
+    document
+      .querySelectorAll(".sbtn")
+      .forEach((b) => b.setAttribute("aria-pressed", b.dataset.scn === k));
+  }
 
-  document.addEventListener('click', (e) => {
-    const t = e.target.closest('button, [data-act]'); if (!t) return;
-    if (t.dataset.scn) { setScenario(t.dataset.scn); return; }
-    if (t.dataset.water) { S.water = Math.min(SETTINGS.waterTarget + 500, S.water + +t.dataset.water); render(); return; }
-    if (t.dataset.task) { const k = t.dataset.task;
-      if (k === 'workout' || k === 'checkin') S[k] = !S[k];
-      if (k === 'water') S.water = S.water >= SETTINGS.waterTarget ? 0 : SETTINGS.waterTarget;
-      if (k === 'steps') S.steps = S.steps >= SETTINGS.stepGoal ? 0 : S.steps + 1500 >= SETTINGS.stepGoal ? SETTINGS.stepGoal : S.steps + 1500;
-      render(); return; }
-    if (t.dataset.step) { draftW = Math.round((draftW + +t.dataset.step) * 10) / 10; render(); return; }
-    const a = t.dataset.act; if (!a) return;
-    if (a === 'weigh') { sheet = 'weigh'; draftW = S.weight; render(); }
-    else if (a === 'save-weight') { S.weight = draftW; S.daysSince = 0; S.reminders.weigh = false; sheet = null; render(); }
-    else if (a === 'close-sheet-btn') { sheet = null; render(); }
-    else if (a === 'close-sheet') { if (e.target.classList.contains('sheet')) { sheet = null; render(); } }
-    else if (a === 'dismiss-weigh') { S.reminders.weigh = false; render(); }
-    else if (a === 'dismiss-checkin') { S.reminders.checkin = false; render(); }
-    else if (a === 'checkin') { S.checkin = true; S.reminders.checkin = false; render(); }
-    else if (a === 'bmi') { hideBMI = !hideBMI; render(); }
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest("button, [data-act]");
+    if (!t) return;
+    if (t.dataset.scn) {
+      setScenario(t.dataset.scn);
+      return;
+    }
+    if (t.dataset.water) {
+      S.water = Math.min(SETTINGS.waterTarget + 500, S.water + +t.dataset.water);
+      render();
+      return;
+    }
+    if (t.dataset.task) {
+      const k = t.dataset.task;
+      if (k === "workout" || k === "checkin") S[k] = !S[k];
+      if (k === "water")
+        S.water = S.water >= SETTINGS.waterTarget ? 0 : SETTINGS.waterTarget;
+      if (k === "steps")
+        S.steps =
+          S.steps >= SETTINGS.stepGoal
+            ? 0
+            : S.steps + 1500 >= SETTINGS.stepGoal
+              ? SETTINGS.stepGoal
+              : S.steps + 1500;
+      render();
+      return;
+    }
+    if (t.dataset.step) {
+      draftW = Math.round((draftW + +t.dataset.step) * 10) / 10;
+      render();
+      return;
+    }
+    const a = t.dataset.act;
+    if (!a) return;
+    if (a === "weigh") {
+      sheet = "weigh";
+      draftW = S.weight;
+      render();
+    } else if (a === "save-weight") {
+      S.weight = draftW;
+      S.daysSince = 0;
+      S.reminders.weigh = false;
+      sheet = null;
+      render();
+    } else if (a === "close-sheet-btn") {
+      sheet = null;
+      render();
+    } else if (a === "close-sheet") {
+      if (e.target.classList.contains("sheet")) {
+        sheet = null;
+        render();
+      }
+    } else if (a === "dismiss-weigh") {
+      S.reminders.weigh = false;
+      render();
+    } else if (a === "dismiss-checkin") {
+      S.reminders.checkin = false;
+      render();
+    } else if (a === "checkin") {
+      S.checkin = true;
+      S.reminders.checkin = false;
+      render();
+    } else if (a === "bmi") {
+      hideBMI = !hideBMI;
+      render();
+    }
   });
-  setScenario('midday');
+  setScenario("midday");
 </script>

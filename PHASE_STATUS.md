@@ -1,6 +1,6 @@
 # Phase 1 status: mobile-first web MVP
 
-_Last updated: 2026-10-09_
+_Last updated: 2026-10-10_
 
 | Milestone | Build                                                     | Status                                                                          |
 | --------- | --------------------------------------------------------- | ------------------------------------------------------------------------------- |
@@ -39,3 +39,17 @@ _Last updated: 2026-10-09_
 ## Next
 
 Milestone 1B after owner approval of 1A.
+
+## Planned additions (not in the original spec)
+
+- **Weekly progress photos** (front, side, back, arms raised). Requested 2026-10-10. Guide §7.8/§9 says not in Phase 1 unless the privacy flow is complete; preferred rollout Phase 4. Plan: build behind the `progressPhotos` flag after 1G, in a **private** store (Cloudflare R2 with short-lived signed URLs, or Supabase private bucket), photo-by-photo consent, EXIF stripped, randomised file names, user can delete any photo, staff cannot view by default. Cloudflare Stream is for video only, so photos would use R2, not Stream. Needs owner sign-off on the privacy design first.
+- Apple Health steps: requires the native iPhone app (Phase 2/4). Manual step entry until then.
+
+## 1B manual test (needs staging Supabase + migration 0002 applied)
+
+1. Sign up with a new email, confirm the email, land on onboarding.
+2. Under-18 date of birth is rejected.
+3. Complete all 5 steps, land on Home with your name, date, starting weight and BMI.
+4. Close the browser mid-onboarding, log back in, steps are pre-filled.
+5. Log out, then open /home: sent to Log in.
+6. Forgot password: link arrives, new password works.
