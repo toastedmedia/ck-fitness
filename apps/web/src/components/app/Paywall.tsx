@@ -29,12 +29,14 @@ export function Paywall({ price, showCta = true }: { price: string; showCta?: bo
         Renews monthly until you cancel. Cancel any time in Profile. Access continues to
         the end of the paid period.
       </p>
-      <Link
-        href="/membership"
-        className="mt-3 inline-flex min-h-11 items-center rounded-button bg-accent px-5 text-xs font-bold text-on-accent"
-      >
-        Become a member
-      </Link>
+      {showCta ? (
+        <Link
+          href="/membership"
+          className="mt-3 inline-flex min-h-11 items-center rounded-button bg-accent px-5 text-xs font-bold text-on-accent"
+        >
+          Become a member
+        </Link>
+      ) : null}
     </Card>
   );
 }
