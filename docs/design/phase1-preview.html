@@ -2,7 +2,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link
-  href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap"
+  href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=DM+Sans:wght@500;600;700&family=Playfair+Display:wght@500;600;700&family=Outfit:wght@500;600&display=swap"
   rel="stylesheet"
 />
 <style>
@@ -34,6 +34,21 @@
     --app-ink-2: #4a5650;
     --app-danger: #a33a2f;
     --app-white: #ffffff;
+    --app-ondark: #cfdcd3;
+    --app-on-primary: #ffffff;
+    --app-on-gold: #2a2208;
+    --app-o700: #7a5c12;
+    --app-gold-border: #e6d49c;
+    --app-danger-border: #e3b8b2;
+    --app-deep: #0b2a20;
+    --app-side-accent: #c9a13b;
+    --app-display: "Fraunces", Georgia, serif;
+    --app-r-card: 18px;
+    --app-r-btn: 14px;
+    --cv1: linear-gradient(135deg, #1b6b4e, #0f3d2e);
+    --cv2: linear-gradient(135deg, #a8801f, #6d4f0e);
+    --cv3: linear-gradient(135deg, #14513c, #2f7a5c);
+    --cv4: linear-gradient(135deg, #5a4a2a, #2c2412);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -78,6 +93,11 @@
   h1.title { font-family: var(--f-display); font-weight: 600; font-size: clamp(28px, 5vw, 40px); line-height: 1.1; margin: 6px 0 8px; text-wrap: balance; }
   .lede { color: var(--muted); max-width: 62ch; margin: 0; }
 
+  .styles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 22px; }
+  .sopt { text-align: left; border: 1.5px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; min-height: 44px; }
+  .sopt[aria-pressed="true"] { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold); }
+  .sopt b { font-size: 14px; } .sopt span.d { font-size: 12.5px; color: var(--muted); }
+  .sw { display: flex; gap: 4px; } .sw i { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); display: block; }
   .modes { display: flex; gap: 8px; margin-block: 24px 20px; flex-wrap: wrap; }
   .mode { border: 1.5px solid var(--line); background: var(--surface); color: var(--fg); padding: 10px 18px; border-radius: 999px; font-weight: 600; min-height: 44px; }
   .mode[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
@@ -102,68 +122,68 @@
 
   /* ---------------- Phone ---------------- */
   .phone { width: min(100%, 372px); background: #0b1410; border-radius: 44px; padding: 10px; box-shadow: 0 24px 60px rgba(0,0,0,0.22); }
-  .screen { background: var(--app-cream-50); color: var(--app-ink); border-radius: 34px; height: 740px; overflow: hidden; display: flex; flex-direction: column; font-size: 14.5px; position: relative; }
+  .screen { background: var(--app-cream-50); color: var(--app-ink); border-radius: 34px; height: 740px; overflow: hidden; display: flex; flex-direction: column; font-size: 13px; position: relative; }
   .status { height: 34px; flex: none; display: flex; justify-content: space-between; align-items: center; padding-inline: 26px; font-size: 12px; font-weight: 600; color: var(--app-ink); }
   .scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 18px 20px; }
   .scroll.dark { background: var(--app-green-900); color: var(--app-cream-50); }
-  .app h1, .app h2, .app h3 { font-family: var(--f-display); font-weight: 600; margin: 0; color: var(--app-green-900); line-height: 1.15; }
-  .app h1 { font-size: 28px; } .app h2 { font-size: 21px; } .app h3 { font-size: 17px; }
+  .app h1, .app h2, .app h3 { font-family: var(--app-display); font-weight: 600; margin: 0; color: var(--app-green-900); line-height: 1.15; }
+  .app h1 { font-size: 24px; } .app h2 { font-size: 18px; } .app h3 { font-size: 15px; }
   .app p { margin: 0; }
   .muted { color: var(--app-ink-2); }
-  .tiny { font-size: 12px; }
-  .label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: var(--app-gold-600); }
+  .tiny { font-size: 11px; }
+  .label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 600; color: var(--app-gold-600); }
   .stack { display: flex; flex-direction: column; gap: 14px; }
   .stack-sm { display: flex; flex-direction: column; gap: 8px; }
   .row { display: flex; align-items: center; gap: 10px; }
   .between { justify-content: space-between; }
   .grow { flex: 1; min-width: 0; }
 
-  .btn { display: flex; align-items: center; justify-content: center; min-height: 48px; border-radius: 14px; border: 2px solid var(--app-green-900); background: var(--app-green-900); color: var(--app-cream-50); font-weight: 600; width: 100%; padding-inline: 16px; }
+  .btn { display: flex; align-items: center; justify-content: center; min-height: 48px; border-radius: var(--app-r-btn); border: 2px solid var(--app-green-900); background: var(--app-green-900); color: var(--app-cream-50); font-weight: 600; width: 100%; padding-inline: 16px; }
   .btn.ghost { background: transparent; color: var(--app-green-900); }
-  .btn.gold { background: var(--app-gold-500); border-color: var(--app-gold-500); color: #2a2208; }
-  .btn.small { min-height: 40px; width: auto; font-size: 13.5px; border-radius: 12px; padding-inline: 14px; }
-  .card { background: var(--app-white); border: 1px solid var(--app-cream-200); border-radius: 18px; padding: 14px; }
+  .btn.gold { background: var(--app-gold-500); border-color: var(--app-gold-500); color: var(--app-on-gold); }
+  .btn.small { min-height: 40px; width: auto; font-size: 12px; border-radius: 12px; padding-inline: 14px; }
+  .card { background: var(--app-white); border: 1px solid var(--app-cream-200); border-radius: var(--app-r-card); padding: 14px; }
   .card.green { background: var(--app-green-900); color: var(--app-cream-50); border-color: var(--app-green-900); }
   .card.green h2, .card.green h3 { color: var(--app-cream-50); }
-  .card.gold { background: var(--app-gold-100); border-color: #e6d49c; }
-  .pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--app-green-100); color: var(--app-green-800); }
-  .pill.gold { background: var(--app-gold-100); color: #7a5c12; }
+  .card.gold { background: var(--app-gold-100); border-color: var(--app-gold-border); }
+  .pill { display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: var(--app-green-100); color: var(--app-green-800); }
+  .pill.gold { background: var(--app-gold-100); color: var(--app-o700); }
   .pill.lock { background: var(--app-cream-100); color: var(--app-ink-2); }
   .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
-  .chip { flex: none; border: 1.5px solid var(--app-cream-200); background: var(--app-white); border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 500; min-height: 40px; color: var(--app-ink); }
+  .chip { flex: none; border: 1.5px solid var(--app-cream-200); background: var(--app-white); border-radius: 999px; padding: 8px 14px; font-size: 12px; font-weight: 500; min-height: 40px; color: var(--app-ink); }
   .chip.on { background: var(--app-green-900); color: var(--app-cream-50); border-color: var(--app-green-900); }
   .field { display: flex; flex-direction: column; gap: 6px; }
-  .field span { font-size: 13px; font-weight: 600; }
+  .field span { font-size: 12px; font-weight: 600; }
   .input { min-height: 48px; border: 1.5px solid var(--app-cream-200); background: var(--app-white); border-radius: 12px; padding: 0 14px; display: flex; align-items: center; color: var(--app-ink-2); }
   .ico { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
   .tabbar { flex: none; display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--app-cream-200); background: var(--app-white); padding: 6px 4px 14px; }
-  .tab { border: 0; background: transparent; color: var(--app-ink-2); display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; min-height: 52px; justify-content: center; border-radius: 12px; }
+  .tab { border: 0; background: transparent; color: var(--app-ink-2); display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; min-height: 52px; justify-content: center; border-radius: 12px; }
   .tab[aria-current="true"] { color: var(--app-green-900); font-weight: 600; }
   .tab[aria-current="true"] .ico { stroke: var(--app-green-900); stroke-width: 2.2; }
   .back { border: 0; background: transparent; color: var(--app-green-900); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; min-height: 40px; padding: 0; }
 
   .cover { border-radius: 14px; height: 120px; position: relative; overflow: hidden; display: flex; align-items: flex-end; padding: 10px; color: var(--app-cream-50); }
-  .cover.c1 { background: linear-gradient(135deg, #1b6b4e, #0f3d2e); }
-  .cover.c2 { background: linear-gradient(135deg, #a8801f, #6d4f0e); }
-  .cover.c3 { background: linear-gradient(135deg, #14513c, #2f7a5c); }
-  .cover.c4 { background: linear-gradient(135deg, #5a4a2a, #2c2412); }
+  .cover.c1 { background: var(--cv1); }
+  .cover.c2 { background: var(--cv2); }
+  .cover.c3 { background: var(--cv3); }
+  .cover.c4 { background: var(--cv4); }
   .cover svg { position: absolute; right: -14px; top: -10px; width: 110px; opacity: 0.18; }
   .bar { height: 8px; border-radius: 99px; background: var(--app-cream-200); overflow: hidden; }
   .bar i { display: block; height: 100%; background: var(--app-green-700); border-radius: 99px; }
   .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
-  .day { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; color: var(--app-ink-2); }
+  .day { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: var(--app-ink-2); }
   .dot { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--app-cream-200); display: grid; place-items: center; background: var(--app-white); }
-  .dot.done { background: var(--app-green-700); border-color: var(--app-green-700); color: #fff; }
+  .dot.done { background: var(--app-green-700); border-color: var(--app-green-700); color: var(--app-on-primary); }
   .dot.plan { border-color: var(--app-gold-500); }
   .dot.rest { background: var(--app-cream-100); }
   .dot.missed { border-style: dashed; border-color: var(--app-ink-2); }
-  .video { aspect-ratio: 16 / 9; border-radius: 14px; background: linear-gradient(135deg, #14513c, #0b2a20); display: grid; place-items: center; color: #fff; position: relative; max-width: 100%; }
+  .video { aspect-ratio: 16 / 9; border-radius: 14px; background: linear-gradient(135deg, var(--app-green-800), var(--app-deep)); display: grid; place-items: center; color: #fff; position: relative; max-width: 100%; }
   .video .play { width: 54px; height: 54px; border-radius: 50%; background: rgba(251,248,241,0.92); display: grid; place-items: center; color: var(--app-green-900); }
   .video .scrub { position: absolute; left: 12px; right: 12px; bottom: 10px; height: 4px; background: rgba(255,255,255,0.3); border-radius: 9px; }
   .video .scrub i { display: block; height: 100%; width: 38%; background: var(--app-gold-500); border-radius: 9px; }
   .seg { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
   .seg i { font-style: normal; text-align: center; border: 1.5px solid var(--app-cream-200); background: var(--app-white); border-radius: 10px; min-height: 42px; display: grid; place-items: center; font-weight: 600; }
-  .seg i.on { background: var(--app-green-900); color: #fff; border-color: var(--app-green-900); }
+  .seg i.on { background: var(--app-green-900); color: var(--app-on-primary); border-color: var(--app-green-900); }
   .step { display: flex; gap: 4px; }
   .step i { flex: 1; height: 5px; border-radius: 9px; background: var(--app-cream-200); }
   .step i.on { background: var(--app-gold-500); }
@@ -176,23 +196,23 @@
   .chrome i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
   .chrome .url { margin-left: 10px; font-size: 12px; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 3px 10px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .admin { display: grid; grid-template-columns: 168px minmax(0, 1fr); min-height: 560px; }
-  .a-side { background: #0f3d2e; color: #e8efe9; padding: 16px 10px; display: flex; flex-direction: column; gap: 2px; }
-  .a-side .brand { font-family: var(--f-display); font-size: 17px; padding: 4px 10px 14px; color: #fbf8f1; }
-  .a-side .brand small { display: block; font-family: var(--f-body); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: #c9a13b; }
-  .a-nav { background: transparent; border: 0; color: #cfdcd3; text-align: left; padding: 9px 10px; border-radius: 8px; font-size: 13.5px; min-height: 38px; }
-  .a-nav[aria-current="true"] { background: rgba(251,248,241,0.12); color: #fff; font-weight: 600; }
+  .a-side { background: var(--app-green-900); color: var(--app-ondark); padding: 16px 10px; display: flex; flex-direction: column; gap: 2px; }
+  .a-side .brand { font-family: var(--app-display); font-size: 17px; padding: 4px 10px 14px; color: var(--app-cream-50); }
+  .a-side .brand small { display: block; font-family: var(--f-body); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--app-side-accent); }
+  .a-nav { background: transparent; border: 0; color: var(--app-ondark); text-align: left; padding: 9px 10px; border-radius: 8px; font-size: 13.5px; min-height: 38px; }
+  .a-nav[aria-current="true"] { background: rgba(128,128,128,0.22); color: var(--app-cream-50); font-weight: 600; }
   .a-nav.off { opacity: 0.45; cursor: default; }
   .a-main { padding: 20px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
-  .a-main h2 { font-family: var(--f-display); font-size: 22px; margin: 0; font-weight: 600; }
+  .a-main h2 { font-family: var(--app-display); font-size: 22px; margin: 0; font-weight: 600; }
   .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
   .tile { border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
-  .tile b { display: block; font-size: 26px; font-family: var(--f-display); font-variant-numeric: tabular-nums; }
+  .tile b { display: block; font-size: 24px; font-family: var(--app-display); font-variant-numeric: tabular-nums; }
   .tile span { font-size: 12.5px; color: var(--muted); }
   .a-card { border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; }
   .a-card h3 { margin: 0 0 8px; font-size: 14px; }
   .twocol { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 12px; }
   .scrollx { overflow-x: auto; }
-  table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 460px; }
+  table { border-collapse: collapse; width: 100%; font-size: 12px; min-width: 460px; }
   th { text-align: left; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--line); }
   td { padding: 9px 8px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
   .st { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 11.5px; font-weight: 600; }
@@ -237,6 +257,7 @@
     A clickable preview of every Phase 1 screen. Names, numbers and programs are sample content for illustration. Tap the bottom bar inside the phone, or pick a screen on the left.
   </p>
 
+  <div class="styles" role="group" aria-label="Design option" id="styles"></div>
   <div class="modes" role="group" aria-label="Preview type">
     <button class="mode" id="mode-app" aria-pressed="true" type="button">Member app (phone)</button>
     <button class="mode" id="mode-admin" aria-pressed="false" type="button">Admin portal (desktop)</button>
@@ -553,6 +574,55 @@
       <div class="a-card"><h3>Only these events are sent</h3><p style="margin:0;font-size:13px;color:var(--muted)">Account created, onboarding done, membership started, cancelled, expired, at risk, coaching interest, help requested, program completed. Weight, measurements and health answers are never sent.</p></div>`, 'admin.chardikalafitness.com/accountability') },
   };
 
+  /* ---------------- Design options ---------------- */
+  const BASE = { g900:'#0f3d2e', g800:'#14513c', g700:'#1b6b4e', g100:'#e3efe9', c50:'#fbf8f1', c100:'#f4efe3', c200:'#e8e0cd',
+    o600:'#a8801f', o500:'#c9a13b', o100:'#f6ecd0', ink:'#1c2420', ink2:'#4a5650', danger:'#a33a2f', ondark:'#cfdcd3', dangerBorder:'#e3b8b2' };
+  const STYLES = {
+    A: { name: 'A · Heritage', desc: 'Deep green, cream and gold with an editorial serif. The current direction, slightly smaller type.',
+      p: BASE, v: {} },
+    B: { name: 'B · Fresh Studio', desc: 'Bright white and sage green, rounded pill buttons and a modern sans. Lighter, more everyday.',
+      p: { g900:'#1f5c47', g800:'#2b7058', g700:'#3e8a6e', g100:'#e8f3ee', c50:'#f7faf8', c100:'#edf4f0', c200:'#dce7e1',
+        o600:'#9a7a28', o500:'#d6b24f', o100:'#fbf3da', ink:'#16231e', ink2:'#546159', danger:'#a33a2f', ondark:'#e2efe8', dangerBorder:'#e3b8b2' },
+      v: { '--app-white':'#ffffff', '--app-display':'"DM Sans", system-ui, sans-serif', '--app-r-card':'22px', '--app-r-btn':'999px',
+        '--app-o700':'#7a5c12', '--app-deep':'#123d2e',
+        '--cv1':'linear-gradient(135deg,#3e8a6e,#1f5c47)','--cv2':'linear-gradient(135deg,#d6b24f,#9a7a28)','--cv3':'linear-gradient(135deg,#2b7058,#58a587)','--cv4':'linear-gradient(135deg,#6b7d73,#34443b)' } },
+    C: { name: 'C · Gold Hour', desc: 'Warmer cream with more saffron-gold, sharper corners and a dramatic serif. Premium and boutique.',
+      p: { g900:'#123f30', g800:'#1a5440', g700:'#24704f', g100:'#e1eadb', c50:'#f8f1e1', c100:'#f1e5c9', c200:'#e4d3a8',
+        o600:'#9a6f12', o500:'#d9a62e', o100:'#f7e6b5', ink:'#25200f', ink2:'#5c5338', danger:'#a33a2f', ondark:'#e9e2c8', dangerBorder:'#e3b8b2' },
+      v: { '--app-white':'#fffaf0', '--app-display':'"Playfair Display", Georgia, serif', '--app-r-card':'8px', '--app-r-btn':'6px',
+        '--app-on-gold':'#2a1d02', '--app-o700':'#6b4c0b', '--app-gold-border':'#dcc277', '--app-deep':'#0a2a1f',
+        '--cv1':'linear-gradient(135deg,#24704f,#123f30)','--cv2':'linear-gradient(135deg,#d9a62e,#8a5f08)','--cv3':'linear-gradient(135deg,#1a5440,#3a7d5e)','--cv4':'linear-gradient(135deg,#6b4c0b,#2e2005)' } },
+    D: { name: 'D · Midnight Emerald', desc: 'A dark app with mint and gold accents. Easy on the eyes for early-morning and evening workouts.',
+      p: { g900:'#6fd0a3', g800:'#52b88b', g700:'#3da577', g100:'#1b3a30', c50:'#0c1d17', c100:'#132a22', c200:'#244238',
+        o600:'#d4ad4a', o500:'#e2bd5c', o100:'#2d2a17', ink:'#eef2ec', ink2:'#a6b9ae', danger:'#e58a7e', ondark:'#0f2a20', dangerBorder:'#5a2f2a' },
+      v: { '--app-white':'#16322a', '--app-display':'"Outfit", system-ui, sans-serif', '--app-r-card':'20px', '--app-r-btn':'14px',
+        '--app-on-primary':'#0c1d17', '--app-on-gold':'#251c04', '--app-o700':'#e2bd5c', '--app-gold-border':'#4a4220', '--app-deep':'#06120d', '--app-side-accent':'#4a3a05',
+        '--cv1':'linear-gradient(135deg,#2c7a5a,#16322a)','--cv2':'linear-gradient(135deg,#a8801f,#4a3a10)','--cv3':'linear-gradient(135deg,#1f5c47,#2f7a5c)','--cv4':'linear-gradient(135deg,#3a3a2a,#141a14)' } },
+  };
+  let styleKey = 'A';
+  const HEXMAP = () => {
+    const t = STYLES[styleKey].p, m = {};
+    Object.keys(BASE).forEach((k) => { m[BASE[k].toLowerCase()] = t[k]; });
+    m['#fff'] = 'var(--app-on-primary)';
+    return m;
+  };
+  const recolor = (html) => { const m = HEXMAP(); return html.replace(/#[0-9a-fA-F]{3,6}\b/g, (h) => m[h.toLowerCase()] || h); };
+  function applyStyle() {
+    const st = STYLES[styleKey], t = st.p;
+    const map = { g900:'--app-green-900', g800:'--app-green-800', g700:'--app-green-700', g100:'--app-green-100', c50:'--app-cream-50', c100:'--app-cream-100', c200:'--app-cream-200',
+      o600:'--app-gold-600', o500:'--app-gold-500', o100:'--app-gold-100', ink:'--app-ink', ink2:'--app-ink-2', danger:'--app-danger', ondark:'--app-ondark', dangerBorder:'--app-danger-border' };
+    const el = document.getElementById('canvas');
+    el.removeAttribute('style');
+    Object.keys(map).forEach((k) => el.style.setProperty(map[k], t[k]));
+    Object.keys(st.v).forEach((k) => el.style.setProperty(k, st.v[k]));
+  }
+  function renderStyles() {
+    document.getElementById('styles').innerHTML = Object.keys(STYLES).map((k) => {
+      const st = STYLES[k];
+      return `<button class="sopt" type="button" data-style="${k}" aria-pressed="${k === styleKey}"><span class="sw">${['g900','c50','o500','c200'].map((r) => `<i style="background:${st.p[r]}"></i>`).join('')}</span><b>${st.name}</b><span class="d">${st.desc}</span></button>`;
+    }).join('');
+  }
+
   /* ---------------- Controller ---------------- */
   let mode = 'app', current = { app: 'home', admin: 'dash' };
   const rail = document.getElementById('rail');
@@ -566,11 +636,14 @@
       `<div class="rail-group">${g}</div>` +
       ids.map((id) => `<button class="rail-btn" data-go="${id}" aria-current="${id === key}">${set[id].name}</button>`).join('')
     ).join('');
-    canvas.innerHTML = set[key].html() + `<p class="note"><strong>${set[key].name}.</strong> ${set[key].note}</p>`;
+    applyStyle(); renderStyles();
+    canvas.innerHTML = recolor(set[key].html()) + `<p class="note"><strong>${set[key].name}.</strong> ${set[key].note}</p>`;
     document.getElementById('mode-app').setAttribute('aria-pressed', mode === 'app');
     document.getElementById('mode-admin').setAttribute('aria-pressed', mode === 'admin');
   }
   document.addEventListener('click', (e) => {
+    const so = e.target.closest('[data-style]');
+    if (so) { styleKey = so.dataset.style; render(); return; }
     const go = e.target.closest('[data-go]');
     if (!go) return;
     const id = go.dataset.go;
