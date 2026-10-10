@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-11: Milestone 1C
+
+- App shell with bottom navigation (phone) and sidebar (desktop).
+- Home: day ring, personalised weigh-in/check-in/restart reminders, water, steps (manual), weight and BMI (hideable), week view, milestones.
+- Accountability: My Week, missed-day recovery (reschedule, rest, skip), weekly commitment, weekly check-in, consistency and streak.
+- Progress: weight trend, workouts per week, water consistency, measurements, check-in history.
+- Profile: details, notification preferences with consent, data download, delete account.
+- Migration 0003 (7 tracking tables + risk_states, RLS). New in-memory Postgres test suite (`supabase/tests`) runs every migration and checks row-level security.
+- Core logic: dates, day score, week/consistency/streak, weigh-in rules, risk rules, milestones, membership resolution (42 tests).
+
 ## 2026-10-10: Milestone 1B
 
 - Email/password sign-up, log in, log out, forgot and reset password, email confirmation callback.

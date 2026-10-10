@@ -1,0 +1,210 @@
+import type { Metadata } from "next";
+import { addDays, weekStart } from "@ck/core";
+import { BarChart, LineChart } from "@/components/app/charts";
+import { Button, Cap, Card, Flash } from "@/components/app/ui";
+import { getContext } from "@/lib/app";
+import { logMeasurements } from "../actions";
+
+export const metadata: Metadata = { title: "Progress" };
+
+const num = (v: string, label: string) => (
+  <label className="text-xs font-semibold">
+    {label}
+    <input
+      name={v}
+      type="number"
+      inputMode="decimal"
+      step="0.1"
+      min={1}
+      max={299}
+      className="mt-1 min-h-11 w-full rounded-2xl border-2 border-line bg-surface px-3 text-sm"
+    />
+  </label>
+);
+
+export default async function ProgressPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ saved?: string; error?: string }>;
+}) {
+  const sp = await searchParams;
+  const { supabase, user, today, goals } = await getContext();
+  const since = addDays(weekStart(today), -28);
+  const [weighs, meas, acts, water, checkins] = await Promise.all([
+    supabase
+      .from("weigh_ins")
+      .select("log_date,weight_kg")
+      .eq("user_id", user.id)
+      .order("log_date")
+      .limit(90),
+    supabase
+      .from("body_measurements")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("log_date", { ascending: false })
+      .limit(2),
+    supabase
+      .from("scheduled_actions")
+      .select("scheduled_for")
+      .eq("user_id", user.id)
+      .eq("action_type", "workout")
+      .eq("status", "completed")
+      .gte("scheduled_for", since),
+    supabase
+      .from("habit_logs")
+      .select("log_date,value")
+      .eq("user_id", user.id)
+      .eq("habit_type", "water_ml")
+      .gte("log_date", addDays(today, -6)),
+    supabase
+      .from("weekly_checkins")
+      .select(
+        "week_start,planned_workouts,completed_workouts,energy,sleep,soreness,confidence",
+      )
+      .eq("user_id", user.id)
+      .order("week_start", { ascending: false })
+      .limit(6),
+  ]);
+
+  const w = (weighs.data ?? []) as { log_date: string; weight_kg: number }[];
+  const counts = new Map<string, number>();
+  for (const a of (acts.data ?? []) as { scheduled_for: string }[]) {
+    const k = weekStart(a.scheduled_for);
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  const thisWeek = weekStart(today);
+  const bars = Array.from({ length: 5 }, (_, i) => {
+    const k = addDays(thisWeek, (i - 4) * 7);
+    return { x: k.slice(5), y: counts.get(k) ?? 0, highlight: k === thisWeek };
+  });
+  const perDay = new Map<string, number>();
+  for (const r of (water.data ?? []) as { log_date: string; value: number }[])
+    perDay.set(r.log_date, (perDay.get(r.log_date) ?? 0) + Number(r.value));
+  const waterDays = [...perDay.values()].filter((v) => v >= goals.waterTargetMl).length;
+  const [latest, previous] = (meas.data ?? []) as Record<
+    string,
+    number | string | null
+  >[];
+  const rows: [string, string][] = [
+    ["Waist", "waist_cm"],
+    ["Hips", "hips_cm"],
+    ["Bust", "bust_cm"],
+    ["Thigh", "thigh_cm"],
+    ["Arm", "arm_cm"],
+  ];
+
+  return (
+    <>
+      <h1 className="font-display text-[19px] text-brand">Progress</h1>
+      {sp.saved ? <Flash>Saved. Nice work.</Flash> : null}
+      {sp.error ? <Flash tone="error">Enter at least one measurement.</Flash> : null}
+
+      <Card>
+        <Cap>Weight</Cap>
+        <div className="mt-1">
+          <LineChart
+            label="Your weight over time"
+            unit=" kg"
+            points={w
+              .slice(-12)
+              .map((p) => ({ x: p.log_date.slice(5), y: Number(p.weight_kg) }))}
+          />
+        </div>
+        <p className="mt-1 text-[10.5px] text-muted">
+          Weigh in about once a week. Day-to-day changes are normal.
+        </p>
+      </Card>
+
+      <Card>
+        <Cap>Workouts per week</Cap>
+        <div className="mt-1">
+          <BarChart label="Workouts completed in the last five weeks" bars={bars} />
+        </div>
+      </Card>
+
+      <Card>
+        <Cap>Water</Cap>
+        <p className="mt-1 text-xl font-extrabold text-brand">{waterDays} of 7 days</p>
+        <p className="text-[10.5px] text-muted">
+          You reached your water target on {waterDays} of the last 7 days.
+        </p>
+      </Card>
+
+      <Card>
+        <div className="flex items-center justify-between">
+          <Cap>Measurements</Cap>
+          <span className="text-[10.5px] text-muted">
+            {latest ? `Last logged ${String(latest.log_date).slice(5)}` : "None yet"}
+          </span>
+        </div>
+        {latest ? (
+          <dl className="mt-2 grid grid-cols-5 gap-1 text-center">
+            {rows.map(([label, key]) => {
+              const diff =
+                latest[key] != null && previous?.[key] != null
+                  ? Math.round((Number(latest[key]) - Number(previous[key])) * 10) / 10
+                  : null;
+              return (
+                <div key={key}>
+                  <dt className="text-[10px] text-muted">{label}</dt>
+                  <dd className="text-sm font-extrabold text-brand tabular-nums">
+                    {latest[key] ?? "-"}
+                  </dd>
+                  {diff !== null && diff !== 0 ? (
+                    <dd className="text-[10px] text-muted">
+                      {diff > 0 ? "+" : ""}
+                      {diff}
+                    </dd>
+                  ) : null}
+                </div>
+              );
+            })}
+          </dl>
+        ) : null}
+        <details className="mt-2">
+          <summary className="flex min-h-10 cursor-pointer items-center text-[11px] font-bold text-brand underline underline-offset-4">
+            Log measurements (cm)
+          </summary>
+          <form action={logMeasurements} className="mt-2 grid grid-cols-2 gap-2">
+            {num("waist", "Waist")}
+            {num("hips", "Hips")}
+            {num("bust", "Bust or chest")}
+            {num("thigh", "Thigh")}
+            {num("arm", "Arm")}
+            <div className="col-span-2">
+              <Button variant="primary" className="w-full">
+                Save measurements
+              </Button>
+            </div>
+          </form>
+        </details>
+      </Card>
+
+      <Card>
+        <Cap>Weekly check-ins</Cap>
+        {(checkins.data ?? []).length === 0 ? (
+          <p className="mt-1 text-xs text-muted">
+            Your check-ins will show here after your first one.
+          </p>
+        ) : (
+          <ul className="mt-2 flex flex-col divide-y divide-line">
+            {((checkins.data ?? []) as Record<string, number | string>[]).map((c) => (
+              <li
+                key={String(c.week_start)}
+                className="flex items-center justify-between py-2 text-xs"
+              >
+                <span className="font-semibold">
+                  Week of {String(c.week_start).slice(5)}
+                </span>
+                <span className="text-muted">
+                  {c.completed_workouts} of {c.planned_workouts} workouts · energy{" "}
+                  {c.energy}/5
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </>
+  );
+}

@@ -1,7 +1,6 @@
 -- Milestone 1A: base tables every later milestone depends on.
 -- profiles, staff_roles, app_settings, admin_audit_log + helper functions + RLS.
 
-create extension if not exists pgcrypto;
 
 create or replace function public.set_updated_at() returns trigger
 language plpgsql as $$

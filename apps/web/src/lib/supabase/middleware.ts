@@ -1,7 +1,17 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED = ["/home", "/onboarding"];
+const PROTECTED = [
+  "/home",
+  "/onboarding",
+  "/programs",
+  "/progress",
+  "/accountability",
+  "/profile",
+  "/membership",
+  "/notifications",
+  "/admin",
+];
 const GUEST_ONLY = ["/login", "/signup"];
 
 const startsWith = (path: string, list: string[]) =>

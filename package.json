@@ -3,7 +3,8 @@
   "private": true,
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "supabase/tests"
   ],
   "engines": {
     "node": ">=20"

@@ -1,0 +1,374 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { addDays, weekStart, weekProgress, type ActionStatus } from "@ck/core";
+import { getContext } from "@/lib/app";
+import { awardMilestones } from "@/lib/milestones";
+import { ensurePlan, ensureWeekPlanned, plannedDays } from "@/lib/plan";
+
+export interface ActionResult {
+  error?: string;
+  ok?: boolean;
+}
+
+const refresh = () => revalidatePath("/", "layout");
+const num = (v: FormDataEntryValue | null) => (v === null || v === "" ? NaN : Number(v));
+const score = (v: FormDataEntryValue | null) => {
+  const n = Number(v);
+  return Number.isInteger(n) && n >= 1 && n <= 5 ? n : null;
+};
+
+export async function addWater(ml: number): Promise<ActionResult> {
+  const { supabase, user, today } = await getContext();
+  if (!Number.isFinite(ml) || ml < 50 || ml > 2000)
+    return { error: "Choose an amount between 50 and 2000 mL." };
+  const { error } = await supabase
+    .from("habit_logs")
+    .insert({ user_id: user.id, log_date: today, habit_type: "water_ml", value: ml });
+  if (error) return { error: "We could not save that. Please try again." };
+  refresh();
+  return { ok: true };
+}
+
+export async function undoWater(): Promise<ActionResult> {
+  const { supabase, user, today } = await getContext();
+  const { data } = await supabase
+    .from("habit_logs")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("log_date", today)
+    .eq("habit_type", "water_ml")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (data) await supabase.from("habit_logs").delete().eq("id", data.id);
+  refresh();
+  return { ok: true };
+}
+
+export async function setSteps(formData: FormData): Promise<void> {
+  const { supabase, user, today } = await getContext();
+  const steps = Math.round(num(formData.get("steps")));
+  if (!Number.isFinite(steps) || steps < 0 || steps > 100000) return;
+  const { data: row } = await supabase
+    .from("habit_logs")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("log_date", today)
+    .eq("habit_type", "steps")
+    .maybeSingle();
+  if (row) await supabase.from("habit_logs").update({ value: steps }).eq("id", row.id);
+  else
+    await supabase
+      .from("habit_logs")
+      .insert({ user_id: user.id, log_date: today, habit_type: "steps", value: steps });
+  refresh();
+}
+
+export async function logWeight(formData: FormData): Promise<void> {
+  const { supabase, user, today } = await getContext();
+  const kg = Math.round(num(formData.get("weight")) * 10) / 10;
+  if (!(kg >= 35 && kg <= 300)) redirect("/home?error=weight");
+  await supabase
+    .from("weigh_ins")
+    .upsert(
+      { user_id: user.id, log_date: today, weight_kg: kg },
+      { onConflict: "user_id,log_date" },
+    );
+  refresh();
+  redirect("/home");
+}
+
+export async function logMeasurements(formData: FormData): Promise<void> {
+  const { supabase, user, today } = await getContext();
+  const field = (k: string) => {
+    const n = num(formData.get(k));
+    return Number.isFinite(n) && n > 0 && n < 300 ? Math.round(n * 10) / 10 : null;
+  };
+  const row = {
+    waist_cm: field("waist"),
+    hips_cm: field("hips"),
+    bust_cm: field("bust"),
+    thigh_cm: field("thigh"),
+    arm_cm: field("arm"),
+  };
+  if (Object.values(row).every((v) => v === null))
+    redirect("/progress?error=measurements");
+  await supabase
+    .from("body_measurements")
+    .upsert(
+      { user_id: user.id, log_date: today, ...row },
+      { onConflict: "user_id,log_date" },
+    );
+  refresh();
+  redirect("/progress?saved=measurements");
+}
+
+async function todaysWorkout(ctx: Awaited<ReturnType<typeof getContext>>) {
+  const { data } = await ctx.supabase
+    .from("scheduled_actions")
+    .select("id,status")
+    .eq("user_id", ctx.user.id)
+    .eq("action_type", "workout")
+    .eq("scheduled_for", ctx.today)
+    .in("status", ["planned", "completed"])
+    .maybeSingle();
+  return data as { id: string; status: ActionStatus } | null;
+}
+
+export async function completeWorkout(): Promise<void> {
+  const ctx = await getContext();
+  const existing = await todaysWorkout(ctx);
+  const now = new Date().toISOString();
+  if (existing) {
+    await ctx.supabase
+      .from("scheduled_actions")
+      .update({ status: "completed", completed_at: now })
+      .eq("id", existing.id);
+  } else {
+    // An extra session she chose to do on a rest day still counts.
+    await ctx.supabase.from("scheduled_actions").insert({
+      user_id: ctx.user.id,
+      action_type: "workout",
+      scheduled_for: ctx.today,
+      status: "completed",
+      completed_at: now,
+    });
+  }
+  await awardMilestones(ctx);
+  refresh();
+}
+
+/** Missed-day recovery: Reschedule, Rest or Skip. Never framed as failure. */
+export async function recoverWorkout(
+  actionId: string,
+  choice: "reschedule" | "rest" | "skip",
+): Promise<ActionResult> {
+  const ctx = await getContext();
+  const { supabase, user, today } = ctx;
+  const { data: action } = await supabase
+    .from("scheduled_actions")
+    .select("id,scheduled_for,status")
+    .eq("id", actionId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!action || action.status !== "planned")
+    return { error: "That session is already sorted." };
+
+  if (choice === "reschedule") {
+    const end = addDays(weekStart(action.scheduled_for), 6);
+    const { data: taken } = await supabase
+      .from("scheduled_actions")
+      .select("scheduled_for")
+      .eq("user_id", user.id)
+      .eq("action_type", "workout")
+      .in("status", ["planned", "completed"])
+      .gte("scheduled_for", today)
+      .lte("scheduled_for", end);
+    const busy = new Set(
+      (taken ?? []).map((t: { scheduled_for: string }) => t.scheduled_for),
+    );
+    let target = today;
+    while (target <= end && busy.has(target)) target = addDays(target, 1);
+    if (target > end)
+      return {
+        error: "This week is full. Choose Rest, and we will plan next week fresh.",
+      };
+    await supabase
+      .from("scheduled_actions")
+      .update({ status: "rescheduled" })
+      .eq("id", actionId);
+    await supabase
+      .from("scheduled_actions")
+      .insert({ user_id: user.id, action_type: "workout", scheduled_for: target });
+  } else {
+    await supabase
+      .from("scheduled_actions")
+      .update({ status: "skipped", note: choice })
+      .eq("id", actionId);
+  }
+  refresh();
+  return { ok: true };
+}
+
+export async function dailyCheckin(
+  mood: "strong" | "tired" | "lighter",
+): Promise<ActionResult> {
+  const { supabase, user, today } = await getContext();
+  const { data: row } = await supabase
+    .from("scheduled_actions")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("action_type", "checkin")
+    .eq("scheduled_for", today)
+    .maybeSingle();
+  const values = {
+    status: "completed",
+    completed_at: new Date().toISOString(),
+    note: mood,
+  };
+  if (row) await supabase.from("scheduled_actions").update(values).eq("id", row.id);
+  else
+    await supabase.from("scheduled_actions").insert({
+      user_id: user.id,
+      action_type: "checkin",
+      scheduled_for: today,
+      ...values,
+    });
+  refresh();
+  return { ok: true };
+}
+
+export async function toggleBmi(): Promise<void> {
+  const { supabase, user, profile } = await getContext();
+  await supabase
+    .from("profiles")
+    .update({ hide_bmi: !profile?.hide_bmi })
+    .eq("user_id", user.id);
+  refresh();
+}
+
+export async function dismissMilestones(): Promise<void> {
+  const { supabase, user } = await getContext();
+  await supabase
+    .from("milestones")
+    .update({ seen: true })
+    .eq("user_id", user.id)
+    .eq("seen", false);
+  refresh();
+}
+
+export async function setCommitment(formData: FormData): Promise<void> {
+  const ctx = await getContext();
+  const days = formData
+    .getAll("days")
+    .map(Number)
+    .filter((d) => Number.isInteger(d) && d >= 0 && d <= 6);
+  const target = Math.min(
+    7,
+    Math.max(1, Math.round(num(formData.get("target")) || days.length || 3)),
+  );
+  const time = String(formData.get("time") ?? "07:00");
+  if (days.length === 0) redirect("/accountability?error=days");
+  await ctx.supabase.from("accountability_plans").upsert(
+    {
+      user_id: ctx.user.id,
+      weekly_target_workouts: target,
+      preferred_days: days,
+      reminder_time: /^\d\d:\d\d$/.test(time) ? time : "07:00",
+    },
+    { onConflict: "user_id" },
+  );
+  // Re-plan the rest of this week to match her new days.
+  await ctx.supabase
+    .from("scheduled_actions")
+    .delete()
+    .eq("user_id", ctx.user.id)
+    .eq("action_type", "workout")
+    .eq("status", "planned")
+    .gte("scheduled_for", ctx.today);
+  await ensureWeekPlanned(ctx, await ensurePlan(ctx));
+  refresh();
+  redirect("/accountability?saved=commitment");
+}
+
+export async function submitWeeklyCheckin(formData: FormData): Promise<void> {
+  const ctx = await getContext();
+  const { supabase, user, today } = ctx;
+  const start = weekStart(today);
+  const energy = score(formData.get("energy")),
+    sleep = score(formData.get("sleep"));
+  const soreness = score(formData.get("soreness")),
+    confidence = score(formData.get("confidence"));
+  if (!energy || !sleep || !soreness || !confidence)
+    redirect("/accountability/checkin?error=answers");
+  const { data: acts } = await supabase
+    .from("scheduled_actions")
+    .select("scheduled_for,status")
+    .eq("user_id", user.id)
+    .eq("action_type", "workout")
+    .gte("scheduled_for", start)
+    .lte("scheduled_for", addDays(start, 6));
+  const prog = weekProgress(
+    (acts ?? []) as { scheduled_for: string; status: ActionStatus }[],
+  );
+  const nextTarget = Math.min(
+    7,
+    Math.max(1, Math.round(num(formData.get("next_target")) || 3)),
+  );
+  await supabase.from("weekly_checkins").upsert(
+    {
+      user_id: user.id,
+      week_start: start,
+      planned_workouts: prog.planned,
+      completed_workouts: prog.completed,
+      energy,
+      sleep,
+      soreness,
+      confidence,
+      obstacle: String(formData.get("obstacle") ?? "").slice(0, 40) || null,
+      note: String(formData.get("note") ?? "").slice(0, 500) || null,
+      next_week_target: nextTarget,
+    },
+    { onConflict: "user_id,week_start" },
+  );
+  const plan = await ensurePlan(ctx);
+  const days = formData
+    .getAll("days")
+    .map(Number)
+    .filter((d) => Number.isInteger(d) && d >= 0 && d <= 6);
+  await supabase.from("accountability_plans").upsert(
+    {
+      user_id: user.id,
+      weekly_target_workouts: nextTarget,
+      preferred_days: days.length ? days : plannedDays(plan),
+    },
+    { onConflict: "user_id" },
+  );
+  refresh();
+  redirect("/accountability?saved=checkin");
+}
+
+export async function saveNotificationPrefs(formData: FormData): Promise<void> {
+  const { supabase, user } = await getContext();
+  const on = (k: string) => formData.get(k) === "on";
+  await supabase.from("notification_preferences").upsert(
+    {
+      user_id: user.id,
+      workout: on("workout"),
+      water: on("water"),
+      weekly_checkin: on("weekly_checkin"),
+      new_content: on("new_content"),
+      marketing: on("marketing"),
+      email: on("email"),
+      sms: on("sms"),
+      push: on("push"),
+      quiet_hours: {
+        start: String(formData.get("quiet_start") ?? "21:00"),
+        end: String(formData.get("quiet_end") ?? "07:00"),
+      },
+      consent_updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" },
+  );
+  refresh();
+  redirect("/profile?saved=prefs");
+}
+
+export async function updateProfileName(formData: FormData): Promise<void> {
+  const { supabase, user } = await getContext();
+  const first = String(formData.get("first_name") ?? "")
+    .trim()
+    .slice(0, 60);
+  const last = String(formData.get("last_name") ?? "")
+    .trim()
+    .slice(0, 60);
+  if (!first || !last) redirect("/profile?error=name");
+  await supabase
+    .from("profiles")
+    .update({ first_name: first, last_name: last })
+    .eq("user_id", user.id);
+  refresh();
+  redirect("/profile?saved=name");
+}

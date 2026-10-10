@@ -1,0 +1,40 @@
+import "server-only";
+import { cache } from "react";
+import { DEFAULT_TZ, dayKey, mergeGoals, type DailyGoals } from "@ck/core";
+import { requireUser } from "@/lib/auth";
+
+export interface Profile {
+  first_name: string | null;
+  last_name: string | null;
+  onboarding_complete: boolean;
+  timezone: string;
+  hide_bmi: boolean;
+  created_at: string;
+  last_active_at: string | null;
+  units: string;
+}
+
+/** Everything most signed-in pages need, fetched once per request. */
+export const getContext = cache(async () => {
+  const { supabase, user } = await requireUser();
+  const [{ data: profile }, { data: settings }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select(
+        "first_name,last_name,onboarding_complete,timezone,hide_bmi,created_at,last_active_at,units",
+      )
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("app_settings")
+      .select("key,value")
+      .eq("key", "daily_goals")
+      .maybeSingle(),
+  ]);
+  const p = (profile ?? null) as Profile | null;
+  const tz = p?.timezone ?? DEFAULT_TZ;
+  const goals: DailyGoals = mergeGoals(settings?.value);
+  return { supabase, user, profile: p, tz, goals, today: dayKey(new Date(), tz) };
+});
+
+export type AppContext = Awaited<ReturnType<typeof getContext>>;

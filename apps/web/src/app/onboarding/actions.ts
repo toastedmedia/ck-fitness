@@ -9,6 +9,7 @@ import {
   validateTraining,
   type Errors,
 } from "@ck/core";
+import { dayKey, DEFAULT_TZ } from "@ck/core";
 import { requireUser } from "@/lib/auth";
 
 export type StepResult = { ok: true } | { ok: false; errors: Errors };
@@ -27,6 +28,33 @@ export async function saveOnboardingStep(
       .from(table)
       .upsert({ user_id: id, ...row }, { onConflict: "user_id" });
     return error ? fail("We could not save that. Please try again.") : null;
+  };
+
+  const finishOnboarding = async (weeklyCommitment: number) => {
+    const { data: ob } = await supabase
+      .from("onboarding_profiles")
+      .select("preferred_days,reminder_time,starting_weight_kg")
+      .eq("user_id", id)
+      .maybeSingle();
+    const days: number[] = ob?.preferred_days ?? [];
+    const plan = await save("accountability_plans", {
+      weekly_target_workouts: weeklyCommitment,
+      preferred_days: days,
+      reminder_time: ob?.reminder_time ?? "07:00",
+    });
+    if (plan) return plan;
+    // Her starting weight becomes the first point on her progress chart.
+    if (ob?.starting_weight_kg) {
+      await supabase.from("weigh_ins").upsert(
+        {
+          user_id: id,
+          log_date: dayKey(new Date(), DEFAULT_TZ),
+          weight_kg: ob.starting_weight_kg,
+        },
+        { onConflict: "user_id,log_date" },
+      );
+    }
+    return save("profiles", { onboarding_complete: true });
   };
 
   switch (step) {
@@ -100,7 +128,7 @@ export async function saveOnboardingStep(
             show_guidance: needsSafetyGuidance(v),
           },
           health_ack_at: new Date().toISOString(),
-        })) ?? (await save("profiles", { onboarding_complete: true }));
+        })) ?? (await finishOnboarding(v.weeklyCommitment));
       return err ?? { ok: true };
     }
     default:
