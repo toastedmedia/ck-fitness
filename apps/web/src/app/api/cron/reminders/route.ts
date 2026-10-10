@@ -1,0 +1,125 @@
+import { NextResponse, type NextRequest } from "next/server";
+import { dayKey, dayOfWeek, hourIn, weekStart, workoutReminderDue } from "@ck/core";
+import { cronGuard } from "@/lib/cron";
+import { createAdminSupabase } from "@/lib/supabase/admin";
+
+export const dynamic = "force-dynamic";
+
+/**
+ * Hourly: creates in-app reminders. Each one is de-duplicated by key, so running twice in an hour
+ * (or being retried) never sends a member the same reminder twice. Respects her notification choices.
+ */
+export async function GET(request: NextRequest) {
+  const denied = cronGuard(request);
+  if (denied) return denied;
+  const db = createAdminSupabase();
+  const now = new Date();
+  const { data: profiles } = await db
+    .from("profiles")
+    .select("user_id,first_name,timezone,last_active_at")
+    .eq("onboarding_complete", true);
+  const { data: prefs } = await db
+    .from("notification_preferences")
+    .select("user_id,workout,weekly_checkin");
+  const pref = new Map(
+    (
+      (prefs ?? []) as { user_id: string; workout: boolean; weekly_checkin: boolean }[]
+    ).map((p) => [p.user_id, p]),
+  );
+  const { data: plans } = await db
+    .from("accountability_plans")
+    .select("user_id,reminder_time");
+  const plan = new Map(
+    ((plans ?? []) as { user_id: string; reminder_time: string }[]).map((p) => [
+      p.user_id,
+      p.reminder_time,
+    ]),
+  );
+  let created = 0;
+
+  const send = async (
+    userId: string,
+    key: string,
+    kind: string,
+    title: string,
+    body: string,
+    link: string,
+  ) => {
+    const { error } = await db
+      .from("notifications")
+      .insert({ user_id: userId, kind, title, body, link, dedupe_key: key });
+    if (!error) created++; // a duplicate key just means it was already sent
+  };
+
+  for (const p of (profiles ?? []) as {
+    user_id: string;
+    first_name: string | null;
+    timezone: string;
+    last_active_at: string | null;
+  }[]) {
+    const today = dayKey(now, p.timezone);
+    const hour = hourIn(now, p.timezone);
+    const name = p.first_name ?? "there";
+    const pr = pref.get(p.user_id);
+
+    if (pr?.workout !== false) {
+      const { data: acts } = await db
+        .from("scheduled_actions")
+        .select("status")
+        .eq("user_id", p.user_id)
+        .eq("action_type", "workout")
+        .eq("scheduled_for", today);
+      const planned = (acts ?? []).some(
+        (a: { status: string }) => a.status === "planned",
+      );
+      const done = (acts ?? []).some((a: { status: string }) => a.status === "completed");
+      if (workoutReminderDue(hour, plan.get(p.user_id) ?? "07:00", planned, done)) {
+        await send(
+          p.user_id,
+          `workout:${today}`,
+          "workout",
+          `${name}, today's session is ready`,
+          "A short session keeps your week on track.",
+          "/home",
+        );
+      }
+    }
+
+    // Friday evening onwards: gentle weekly check-in nudge, once per week.
+    if (pr?.weekly_checkin !== false && dayOfWeek(today) >= 4 && hour >= 17) {
+      const start = weekStart(today);
+      const { data: ci } = await db
+        .from("weekly_checkins")
+        .select("id")
+        .eq("user_id", p.user_id)
+        .eq("week_start", start)
+        .maybeSingle();
+      if (!ci)
+        await send(
+          p.user_id,
+          `checkin:${start}`,
+          "checkin",
+          "Your weekly check-in is ready",
+          "It takes about a minute.",
+          "/accountability/checkin",
+        );
+    }
+
+    // Three quiet days: one friendly restart note per quiet stretch.
+    if (
+      p.last_active_at &&
+      now.getTime() - new Date(p.last_active_at).getTime() >= 3 * 86_400_000 &&
+      hour >= 9
+    ) {
+      await send(
+        p.user_id,
+        `restart:${dayKey(new Date(p.last_active_at), p.timezone)}`,
+        "restart",
+        `${name}, pick up where you left off`,
+        "One short session is a great restart.",
+        "/home",
+      );
+    }
+  }
+  return NextResponse.json({ members: profiles?.length ?? 0, created });
+}

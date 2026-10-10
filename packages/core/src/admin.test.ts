@@ -1,0 +1,75 @@
+import { describe, expect, it } from "vitest";
+import {
+  audienceMatches,
+  canManageRole,
+  crmRetryDelayMinutes,
+  validateForPublish,
+  workoutReminderDue,
+} from "./admin";
+
+const ready = {
+  program: {
+    title: "P",
+    short_description: "d",
+    access_level: "free" as const,
+    level: "beginner",
+    duration_label: "5 days",
+  },
+  sections: [{ id: "s1", title: "Week 1" }],
+  lessons: [
+    {
+      title: "L1",
+      section_id: "s1",
+      stream_uid: "abc",
+      instructions: "",
+      published: true,
+    },
+  ],
+};
+
+describe("validateForPublish", () => {
+  it("passes a complete program", () => expect(validateForPublish(ready)).toEqual([]));
+  it("lists every missing piece in plain English", () => {
+    const problems = validateForPublish({
+      program: { ...ready.program, short_description: "", level: null },
+      sections: [...ready.sections, { id: "s2", title: "Week 2" }],
+      lessons: [{ ...ready.lessons[0], stream_uid: null }],
+    });
+    expect(problems).toContain("Add a one-line benefit (short description).");
+    expect(problems).toContain("Choose a level.");
+    expect(problems).toContain('"L1" needs a video or written instructions.');
+    expect(problems).toContain('"Week 2" has no lessons yet.');
+  });
+  it("needs at least one published lesson", () =>
+    expect(
+      validateForPublish({
+        ...ready,
+        lessons: [{ ...ready.lessons[0], published: false }],
+      }),
+    ).toContain("Add at least one published lesson."));
+});
+
+describe("roles, reminders, audiences, retries", () => {
+  it("lets only owners manage roles", () => {
+    expect(canManageRole(["owner"], "admin")).toBe(true);
+    expect(canManageRole(["admin"], "owner")).toBe(false);
+    expect(canManageRole(["admin"], "coach")).toBe(false);
+  });
+  it("sends the workout reminder only once her hour has come and nothing is done", () => {
+    expect(workoutReminderDue(6, "07:00", true, false)).toBe(false);
+    expect(workoutReminderDue(7, "07:00", true, false)).toBe(true);
+    expect(workoutReminderDue(9, "07:00", true, true)).toBe(false);
+    expect(workoutReminderDue(9, "07:00", false, false)).toBe(false);
+  });
+  it("targets announcements by plan", () => {
+    expect(audienceMatches("free", "ck_member")).toBe(false);
+    expect(audienceMatches("member", "ck_premium")).toBe(true);
+    expect(audienceMatches("premium", "ck_member")).toBe(false);
+    expect(audienceMatches("all", "free")).toBe(true);
+  });
+  it("backs off CRM retries then stops", () => {
+    expect(crmRetryDelayMinutes(0)).toBe(1);
+    expect(crmRetryDelayMinutes(4)).toBe(240);
+    expect(crmRetryDelayMinutes(5)).toBeNull();
+  });
+});

@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { queueCrm, track } from "@/lib/events";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export interface FormState {
@@ -43,6 +44,10 @@ export async function signUp(_prev: FormState, formData: FormData): Promise<Form
     options: { emailRedirectTo: `${await siteUrl()}/auth/callback?next=/onboarding` },
   });
   if (error) return { error: "We could not create your account. Please try again." };
+  if (data.user) {
+    await queueCrm(data.user.id, "free_account_created");
+    await track(data.user.id, "signup");
+  }
   if (data.session) redirect("/onboarding");
   return { message: "Check your email. We sent you a link to confirm your address." };
 }

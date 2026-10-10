@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getContext } from "@/lib/app";
+import { queueCrm, track } from "@/lib/events";
 import { awardMilestones } from "@/lib/milestones";
 import { getProgramOutline } from "@/lib/programs";
 
@@ -23,6 +24,7 @@ export async function startProgram(programId: string, slug: string): Promise<voi
       .from("program_enrollments")
       .insert({ user_id: user.id, program_id: programId, current_lesson_id: first });
     if (error) redirect(`/programs/${slug}?error=locked`);
+    await track(user.id, "program_started", { program: slug });
   }
   revalidatePath("/", "layout");
   redirect(first ? `/programs/${slug}/${first}` : `/programs/${slug}`);
@@ -104,6 +106,10 @@ export async function completeLesson(
     .eq("user_id", user.id)
     .eq("program_id", programId);
 
+  if (!next) {
+    await track(user.id, "program_completed", { program: slug });
+    await queueCrm(user.id, "program_completed", { program: slug });
+  }
   await awardMilestones(ctx);
   revalidatePath("/", "layout");
   redirect(next ? `/programs/${slug}/${next.id}` : `/programs/${slug}?done=1`);

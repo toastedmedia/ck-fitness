@@ -55,6 +55,7 @@ export default async function HomePage({
   const start = weekStart(today);
 
   const [
+    unread,
     habits,
     weekActs,
     todayActs,
@@ -65,6 +66,11 @@ export default async function HomePage({
     active,
     workout,
   ] = await Promise.all([
+    supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .is("read_at", null),
     supabase
       .from("habit_logs")
       .select("habit_type,value")
@@ -195,11 +201,35 @@ export default async function HomePage({
 
   return (
     <>
-      <header>
-        <p className="text-xs font-semibold text-muted">{date}</p>
-        <h1 className="font-display text-[19px] text-brand">
-          {greeting(hourIn(new Date(), tz))}, {name}
-        </h1>
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold text-muted">{date}</p>
+          <h1 className="font-display text-[19px] text-brand">
+            {greeting(hourIn(new Date(), tz))}, {name}
+          </h1>
+        </div>
+        <Link
+          href="/notifications"
+          aria-label={
+            unread.count ? `Notifications, ${unread.count} unread` : "Notifications"
+          }
+          className="relative grid size-11 shrink-0 place-items-center rounded-full border-2 border-line bg-surface text-brand"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="size-5 fill-none stroke-current"
+            strokeWidth="1.9"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M6 16V11a6 6 0 0112 0v5l2 2H4z" />
+            <path d="M10 21h4" />
+          </svg>
+          {unread.count ? (
+            <span className="absolute right-2 top-2 size-2.5 rounded-full border-2 border-surface bg-accent" />
+          ) : null}
+        </Link>
       </header>
 
       {sp.error === "weight" ? (

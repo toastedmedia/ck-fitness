@@ -11,6 +11,7 @@ import {
 } from "@ck/core";
 import { dayKey, DEFAULT_TZ } from "@ck/core";
 import { requireUser } from "@/lib/auth";
+import { queueCrm, track } from "@/lib/events";
 
 export type StepResult = { ok: true } | { ok: false; errors: Errors };
 
@@ -33,7 +34,9 @@ export async function saveOnboardingStep(
   const finishOnboarding = async (weeklyCommitment: number) => {
     const { data: ob } = await supabase
       .from("onboarding_profiles")
-      .select("preferred_days,reminder_time,starting_weight_kg")
+      .select(
+        "preferred_days,reminder_time,starting_weight_kg,primary_goal,training_location",
+      )
       .eq("user_id", id)
       .maybeSingle();
     const days: number[] = ob?.preferred_days ?? [];
@@ -54,7 +57,15 @@ export async function saveOnboardingStep(
         { onConflict: "user_id,log_date" },
       );
     }
-    return save("profiles", { onboarding_complete: true });
+    const done = await save("profiles", { onboarding_complete: true });
+    if (!done) {
+      await queueCrm(id, "onboarding_completed", {
+        goal: ob?.primary_goal,
+        location: ob?.training_location,
+      });
+      await track(id, "onboarding_completed");
+    }
+    return done;
   };
 
   switch (step) {

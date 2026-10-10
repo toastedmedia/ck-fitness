@@ -482,3 +482,35 @@ describe("operations tables", () => {
     ).toBe(0);
   });
 });
+
+describe("admin support migration", () => {
+  it("copies the email onto the profile at signup and when it changes", async () => {
+    const H = "00000000-0000-0000-0000-000000000011";
+    await addUser(db, H, "hh@example.com");
+    expect(
+      (
+        (await db.query("select email from public.profiles where user_id = $1", [H]))
+          .rows[0] as { email: string }
+      ).email,
+    ).toBe("hh@example.com");
+    await db.query("update auth.users set email = 'new@example.com' where id = $1", [H]);
+    expect(
+      (
+        (await db.query("select email from public.profiles where user_id = $1", [H]))
+          .rows[0] as { email: string }
+      ).email,
+    ).toBe("new@example.com");
+  });
+  it("de-duplicates keyed notifications", async () => {
+    await db.query(
+      "insert into public.notifications (user_id, kind, title, dedupe_key) values ($1,'workout','Time to train','workout:2026-10-14')",
+      [A],
+    );
+    await expect(
+      db.query(
+        "insert into public.notifications (user_id, kind, title, dedupe_key) values ($1,'workout','Time to train','workout:2026-10-14')",
+        [A],
+      ),
+    ).rejects.toThrow();
+  });
+});
