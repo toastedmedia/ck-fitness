@@ -2,7 +2,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link
-  href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=DM+Sans:wght@500;600;700&family=Playfair+Display:wght@500;600;700&family=Outfit:wght@500;600&display=swap"
+  href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=DM+Sans:wght@500;600;700&family=Playfair+Display:wght@500;600;700&family=Outfit:wght@500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
   rel="stylesheet"
 />
 <style>
@@ -126,7 +126,8 @@
   .status { height: 34px; flex: none; display: flex; justify-content: space-between; align-items: center; padding-inline: 26px; font-size: 12px; font-weight: 600; color: var(--app-ink); }
   .scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 18px 20px; }
   .scroll.dark { background: var(--app-green-900); color: var(--app-cream-50); }
-  .app h1, .app h2, .app h3 { font-family: var(--app-display); font-weight: 600; margin: 0; color: var(--app-green-900); line-height: 1.15; }
+  .screen, .browser { font-family: var(--app-body, var(--f-body)); }
+  .app h1, .app h2, .app h3 { letter-spacing: var(--app-hls, 0); font-weight: var(--app-hw, 600); font-family: var(--app-display); font-weight: 600; margin: 0; color: var(--app-green-900); line-height: 1.15; }
   .app h1 { font-size: 24px; } .app h2 { font-size: 18px; } .app h3 { font-size: 15px; }
   .app p { margin: 0; }
   .muted { color: var(--app-ink-2); }
@@ -578,6 +579,13 @@
   const BASE = { g900:'#0f3d2e', g800:'#14513c', g700:'#1b6b4e', g100:'#e3efe9', c50:'#fbf8f1', c100:'#f4efe3', c200:'#e8e0cd',
     o600:'#a8801f', o500:'#c9a13b', o100:'#f6ecd0', ink:'#1c2420', ink2:'#4a5650', danger:'#a33a2f', ondark:'#cfdcd3', dangerBorder:'#e3b8b2' };
   const STYLES = {
+    E: { name: 'E · Chardikala Brand', desc: 'Matches the Chardikala website: dark navy, saffron gold, cool grey-lavender background, white cards, bold geometric sans.',
+      p: { g900:'#1b1b36', g800:'#17803f', g700:'#1f8a4c', g100:'#e6f6ec', c50:'#f3f4f9', c100:'#ebedf5', c200:'#dfe2ec',
+        o600:'#8a6d1a', o500:'#c8a84b', o100:'#f6efd6', ink:'#1b1b36', ink2:'#5b6075', danger:'#b3402f', ondark:'#c9cbe0', dangerBorder:'#e8bdb6' },
+      v: { '--app-white':'#ffffff', '--app-display':'"Plus Jakarta Sans", system-ui, sans-serif', '--app-body':'"Plus Jakarta Sans", system-ui, sans-serif',
+        '--app-hw':'700', '--app-hls':'-0.02em', '--app-r-card':'26px', '--app-r-btn':'999px',
+        '--app-on-gold':'#1b1b36', '--app-o700':'#6f5712', '--app-gold-border':'#e6d9a4', '--app-deep':'#12122a', '--app-side-accent':'#c8a84b',
+        '--cv1':'linear-gradient(135deg,#2a2a4a,#171728)','--cv2':'linear-gradient(135deg,#171728,#3a3020)','--cv3':'linear-gradient(135deg,#34345a,#1b1b36)','--cv4':'linear-gradient(135deg,#171728,#2f2a1c)' } },
     A: { name: 'A · Heritage', desc: 'Deep green, cream and gold with an editorial serif. The current direction, slightly smaller type.',
       p: BASE, v: {} },
     B: { name: 'B · Fresh Studio', desc: 'Bright white and sage green, rounded pill buttons and a modern sans. Lighter, more everyday.',
@@ -599,7 +607,7 @@
         '--app-on-primary':'#0c1d17', '--app-on-gold':'#251c04', '--app-o700':'#e2bd5c', '--app-gold-border':'#4a4220', '--app-deep':'#06120d', '--app-side-accent':'#4a3a05',
         '--cv1':'linear-gradient(135deg,#2c7a5a,#16322a)','--cv2':'linear-gradient(135deg,#a8801f,#4a3a10)','--cv3':'linear-gradient(135deg,#1f5c47,#2f7a5c)','--cv4':'linear-gradient(135deg,#3a3a2a,#141a14)' } },
   };
-  let styleKey = 'A';
+  let styleKey = 'E';
   const HEXMAP = () => {
     const t = STYLES[styleKey].p, m = {};
     Object.keys(BASE).forEach((k) => { m[BASE[k].toLowerCase()] = t[k]; });
