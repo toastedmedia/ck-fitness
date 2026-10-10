@@ -58,6 +58,10 @@ and running the QA checklist. Nothing has yet been run against a real Supabase, 
 - **Weekly progress photos** (front, side, back, arms raised). Guide says not in Phase 1 unless the privacy flow is complete (preferred Phase 4). Plan: behind the `progressPhotos` flag, private store (Cloudflare R2 with short-lived signed links, or Supabase private bucket), per-photo consent, EXIF stripped, randomised names, member can delete, staff cannot view by default. Needs owner sign-off on the privacy design first. Cloudflare Stream is video-only.
 - Web push notifications (optional per guide); in-app notification centre is built.
 
+## Home refinement (2026-10-10, owner-requested)
+
+Home reorganised into small components (`apps/web/src/components/home`): Header, Needs Attention (one card, any alert type, hidden when empty), Today's Workout hero (rest-day variant), Today's CK Score (only today's scheduled actions, normalised; updates instantly), My Commitment, Water, Weight Progress, BMI (secondary), This Week, Next Milestone, Apple Health preview (feature flags `apple_health_enabled`, `show_apple_health_preview`). New 15-second daily check-in (energy, soreness, sleep, mood, optional note) and missed-workout "what's getting in the way" reasons. Migration 0008. CK Score weights now Workout 40, Water 25, Check-in 15, Steps 10, Weigh-in 10 (editable in Admin -> Settings). Dev-only layout preview at `/dev/home` (404 unless `CK_DEV_PREVIEW=1`).
+
 ## Closed after a spec audit (2026-10-10)
 
 Free-member benefit card on Home, "Still want to train today?" prompt, weekly summary (members get extras), all guide §16 analytics events, KPI dashboard (Admin -> KPIs) with the monthly video-minutes cost guard, tag/category management, opt-in water reminder and monthly measurements reminder, support email editable in Settings, full set of 11 test accounts, staff access policy, program import template.

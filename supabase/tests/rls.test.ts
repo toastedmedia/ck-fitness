@@ -514,3 +514,43 @@ describe("admin support migration", () => {
     ).rejects.toThrow();
   });
 });
+
+describe("daily check-in migration", () => {
+  const J = "00000000-0000-0000-0000-000000000012";
+  beforeAll(async () => addUser(db, J));
+  const row =
+    "insert into public.daily_checkins (user_id, check_date, energy, soreness, sleep, mood) values ($1,'2026-10-10','good','mild','fair','okay')";
+
+  it("stores one check-in per member per day, privately", async () => {
+    await asUser(db, J, () => db.query(row, [J]));
+    await expect(asUser(db, J, () => db.query(row, [J]))).rejects.toThrow(); // second one the same day
+    expect(
+      await asUser(
+        db,
+        A,
+        async () => (await db.query("select * from public.daily_checkins")).rows.length,
+      ),
+    ).toBe(0);
+    await expect(asUser(db, A, () => db.query(row, [J]))).rejects.toThrow(); // cannot write for someone else
+  });
+  it("rejects values outside the allowed answers", async () => {
+    await expect(
+      db.query(
+        "insert into public.daily_checkins (user_id, check_date, energy, soreness, sleep, mood) values ($1,'2026-10-11','amazing','mild','fair','okay')",
+        [J],
+      ),
+    ).rejects.toThrow();
+  });
+  it("saves a barrier reason on a missed workout, and rejects unknown reasons", async () => {
+    await db.query(
+      "insert into public.scheduled_actions (user_id, action_type, scheduled_for, status, barrier) values ($1,'workout','2026-10-20','skipped','no_time')",
+      [J],
+    );
+    await expect(
+      db.query(
+        "insert into public.scheduled_actions (user_id, action_type, scheduled_for, barrier) values ($1,'workout','2026-10-21','boredom')",
+        [J],
+      ),
+    ).rejects.toThrow();
+  });
+});

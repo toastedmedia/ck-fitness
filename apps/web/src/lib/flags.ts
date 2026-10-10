@@ -3,6 +3,9 @@ export const flags = {
   community: false,
   aiCoach: false,
   nutrition: false,
-  healthKit: false,
+  /** Apple Health needs the native iPhone app (Phase 2). Flip to true when it ships. */
+  apple_health_enabled: false,
+  /** While Apple Health is not ready, show a small "Coming in Phase 2" card. Set false to hide it entirely. */
+  show_apple_health_preview: true,
   progressPhotos: false,
 } as const;

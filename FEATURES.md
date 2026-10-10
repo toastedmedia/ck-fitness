@@ -7,7 +7,7 @@ Legend: ✅ built (unit/DB tested) · 🔌 built, needs an external account to v
 - ✅ Welcome, sign up, log in, forgot/reset password, 18+ check
 - 🔌 Email confirmation and reset emails (needs Resend + Supabase SMTP)
 - ✅ 5-step onboarding with resume and safety guidance
-- ✅ Home: day ring, personal reminders, water, steps (manual), weight + BMI (hideable), weekly view, milestones, notification bell
+- ✅ Home: Needs Attention, Today's Workout hero, Today's CK Score, My Commitment, water, steps (manual), weight + BMI (hideable), This Week with CK Streak, Next Milestone, 15-second daily check-in, missed-workout recovery with reasons, notification bell
 - ✅ Accountability: My Week, commitment, weekly check-in, missed-day recovery, consistency, streak
 - ✅ Progress: weight trend, workouts per week, water consistency, measurements, check-in history
 - ✅ Programs: Discover, My Programs, Free, Member Library, Categories, filters, program detail, lesson player

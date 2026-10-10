@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { addDays, daysBetween, dayKey, dayOfWeek, weekStart } from "./dates";
-import { dayScore, DEFAULT_GOALS, mergeGoals } from "./score";
+import { ckScore, DEFAULT_GOALS, mergeGoals } from "./score";
 import {
   buildWeek,
-  homeReminders,
+  attentionItems,
+  nextMilestone,
+  supportiveLine,
   milestonesEarned,
   riskState,
   streakDays,
@@ -28,35 +30,66 @@ describe("dates", () => {
   });
 });
 
-describe("dayScore", () => {
+describe("ckScore", () => {
+  const base = {
+    workoutScheduled: true,
+    workoutDone: false,
+    waterMl: 0,
+    steps: 0,
+    checkinDone: false,
+    weighScheduled: false,
+    weighDone: false,
+  };
   it("is 0 for an empty day and 100 for a full day", () => {
+    expect(ckScore(base)).toBe(0);
     expect(
-      dayScore({ workoutDone: false, waterMl: 0, steps: 0, checkinDone: false }),
-    ).toBe(0);
-    expect(
-      dayScore({ workoutDone: true, waterMl: 2500, steps: 8000, checkinDone: true }),
+      ckScore({
+        ...base,
+        workoutDone: true,
+        waterMl: 2500,
+        steps: 8000,
+        checkinDone: true,
+      }),
     ).toBe(100);
   });
   it("counts water and steps partially and caps at their targets", () => {
-    expect(
-      dayScore({ workoutDone: false, waterMl: 1250, steps: 0, checkinDone: false }),
-    ).toBe(15);
-    expect(
-      dayScore({ workoutDone: false, waterMl: 9000, steps: 0, checkinDone: false }),
-    ).toBe(30);
+    // workout 40 + water 25 + checkin 15 + steps 10 = 90 available; half the water is 12.5 of 90
+    expect(ckScore({ ...base, waterMl: 1250 })).toBe(14);
+    expect(ckScore({ ...base, waterMl: 9000 })).toBe(28);
+  });
+  it("does not penalise a rest day", () => {
+    const rest = {
+      ...base,
+      workoutScheduled: false,
+      waterMl: 2500,
+      steps: 8000,
+      checkinDone: true,
+    };
+    expect(ckScore(rest)).toBe(100);
+  });
+  it("only counts the weigh-in when one is scheduled or done", () => {
+    const full = {
+      ...base,
+      workoutDone: true,
+      waterMl: 2500,
+      steps: 8000,
+      checkinDone: true,
+    };
+    expect(ckScore({ ...full, weighScheduled: true })).toBe(90);
+    expect(ckScore({ ...full, weighScheduled: true, weighDone: true })).toBe(100);
+    expect(ckScore({ ...full, weighScheduled: false })).toBe(100);
   });
   it("normalises when custom weights do not sum to 100", () => {
     const goals = {
       ...DEFAULT_GOALS,
-      weights: { workout: 50, water: 50, steps: 0, checkin: 0 },
+      weights: { workout: 50, water: 50, checkin: 0, steps: 0, weigh: 0 },
     };
-    expect(
-      dayScore({ workoutDone: true, waterMl: 0, steps: 0, checkinDone: false }, goals),
-    ).toBe(50);
+    expect(ckScore({ ...base, workoutDone: true }, goals)).toBe(50);
   });
   it("ignores invalid saved settings", () => {
     expect(mergeGoals({ waterTargetMl: -5, stepGoal: "x" }).waterTargetMl).toBe(2500);
     expect(mergeGoals({ stepGoal: 10000 }).stepGoal).toBe(10000);
+    expect(mergeGoals({}).weights.weigh).toBe(10);
   });
 });
 
@@ -110,27 +143,126 @@ describe("weigh-in and reminders", () => {
       dueIn: 1,
     });
   });
-  it("personalises and limits reminders to two", () => {
-    const r = homeReminders({
-      firstName: "Priya",
-      today: "2026-10-10",
-      weigh: { daysSince: 6, show: true, dueIn: 1 },
-      checkinDoneThisWeek: false,
-      daysInactive: 4,
+});
+
+describe("needs attention", () => {
+  const today = "2026-10-10"; // Saturday
+  const base = {
+    firstName: "Priya",
+    today,
+    weigh: { daysSince: 2, show: false, dueIn: 5 },
+    weighEveryDays: 7,
+    checkinDoneThisWeek: true,
+    daysInactive: 0,
+  };
+  it("is empty when nothing needs attention", () =>
+    expect(attentionItems(base)).toEqual([]));
+  it("says how overdue the weigh-in is", () => {
+    const [w] = attentionItems({
+      ...base,
+      weigh: { daysSince: 13, show: true, dueIn: 0 },
     });
-    expect(r).toHaveLength(2);
-    expect(r[0].id).toBe("restart");
-    expect(r[1].title).toContain("Priya");
+    expect(w).toMatchObject({
+      kind: "weigh_in",
+      severity: "warning",
+      detail: "Overdue by 6 days",
+    });
   });
-  it("does not nag about the check-in early in the week", () => {
-    const r = homeReminders({
-      firstName: "P",
-      today: "2026-10-06",
-      weigh: { daysSince: 1, show: false, dueIn: 6 },
-      checkinDoneThisWeek: false,
-      daysInactive: 0,
+  it("shows a countdown before it is overdue", () => {
+    const [w] = attentionItems({
+      ...base,
+      weigh: { daysSince: 5, show: true, dueIn: 2 },
     });
-    expect(r).toHaveLength(0);
+    expect(w.detail).toBe("Due in 2 days");
+  });
+  it("offers inline recovery for a missed workout, without guilt", () => {
+    const [m] = attentionItems({
+      ...base,
+      missedWorkout: { id: "a1", date: "2026-10-09" },
+    });
+    expect(m).toMatchObject({
+      kind: "missed_workout",
+      title: "Missed yesterday's workout?",
+      cta: { action: "missed_recovery" },
+      ref: "a1",
+    });
+    expect(
+      attentionItems({ ...base, missedWorkout: { id: "a1", date: "2026-10-07" } })[0]
+        .title,
+    ).toBe("Missed Wednesday's workout?");
+    expect(m.detail).not.toMatch(/fail/i);
+  });
+  it("puts payment first and caps the list", () => {
+    const items = attentionItems({
+      ...base,
+      paymentProblem: true,
+      missedWorkout: { id: "a", date: "2026-10-09" },
+      weigh: { daysSince: 9, show: true, dueIn: 0 },
+      checkinDoneThisWeek: false,
+    });
+    expect(items[0].kind).toBe("payment");
+    expect(items.map((i) => i.kind)).toEqual([
+      "payment",
+      "missed_workout",
+      "weigh_in",
+      "weekly_checkin",
+    ]);
+  });
+  it("only asks for the weekly check-in from Friday", () => {
+    expect(
+      attentionItems({ ...base, today: "2026-10-06", checkinDoneThisWeek: false }),
+    ).toEqual([]);
+    expect(
+      attentionItems({ ...base, today: "2026-10-09", checkinDoneThisWeek: false })[0]
+        .kind,
+    ).toBe("weekly_checkin");
+  });
+});
+
+describe("next milestone and supportive line", () => {
+  const base = {
+    program: null,
+    week: { target: 4, completed: 2 },
+    weeklyCheckinDone: false,
+    waterRemainingMl: 900,
+  };
+  it("prefers the program, then the week, then accountability, then water", () => {
+    expect(
+      nextMilestone({ ...base, program: { sectionTitle: "Week 2", remaining: 2 } })?.text,
+    ).toBe("Complete 2 more workouts to finish Week 2.");
+    expect(
+      nextMilestone({ ...base, program: { sectionTitle: "Week 3", remaining: 1 } })?.text,
+    ).toBe("1 workout away from completing Week 3.");
+    expect(nextMilestone(base)?.kind).toBe("week");
+    expect(nextMilestone({ ...base, week: { target: 4, completed: 4 } })?.kind).toBe(
+      "accountability",
+    );
+    expect(
+      nextMilestone({
+        ...base,
+        week: { target: 4, completed: 4 },
+        weeklyCheckinDone: true,
+      })?.text,
+    ).toBe("900 mL more water to hit today's goal.");
+    expect(
+      nextMilestone({
+        ...base,
+        week: { target: 4, completed: 4 },
+        weeklyCheckinDone: true,
+        waterRemainingMl: 0,
+      }),
+    ).toBeNull();
+  });
+  it("keeps the supportive line kind", () => {
+    expect(
+      supportiveLine({ score: 100, streak: 0, missed: false, weekDone: false }),
+    ).toMatch(/done/i);
+    expect(supportiveLine({ score: 20, streak: 4, missed: false, weekDone: false })).toBe(
+      "Let's keep the momentum going.",
+    );
+    expect(
+      supportiveLine({ score: 20, streak: 0, missed: true, weekDone: false }),
+    ).toMatch(/fresh start/i);
   });
 });
 

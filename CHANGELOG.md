@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-10-10: Home refinement
+
+- Home reorganised into reusable components; hierarchy: header, Needs Attention, Today's Workout, Today's CK Score, My Commitment, Water, Weight, BMI, This Week, Next Milestone, Apple Health preview.
+- Today's CK Score replaces "% of your day": weights 40/25/15/10/10, only counts actions scheduled that day (rest days and unscheduled weigh-ins do not penalise), updates instantly for water, steps and check-in.
+- Needs Attention: one card driven by typed items (missed workout with Do it today / Move on / Need help + reasons, weigh-in overdue, weekly check-in, still-want-to-train, restart, payment).
+- Daily check-in (energy, soreness, sleep, mood, optional note) stored in `daily_checkins`; missed-workout reason stored in `scheduled_actions.barrier`. Migration 0008.
+- Next Milestone (program, weekly target, accountability, hydration), CK Streak label, header supportive line and profile avatar, rest-day hero.
+- Card component: caller colours now replace defaults (fixes tinted cards rendering white).
+
 ## 2026-10-10: Spec audit follow-ups
 
 - Home: member benefit card for free users, "Still want to train today?" prompt.

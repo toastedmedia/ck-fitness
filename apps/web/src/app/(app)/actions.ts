@@ -2,7 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { addDays, weekStart, weekProgress, type ActionStatus } from "@ck/core";
+import {
+  addDays,
+  isBarrier,
+  validateDailyCheckin,
+  weekStart,
+  weekProgress,
+  type ActionStatus,
+} from "@ck/core";
 import { getContext } from "@/lib/app";
 import { track } from "@/lib/events";
 import { awardMilestones } from "@/lib/milestones";
@@ -32,11 +39,11 @@ export async function addWater(ml: number): Promise<ActionResult> {
   return { ok: true };
 }
 
-export async function undoWater(): Promise<ActionResult> {
+export async function undoWater(): Promise<ActionResult & { removed?: number }> {
   const { supabase, user, today } = await getContext();
   const { data } = await supabase
     .from("habit_logs")
-    .select("id")
+    .select("id,value")
     .eq("user_id", user.id)
     .eq("log_date", today)
     .eq("habit_type", "water_ml")
@@ -45,7 +52,7 @@ export async function undoWater(): Promise<ActionResult> {
     .maybeSingle();
   if (data) await supabase.from("habit_logs").delete().eq("id", data.id);
   refresh();
-  return { ok: true };
+  return { ok: true, removed: data ? Number(data.value) : 0 };
 }
 
 export async function setSteps(formData: FormData): Promise<void> {
@@ -193,10 +200,26 @@ export async function recoverWorkout(
   return { ok: true };
 }
 
-export async function dailyCheckin(
-  mood: "strong" | "tired" | "lighter",
+/** The 15-second daily check-in. Also counts as today's check-in action for streaks and the CK Score. */
+export async function saveDailyCheckin(
+  raw: Record<string, unknown>,
 ): Promise<ActionResult> {
   const { supabase, user, today } = await getContext();
+  const v = validateDailyCheckin(raw);
+  if (!v.ok) return { error: v.error };
+  const { error } = await supabase.from("daily_checkins").upsert(
+    {
+      user_id: user.id,
+      check_date: today,
+      energy: v.value.energy,
+      soreness: v.value.soreness,
+      sleep: v.value.sleep,
+      mood: v.value.mood,
+      optional_note: v.value.note || null,
+    },
+    { onConflict: "user_id,check_date" },
+  );
+  if (error) return { error: "We could not save that. Please try again." };
   const { data: row } = await supabase
     .from("scheduled_actions")
     .select("id")
@@ -207,7 +230,7 @@ export async function dailyCheckin(
   const values = {
     status: "completed",
     completed_at: new Date().toISOString(),
-    note: mood,
+    note: v.value.mood,
   };
   if (row) await supabase.from("scheduled_actions").update(values).eq("id", row.id);
   else
@@ -217,6 +240,31 @@ export async function dailyCheckin(
       scheduled_for: today,
       ...values,
     });
+  await track(user.id, "daily_checkin_completed");
+  refresh();
+  return { ok: true };
+}
+
+/** "What's getting in the way?" Saves the reason against the missed workout and closes it gently. */
+export async function saveBarrier(
+  actionId: string,
+  reason: string,
+): Promise<ActionResult> {
+  const { supabase, user } = await getContext();
+  if (!isBarrier(reason)) return { error: "Please choose one of the options." };
+  const { data: action } = await supabase
+    .from("scheduled_actions")
+    .select("id,status")
+    .eq("id", actionId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!action || action.status !== "planned")
+    return { error: "That session is already sorted." };
+  await supabase
+    .from("scheduled_actions")
+    .update({ status: "skipped", barrier: reason, note: "help" })
+    .eq("id", actionId);
+  await track(user.id, "barrier_selected", { reason });
   refresh();
   return { ok: true };
 }

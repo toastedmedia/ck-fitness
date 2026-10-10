@@ -68,7 +68,7 @@ export default async function AdminSettings({
             Stripe.
           </p>
         </Panel>
-        <Panel title="Daily goals and the day ring">
+        <Panel title="Daily goals and Today's CK Score">
           <div className="grid gap-3 md:grid-cols-4">
             <label className={lab}>
               Water target (mL)
@@ -139,6 +139,15 @@ export default async function AdminSettings({
                 name="w_checkin"
                 type="number"
                 defaultValue={g.weights.checkin}
+                className={aInput}
+              />
+            </label>
+            <label className={lab}>
+              Weigh-in weight
+              <input
+                name="w_weigh"
+                type="number"
+                defaultValue={g.weights.weigh}
                 className={aInput}
               />
             </label>

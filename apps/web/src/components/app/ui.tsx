@@ -3,13 +3,21 @@ import type { ReactNode } from "react";
 export function Card({
   children,
   className = "",
+  id,
 }: {
   children: ReactNode;
   className?: string;
+  id?: string;
 }) {
+  // A caller's own background or border colour replaces the default instead of fighting it.
+  const bg = /(^|\s)bg-/.test(className) ? "" : "bg-surface";
+  const border = /(^|\s)border-(\[|[a-z])/.test(className)
+    ? "border"
+    : "border border-line";
   return (
     <section
-      className={`rounded-card border border-line bg-surface p-[var(--space-card)] ${className}`}
+      id={id}
+      className={`rounded-card ${border} ${bg} p-[var(--space-card)] ${className}`}
     >
       {children}
     </section>

@@ -4,11 +4,17 @@ import type { AppContext } from "@/lib/app";
 import { getViewer } from "@/lib/viewer";
 
 export interface TodayWorkout {
+  /** For example "Today · Week 2 · Day 2" */
   label: string;
   title: string;
   subtitle: string;
+  /** Link to the current lesson, if she is in a program. */
   href: string | null;
+  /** A session is planned for today (or already done). */
   scheduled: boolean;
+  cover: string | null;
+  /** Remaining (not yet completed) lessons in her current week or phase. */
+  section: { title: string; remaining: number } | null;
 }
 
 /** What the Today card shows: her current program step if she has one, else her planned session. */
@@ -28,27 +34,63 @@ export async function getTodayWorkout({
       .maybeSingle(),
     supabase
       .from("program_enrollments")
-      .select("current_lesson_id,programs(slug,title)")
+      .select("current_lesson_id,programs(slug,title,cover_path)")
       .eq("user_id", user.id)
       .eq("status", "active")
       .order("started_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
   ]);
-  const program = (enr?.programs ?? null) as { slug: string; title: string } | null;
+  const program = (enr?.programs ?? null) as {
+    slug: string;
+    title: string;
+    cover_path: string | null;
+  } | null;
   if (enr && program && enr.current_lesson_id) {
     const { data: lesson } = await supabase
       .from("lesson_outline")
-      .select("id,title,duration_minutes")
+      .select("id,title,duration_minutes,section_id")
       .eq("id", enr.current_lesson_id)
       .maybeSingle();
     if (lesson) {
+      const [{ data: section }, { data: siblings }, { data: done }] = await Promise.all([
+        supabase
+          .from("program_sections")
+          .select("title")
+          .eq("id", lesson.section_id)
+          .maybeSingle(),
+        supabase
+          .from("lesson_outline")
+          .select("id,order_index")
+          .eq("section_id", lesson.section_id)
+          .order("order_index"),
+        supabase
+          .from("lesson_progress")
+          .select("lesson_id")
+          .eq("user_id", user.id)
+          .not("completed_at", "is", null),
+      ]);
+      const ids = ((siblings ?? []) as { id: string }[]).map((l) => l.id);
+      const doneSet = new Set(
+        ((done ?? []) as { lesson_id: string }[]).map((d) => d.lesson_id),
+      );
+      const dayNumber = ids.indexOf(lesson.id) + 1;
+      const sectionTitle = section?.title ?? "";
       return {
-        label: planned ? "Today" : "Up next",
+        label: ["Today", sectionTitle, dayNumber > 0 ? `Day ${dayNumber}` : ""]
+          .filter(Boolean)
+          .join(" · "),
         title: lesson.title,
-        subtitle: `${program.title}${lesson.duration_minutes ? ` · ${lesson.duration_minutes} min` : ""}`,
+        subtitle: `${lesson.duration_minutes ? `${lesson.duration_minutes} min · ` : ""}${program.title}`,
         href: `/programs/${program.slug}/${lesson.id}`,
         scheduled: Boolean(planned),
+        cover: coverUrl(program.cover_path),
+        section: sectionTitle
+          ? {
+              title: sectionTitle,
+              remaining: ids.filter((id) => !doneSet.has(id)).length,
+            }
+          : null,
       };
     }
   }
@@ -59,6 +101,8 @@ export async function getTodayWorkout({
       subtitle: "Your planned workout",
       href: null,
       scheduled: true,
+      cover: null,
+      section: null,
     };
   return {
     label: "Today",
@@ -66,6 +110,8 @@ export async function getTodayWorkout({
     subtitle: "No session planned. A walk counts.",
     href: null,
     scheduled: false,
+    cover: null,
+    section: null,
   };
 }
 

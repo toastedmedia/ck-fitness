@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 
 /** The "your day" ring: fills from empty to the current percentage when the page opens. */
-export function DayRing({ pct }: { pct: number }) {
+export function DayRing({
+  pct,
+  caption = "Complete",
+}: {
+  pct: number;
+  caption?: string;
+}) {
   const [shown, setShown] = useState(0);
   useEffect(() => {
     const id = requestAnimationFrame(() => setShown(pct));
@@ -11,11 +17,11 @@ export function DayRing({ pct }: { pct: number }) {
   }, [pct]);
   const C = 2 * Math.PI * 56;
   return (
-    <div className="relative size-[132px] shrink-0">
+    <div className="relative size-[112px] shrink-0">
       <svg
         viewBox="0 0 132 132"
         role="img"
-        aria-label={`Your day is ${pct} percent complete`}
+        aria-label={`Today's CK Score is ${pct} percent`}
         className="size-full"
       >
         <defs>
@@ -47,10 +53,10 @@ export function DayRing({ pct }: { pct: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <b className="text-[28px] font-extrabold leading-none tracking-tight text-brand tabular-nums">
+        <b className="text-[26px] font-extrabold leading-none tracking-tight text-brand tabular-nums">
           {pct}%
         </b>
-        <span className="mt-1 text-[10px] font-semibold text-muted">of your day</span>
+        <span className="mt-1 text-[10px] font-semibold text-muted">{caption}</span>
       </div>
     </div>
   );
