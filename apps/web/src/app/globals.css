@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+/* Mirrors packages/design-tokens/src/index.ts (a test keeps them in sync). */
+@theme {
+  --color-green-900: #0f3d2e;
+  --color-green-800: #14513c;
+  --color-green-700: #1b6b4e;
+  --color-green-100: #e3efe9;
+  --color-cream-50: #fbf8f1;
+  --color-cream-100: #f4efe3;
+  --color-cream-200: #e8e0cd;
+  --color-gold-600: #a8801f;
+  --color-gold-500: #c9a13b;
+  --color-gold-100: #f6ecd0;
+  --color-ink-900: #1c2420;
+  --color-ink-600: #4a5650;
+  --color-danger: #a33a2f;
+  --font-sans: var(--font-body), system-ui, sans-serif;
+  --font-display: var(--font-heading), Georgia, serif;
+}
+
+html {
+  background: var(--color-cream-50);
+}
+
+body {
+  background: var(--color-cream-50);
+  color: var(--color-ink-900);
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+/* Visible keyboard focus everywhere. */
+:focus-visible {
+  outline: 3px solid var(--color-gold-500);
+  outline-offset: 2px;
+}
