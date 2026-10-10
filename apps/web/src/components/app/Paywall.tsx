@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Cap, Card } from "@/components/app/ui";
 
 /** Only benefits that exist today are listed. Billing terms are never hidden. */
-export function Paywall({ price }: { price: string }) {
+export function Paywall({ price, showCta = true }: { price: string; showCta?: boolean }) {
   return (
     <Card className="bg-page">
       <Cap>CK Membership</Cap>

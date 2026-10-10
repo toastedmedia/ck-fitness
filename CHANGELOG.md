@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2026-10-12: Milestone 1D
+
 - Programs: Discover, My Programs, Free, Member Library, Categories; filters by goal, level, home/gym; program cards with locks and progress.
 - Program detail (weeks, lessons, progress, paywall or coaching CTA) and lesson player (written steps, safety note, PDF via signed link, complete, previous/next, "I cannot do this today").
 - Secure video: /api/video-token checks access twice (database policy + core rule) and returns a 10-minute Cloudflare Stream signed link; nothing loads until she taps Play; position is saved and resumed.

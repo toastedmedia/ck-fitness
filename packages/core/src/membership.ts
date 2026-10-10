@@ -55,3 +55,73 @@ export function resolveMembership(
       return { ...base, entitlement: "free", state: "none" };
   }
 }
+
+/** The few Stripe subscription fields we use. Kept separate from the Stripe SDK so it is easy to test. */
+export interface SubscriptionLike {
+  id: string;
+  customer: string;
+  status: string;
+  cancel_at_period_end: boolean;
+  start_date: number;
+  period_end: number; // unix seconds, from the subscription item
+}
+
+export interface MembershipUpsert {
+  user_id: string;
+  provider: "stripe";
+  provider_customer_id: string;
+  provider_subscription_id: string;
+  entitlement: "ck_member";
+  status: string;
+  started_at: string;
+  period_end: string;
+  cancel_at_period_end: boolean;
+  source: "web";
+}
+
+const iso = (unix: number) => new Date(unix * 1000).toISOString();
+
+export function membershipFromSubscription(
+  sub: SubscriptionLike,
+  userId: string,
+): MembershipUpsert {
+  return {
+    user_id: userId,
+    provider: "stripe",
+    provider_customer_id: sub.customer,
+    provider_subscription_id: sub.id,
+    entitlement: "ck_member",
+    status: sub.status,
+    started_at: iso(sub.start_date),
+    period_end: iso(sub.period_end),
+    cancel_at_period_end: sub.cancel_at_period_end,
+    source: "web",
+  };
+}
+
+export type MembershipEvent =
+  | "membership_started"
+  | "membership_cancelled"
+  | "membership_expired"
+  | "billing_problem";
+
+/** Which lifecycle events a change in membership should trigger (each is sent to the CRM once). */
+export function membershipEvents(
+  previous: Pick<MembershipRow, "status" | "cancel_at_period_end"> | null,
+  next: Pick<MembershipRow, "status" | "cancel_at_period_end" | "period_end">,
+  now: Date = new Date(),
+): MembershipEvent[] {
+  const out: MembershipEvent[] = [];
+  const wasPaid =
+    previous && (previous.status === "active" || previous.status === "trialing");
+  const isPaid = next.status === "active" || next.status === "trialing";
+  if (isPaid && !wasPaid) out.push("membership_started");
+  if (isPaid && next.cancel_at_period_end && !previous?.cancel_at_period_end)
+    out.push("membership_cancelled");
+  if (next.status === "past_due" && previous?.status !== "past_due")
+    out.push("billing_problem");
+  const ended =
+    next.status === "canceled" && (!next.period_end || new Date(next.period_end) <= now);
+  if (ended && previous?.status !== "canceled") out.push("membership_expired");
+  return out;
+}

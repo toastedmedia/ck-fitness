@@ -203,3 +203,54 @@ describe("membership", () => {
         .entitlement,
     ).toBe("ck_premium"));
 });
+
+import { membershipEvents, membershipFromSubscription } from "./membership";
+
+describe("stripe mapping", () => {
+  const sub = {
+    id: "sub_1",
+    customer: "cus_1",
+    status: "active",
+    cancel_at_period_end: false,
+    start_date: 1_760_000_000,
+    period_end: 1_762_600_000,
+  };
+  it("maps a subscription to a membership row", () => {
+    const row = membershipFromSubscription(sub, "user-1");
+    expect(row).toMatchObject({
+      user_id: "user-1",
+      entitlement: "ck_member",
+      status: "active",
+      source: "web",
+      provider_customer_id: "cus_1",
+    });
+    expect(row.period_end).toBe(new Date(1_762_600_000 * 1000).toISOString());
+  });
+  it("emits one event per real change", () => {
+    const now = new Date("2026-10-10T00:00:00Z");
+    const active = {
+      status: "active",
+      cancel_at_period_end: false,
+      period_end: "2026-11-10T00:00:00Z",
+    };
+    expect(membershipEvents(null, active, now)).toEqual(["membership_started"]);
+    expect(membershipEvents(active, active, now)).toEqual([]);
+    expect(
+      membershipEvents(active, { ...active, cancel_at_period_end: true }, now),
+    ).toEqual(["membership_cancelled"]);
+    expect(membershipEvents(active, { ...active, status: "past_due" }, now)).toEqual([
+      "billing_problem",
+    ]);
+    expect(
+      membershipEvents(
+        { status: "active", cancel_at_period_end: true },
+        {
+          status: "canceled",
+          cancel_at_period_end: true,
+          period_end: "2026-10-09T00:00:00Z",
+        },
+        now,
+      ),
+    ).toEqual(["membership_expired"]);
+  });
+});

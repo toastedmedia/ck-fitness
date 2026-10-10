@@ -359,3 +359,126 @@ describe("development seed", () => {
     expect(tags.n).toBe(11);
   });
 });
+
+describe("operations tables", () => {
+  const F = "00000000-0000-0000-0000-00000000000f";
+  const G = "00000000-0000-0000-0000-000000000010"; // support staff
+  beforeAll(async () => {
+    await addUser(db, F);
+    await addUser(db, G);
+    await db.query(
+      "insert into public.staff_roles (user_id, role) values ($1,'support')",
+      [G],
+    );
+    await db.query(
+      "insert into public.notifications (user_id, kind, title) values ($1,'billing','Payment problem')",
+      [F],
+    );
+    await db.query(
+      "insert into public.crm_sync_events (user_id, event_type) values ($1,'membership_started')",
+      [F],
+    );
+    await db.query(
+      "insert into public.analytics_events (user_id, event_name) values ($1,'signup')",
+      [F],
+    );
+    await db.query(
+      "insert into public.weigh_ins (user_id, log_date, weight_kg) values ($1,'2026-10-10',70)",
+      [F],
+    );
+  });
+
+  it("lets a member read and mark her own notifications but not create or read others", async () => {
+    expect(
+      await asUser(
+        db,
+        F,
+        async () => (await db.query("select * from public.notifications")).rows.length,
+      ),
+    ).toBe(1);
+    expect(
+      await asUser(
+        db,
+        B,
+        async () => (await db.query("select * from public.notifications")).rows.length,
+      ),
+    ).toBe(0);
+    await expect(
+      asUser(db, F, () =>
+        db.query(
+          "insert into public.notifications (user_id, kind, title) values ($1,'x','spam')",
+          [F],
+        ),
+      ),
+    ).rejects.toThrow();
+    await asUser(db, F, () =>
+      db.query("update public.notifications set read_at = now()"),
+    );
+  });
+
+  it("keeps the CRM queue and analytics invisible to members", async () => {
+    expect(
+      await asUser(
+        db,
+        F,
+        async () => (await db.query("select * from public.crm_sync_events")).rows.length,
+      ),
+    ).toBe(0);
+    expect(
+      await asUser(
+        db,
+        F,
+        async () => (await db.query("select * from public.analytics_events")).rows.length,
+      ),
+    ).toBe(0);
+  });
+
+  it("lets members create their own support request only", async () => {
+    await asUser(db, F, () =>
+      db.query(
+        "insert into public.support_requests (user_id, message) values ($1,'Please help')",
+        [F],
+      ),
+    );
+    await expect(
+      asUser(db, F, () =>
+        db.query(
+          "insert into public.support_requests (user_id, message) values ($1,'as someone else')",
+          [B],
+        ),
+      ),
+    ).rejects.toThrow();
+    expect(
+      await asUser(
+        db,
+        B,
+        async () => (await db.query("select * from public.support_requests")).rows.length,
+      ),
+    ).toBe(0);
+  });
+
+  it("lets support staff see requests but not body data", async () => {
+    expect(
+      await asUser(
+        db,
+        G,
+        async () => (await db.query("select * from public.support_requests")).rows.length,
+      ),
+    ).toBe(1);
+    expect(
+      await asUser(
+        db,
+        G,
+        async () => (await db.query("select * from public.weigh_ins")).rows.length,
+      ),
+    ).toBe(0);
+    expect(
+      await asUser(
+        db,
+        G,
+        async () =>
+          (await db.query("select * from public.onboarding_profiles")).rows.length,
+      ),
+    ).toBe(0);
+  });
+});
