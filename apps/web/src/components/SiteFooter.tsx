@@ -6,9 +6,11 @@ const links = [
   { href: "/support", label: "Support" },
 ];
 
-export function SiteFooter() {
+export function SiteFooter({ dark = false }: { dark?: boolean }) {
   return (
-    <footer className="mt-16 border-t border-line px-4 py-8 text-center text-sm text-muted">
+    <footer
+      className={`px-4 py-6 text-center text-xs ${dark ? "text-[#c9cbe0]" : "mt-12 border-t border-line text-muted"}`}
+    >
       <nav aria-label="Legal and support" className="flex justify-center gap-2">
         {links.map((l) => (
           <Link
@@ -20,7 +22,7 @@ export function SiteFooter() {
           </Link>
         ))}
       </nav>
-      <p className="mt-2">&copy; CK Fitness / Chardikala Fitness &amp; Performance</p>
+      <p>&copy; CK Fitness / Chardikala Fitness &amp; Performance</p>
     </footer>
   );
 }

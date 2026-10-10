@@ -13,3 +13,13 @@ Staff see only what their role needs; support does not see body measurements or 
 | Admin changes                                  | admin_audit_log          | Owner/admin read; append-only                |
 
 Updated as each milestone adds tables.
+| Weigh-ins, measurements, check-ins, water, steps, workouts | weigh_ins, body_measurements, weekly_checkins, habit_logs, scheduled_actions | The user only (staff never, including support and coaches) |
+| Lesson and program progress | lesson_progress, program_enrollments | The user; staff see summaries in Admin -> Users |
+| Membership state | memberships | The user; written only by the server |
+| Notifications | notifications | The user |
+| Support messages | support_requests | The user; support, coach, admin, owner |
+| Inactivity state | risk_states | The user; admin portal (server) |
+| CRM queue and analytics | crm_sync_events, analytics_events | Server only. Never contains weight, measurements or health answers |
+
+Staff cross-member reads (Admin) go through server routes after a role check and are limited to name, email, plan, activity and progress summaries.
+Account deletion removes all of the above by cascade; export gives the member a copy (Profile).

@@ -36,3 +36,9 @@ development/staging only.
 
 See `apps/web/.env.example`. `NEXT_PUBLIC_*` values are visible in the browser.
 Everything else is server-only and must be set in Vercel (not committed).
+
+## More
+
+- Full deploy steps: `docs/DEPLOY.md`
+- Payments: `docs/PAYMENTS.md` · Video and files: `docs/STORAGE.md` · CRM: `docs/TOASTED_MEDIA_CRM.md`
+- Admin guide and making yourselves owners: `docs/ADMIN.md` · QA: `docs/QA_CHECKLIST.md`

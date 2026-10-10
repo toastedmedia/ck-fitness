@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-10 to 2026-10-14: Milestones 1E, 1F, 1G (overnight build)
+
+- 1E: Stripe Checkout, customer portal, signature-verified webhook that re-reads the subscription, entitlement resolution (active, cancelled-until-period-end, 7-day grace), CRM + in-app notifications on membership changes. Decision doc: docs/PAYMENTS.md.
+- 1F: Admin portal (dashboard, programs/lessons editor with preview and publish checks, users, staff roles, accountability, support replies, announcements, CRM sync, settings, audit log). Notification centre, support requests, Toasted Media CRM adapter + queue with retries, cron jobs (reminders, risk detection, CRM sync). Migrations 0006, 0007.
+- 1G: Welcome page redesign, draft Privacy/Terms/Support pages, error and loading pages, PWA icons, security headers, privacy-safe Sentry hooks, account deletion cancels Stripe first, QA checklist, deploy runbook, test-user script, storage/CRM/admin docs.
+
 ## 2026-10-12: Milestone 1D
 
 - Programs: Discover, My Programs, Free, Member Library, Categories; filters by goal, level, home/gym; program cards with locks and progress.

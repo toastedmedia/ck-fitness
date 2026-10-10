@@ -60,6 +60,12 @@ export default async function ProfilePage({
       {sp.error === "confirm" ? (
         <Flash tone="error">Type DELETE exactly to confirm.</Flash>
       ) : null}
+      {sp.error === "billing" ? (
+        <Flash tone="error">
+          We could not cancel your membership automatically. Please cancel it under
+          Membership first, then delete your account.
+        </Flash>
+      ) : null}
       {sp.error === "delete" ? (
         <Flash tone="error">
           We could not delete your account. Please contact support.

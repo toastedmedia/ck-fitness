@@ -44,7 +44,7 @@ export async function signUp(_prev: FormState, formData: FormData): Promise<Form
     options: { emailRedirectTo: `${await siteUrl()}/auth/callback?next=/onboarding` },
   });
   if (error) return { error: "We could not create your account. Please try again." };
-  if (data.user) {
+  if (data.user && (data.user.identities?.length ?? 0) > 0) {
     await queueCrm(data.user.id, "free_account_created");
     await track(data.user.id, "signup");
   }

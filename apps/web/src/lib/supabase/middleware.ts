@@ -51,7 +51,7 @@ export async function updateSession(request: NextRequest) {
   if (!user && startsWith(path, PROTECTED)) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
-  if (user && startsWith(path, GUEST_ONLY)) {
+  if (user && (path === "/" || startsWith(path, GUEST_ONLY))) {
     return NextResponse.redirect(new URL("/home", request.url));
   }
   return response;
