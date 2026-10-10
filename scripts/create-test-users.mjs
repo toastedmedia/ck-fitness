@@ -27,26 +27,45 @@ console.log(`Target project: ${new URL(url).host}`);
 
 const db = createClient(url, key, { auth: { persistSession: false } });
 const domain = "test.chardikalafitness.com";
+const DAY = 86_400_000;
+const iso = (offsetDays) => new Date(Date.now() + offsetDays * DAY).toISOString();
 const USERS = [
-  { email: `free@${domain}`, name: ["Fran", "Free"], membership: null, staff: null },
+  { email: `free@${domain}`, name: ["Fran", "Free"] },
+  { email: `incomplete@${domain}`, name: ["Ines", "Incomplete"], incomplete: true },
   {
     email: `member@${domain}`,
     name: ["Mia", "Member"],
-    membership: "ck_member",
-    staff: null,
+    membership: { entitlement: "ck_member", status: "active", period_end: iso(20) },
+  },
+  {
+    email: `cancelling@${domain}`,
+    name: ["Cam", "Cancelling"],
+    membership: {
+      entitlement: "ck_member",
+      status: "active",
+      period_end: iso(6),
+      cancel_at_period_end: true,
+    },
+  },
+  {
+    email: `expired@${domain}`,
+    name: ["Eve", "Expired"],
+    membership: { entitlement: "ck_member", status: "canceled", period_end: iso(-5) },
+  },
+  {
+    email: `billing@${domain}`,
+    name: ["Bea", "Billing"],
+    membership: { entitlement: "ck_member", status: "past_due", period_end: iso(-2) },
   },
   {
     email: `premium@${domain}`,
     name: ["Pia", "Premium"],
-    membership: "ck_premium",
-    staff: null,
+    membership: { entitlement: "ck_premium", status: "active", period_end: null },
   },
-  {
-    email: `owner@${domain}`,
-    name: ["Olive", "Owner"],
-    membership: null,
-    staff: "owner",
-  },
+  { email: `owner1@${domain}`, name: ["Kv", "Owner"], staff: "owner" },
+  { email: `owner2@${domain}`, name: ["Chanveer", "Owner"], staff: "owner" },
+  { email: `content@${domain}`, name: ["Cory", "Content"], staff: "content_manager" },
+  { email: `support@${domain}`, name: ["Sam", "Support"], staff: "support" },
 ];
 
 for (const u of USERS) {

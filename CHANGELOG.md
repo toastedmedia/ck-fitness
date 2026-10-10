@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-10-10: Spec audit follow-ups
+
+- Home: member benefit card for free users, "Still want to train today?" prompt.
+- Weekly summary page (workouts, water, check-in, next-week commitment; member extras); check-in now lands on it.
+- Analytics: onboarding_started, dashboard_viewed, program_viewed, lesson_started/completed, weekly_checkin_completed, paywall_viewed, checkout_started, account_deleted.
+- Admin: KPI dashboard (9 KPIs + video cost guard), tags management. Core KPI maths with tests.
+- Reminders: opt-in water nudge, monthly measurements prompt. Support email editable in Settings.
+- Test-account script now creates 11 accounts (all types from guide 17.1). Docs: staff access policy, program import template.
+
 ## 2026-10-10 to 2026-10-14: Milestones 1E, 1F, 1G (overnight build)
 
 - 1E: Stripe Checkout, customer portal, signature-verified webhook that re-reads the subscription, entitlement resolution (active, cancelled-until-period-end, 7-day grace), CRM + in-app notifications on membership changes. Decision doc: docs/PAYMENTS.md.

@@ -6,6 +6,7 @@ import { VideoPlayer } from "@/components/app/VideoPlayer";
 import { ActionButton } from "@/components/app/ActionButton";
 import { Button, Cap, Card, Pill } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
+import { track } from "@/lib/events";
 import { getProgramOutline } from "@/lib/programs";
 import { recoverWorkout } from "../../../actions";
 import { completeLesson } from "../../actions";
@@ -43,6 +44,7 @@ export default async function LessonPage({
     next = flat[idx + 1];
 
   if (!lesson) {
+    await track(user.id, "paywall_viewed", { source: "lesson" });
     const { data: price } = await supabase
       .from("app_settings")
       .select("value")
@@ -80,6 +82,8 @@ export default async function LessonPage({
       .eq("status", "planned")
       .maybeSingle(),
   ]);
+
+  if (!prog) await track(user.id, "lesson_started", { lesson: lessonId });
 
   return (
     <>

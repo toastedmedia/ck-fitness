@@ -17,7 +17,7 @@ and running the QA checklist. Nothing has yet been run against a real Supabase, 
 
 ## Automated checks (all passing)
 
-`npm run check`: format, lint, types, **core tests (51)**, web tests (5), **database tests (28)** that run every migration in an in-memory Postgres and verify row-level security, production build.
+`npm run check`: format, lint, types, **core tests (54)**, web tests (5), **database tests (28)** that run every migration in an in-memory Postgres and verify row-level security, production build.
 
 ## Accounts checklist
 
@@ -57,6 +57,20 @@ and running the QA checklist. Nothing has yet been run against a real Supabase, 
 
 - **Weekly progress photos** (front, side, back, arms raised). Guide says not in Phase 1 unless the privacy flow is complete (preferred Phase 4). Plan: behind the `progressPhotos` flag, private store (Cloudflare R2 with short-lived signed links, or Supabase private bucket), per-photo consent, EXIF stripped, randomised names, member can delete, staff cannot view by default. Needs owner sign-off on the privacy design first. Cloudflare Stream is video-only.
 - Web push notifications (optional per guide); in-app notification centre is built.
+
+## Closed after a spec audit (2026-10-10)
+
+Free-member benefit card on Home, "Still want to train today?" prompt, weekly summary (members get extras), all guide §16 analytics events, KPI dashboard (Admin -> KPIs) with the monthly video-minutes cost guard, tag/category management, opt-in water reminder and monthly measurements reminder, support email editable in Settings, full set of 11 test accounts, staff access policy, program import template.
+
+## Still pending for Phase 1 (cannot be coded without owners)
+
+- Accounts and keys (Supabase staging/prod, Vercel, Resend, Cloudflare, Stripe, CRM, Sentry), applying migrations, env vars.
+- Verification of everything against real services, then the QA checklist and the 20 to 50 person beta.
+- Lawyer-approved Privacy Policy and Terms; real support email and legal business name.
+- CK's content: program inventory (use `docs/program-import-template.csv`), videos in Cloudflare Stream with **Require signed URLs** on, covers, safety notes approved.
+- Exact brand font and hex codes; decide the in-app name (CK Fitness or Chardikala).
+- Toasted Media CRM API shape (endpoint paths in `crm.ts`).
+- Optional, deferred: web push, in-app search, drag-to-reorder (order numbers work), lb/in units, end-to-end browser tests, progress photos.
 
 ## Known limitations / owner decisions
 

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { track } from "@/lib/events";
 import { stripeClient } from "@/lib/stripe";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -38,6 +39,7 @@ export async function POST(request: NextRequest) {
     }
   }
   const { error } = await admin.auth.admin.deleteUser(user.id);
+  if (!error) await track(null, "account_deleted");
   if (error)
     return NextResponse.redirect(new URL("/profile?error=delete", request.url), {
       status: 303,

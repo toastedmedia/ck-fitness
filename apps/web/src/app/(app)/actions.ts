@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { addDays, weekStart, weekProgress, type ActionStatus } from "@ck/core";
 import { getContext } from "@/lib/app";
+import { track } from "@/lib/events";
 import { awardMilestones } from "@/lib/milestones";
 import { ensurePlan, ensureWeekPlanned, plannedDays } from "@/lib/plan";
 
@@ -326,8 +327,9 @@ export async function submitWeeklyCheckin(formData: FormData): Promise<void> {
     },
     { onConflict: "user_id" },
   );
+  await track(user.id, "weekly_checkin_completed");
   refresh();
-  redirect("/accountability?saved=checkin");
+  redirect("/accountability/summary?saved=1");
 }
 
 export async function saveNotificationPrefs(formData: FormData): Promise<void> {

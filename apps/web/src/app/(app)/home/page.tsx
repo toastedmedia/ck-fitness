@@ -26,11 +26,13 @@ import { activeDays } from "@/lib/milestones";
 import { ensurePlan, ensureWeekPlanned } from "@/lib/plan";
 import { getContext } from "@/lib/app";
 import { getTodayWorkout } from "@/lib/programs";
+import { getViewer } from "@/lib/viewer";
 import {
   addWater,
   completeWorkout,
   dailyCheckin,
   dismissMilestones,
+  recoverWorkout,
   logWeight,
   setSteps,
   toggleBmi,
@@ -171,6 +173,16 @@ export default async function HomePage({
     .map((m) => MILESTONE_COPY[m.milestone_type])
     .filter(Boolean);
   const showWeighForm = sp.log === "weight";
+  const { viewer } = await getViewer();
+  const isMember = viewer.entitlement !== "free";
+  // "Still want to train today?" appears a few hours after her reminder time if the session is not done.
+  const plannedToday = weekActions.find(
+    (a) => a.scheduled_for === today && a.status === "planned",
+  );
+  const nudgeHour = Number(plan.reminder_time.slice(0, 2)) + 4;
+  const hourNow = hourIn(new Date(), tz);
+  const showStillTrain =
+    Boolean(plannedToday) && !workoutDone && hourNow >= nudgeHour && hourNow < 21;
 
   const tasks = [
     {
@@ -266,6 +278,37 @@ export default async function HomePage({
           )}
         </div>
       ))}
+
+      {showStillTrain && plannedToday ? (
+        <Card className="border-[#ecdca4] bg-[#fbf5e1]">
+          <h2 className="text-[13px] font-bold text-brand">
+            Still want to train today, {name}?
+          </h2>
+          <p className="mt-0.5 text-xs text-muted">
+            Even a short session counts. Or move it, no problem.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {workout.href ? (
+              <Link
+                href={workout.href}
+                className="inline-flex min-h-11 items-center rounded-button bg-brand px-4 text-xs font-bold text-on-brand"
+              >
+                Start
+              </Link>
+            ) : (
+              <ActionButton variant="primary" run={completeWorkout}>
+                Mark done
+              </ActionButton>
+            )}
+            <ActionButton run={recoverWorkout.bind(null, plannedToday.id, "reschedule")}>
+              Reschedule
+            </ActionButton>
+            <ActionButton run={recoverWorkout.bind(null, plannedToday.id, "rest")}>
+              Rest
+            </ActionButton>
+          </div>
+        </Card>
+      ) : null}
 
       {milestones.length > 0 ? (
         <Card className="border-0 bg-gradient-to-r from-accent to-[#e3cc7e]">
@@ -553,6 +596,24 @@ export default async function HomePage({
           </Link>
         </div>
       </Card>
+
+      {!isMember ? (
+        <Card className="bg-page">
+          <Cap>CK Membership</Cap>
+          <h3 className="mt-1 text-[13px] font-bold text-brand">
+            Unlock the complete CK experience
+          </h3>
+          <p className="mt-0.5 text-xs text-muted">
+            The full program library and member accountability.
+          </p>
+          <Link
+            href="/membership"
+            className="mt-2 inline-flex min-h-11 items-center rounded-button bg-brand px-4 text-xs font-bold text-on-brand"
+          >
+            See what is included
+          </Link>
+        </Card>
+      ) : null}
 
       <div className="flex items-center gap-3 rounded-card border-2 border-dashed border-line p-3">
         <div className="min-w-0 flex-1">

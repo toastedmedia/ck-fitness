@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { track } from "@/lib/events";
 import { stripeClient } from "@/lib/stripe";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -19,6 +20,7 @@ export async function POST(request: NextRequest) {
       status: 303,
     });
 
+  await track(user.id, "checkout_started");
   const { data: existing } = await supabase
     .from("memberships")
     .select("provider_customer_id,status")

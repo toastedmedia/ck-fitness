@@ -24,6 +24,10 @@ on a real iPhone (Safari), a real Android phone (Chrome) and a desktop browser. 
 - [ ] Changing training days re-plans the current week
 - [ ] Milestone card appears after the first completed workout
 
+- [ ] "Still want to train today?" shows a few hours after the reminder time when the session is not done
+- [ ] Weekly summary shows after a check-in; member extras appear only for members
+- [ ] Free account sees the membership card on Home; member account does not
+
 ## Programs and video
 
 - [ ] Free account sees Free programs open and Member programs locked with the offer
@@ -61,6 +65,11 @@ on a real iPhone (Safari), a real Android phone (Chrome) and a desktop browser. 
 - [ ] Privacy, Terms and Support links work from every public page and Profile
 - [ ] Two members cannot see each other's data (try changing IDs in URLs)
 - [ ] No service-role key, Stripe secret, Cloudflare key or CRM token appears in browser network traffic or page source
+
+## KPIs
+
+- [ ] Admin -> KPIs loads, shows "Not enough data yet" with no division errors on an empty database
+- [ ] Enter this month's Stream minutes and see minutes per paying member
 
 ## Quality
 

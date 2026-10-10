@@ -28,6 +28,21 @@ export async function queueCrm(
   if (error) console.error("queueCrm failed", eventType, error.message);
 }
 
+/** Records an event only the first time for this member (for example onboarding_started). */
+export async function trackOnce(
+  userId: string,
+  name: string,
+  properties: Record<string, unknown> = {},
+) {
+  const db = createAdminSupabase();
+  const { count } = await db
+    .from("analytics_events")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("event_name", name);
+  if (!count) await track(userId, name, properties);
+}
+
 export async function notifyUser(
   userId: string,
   n: { kind: string; title: string; body?: string; link?: string },

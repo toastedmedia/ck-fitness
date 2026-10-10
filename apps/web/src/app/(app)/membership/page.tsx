@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Paywall } from "@/components/app/Paywall";
 import { Button, Card, Cap, Flash, Pill } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
+import { track } from "@/lib/events";
 import { getViewer } from "@/lib/viewer";
 
 export const metadata: Metadata = { title: "Membership" };
@@ -31,6 +32,8 @@ export default async function MembershipPage({
     .maybeSingle();
   const priceText = String(price?.value ?? "$29.99 CAD / month").replace(/^"|"$/g, "");
   const { state, endsAt, cancelling, entitlement } = membership;
+  if (state !== "active" && state !== "grace")
+    await track((await getContext()).user.id, "paywall_viewed", { source: "membership" });
   const premium = entitlement === "ck_premium";
 
   return (

@@ -73,3 +73,54 @@ describe("roles, reminders, audiences, retries", () => {
     expect(crmRetryDelayMinutes(5)).toBeNull();
   });
 });
+
+import { computeKpis, videoMinutesPerMember } from "./kpis";
+
+describe("KPIs", () => {
+  const base = {
+    newAccounts: 10,
+    activated: 6,
+    freeEligible: 50,
+    converted: 5,
+    onboarded: 40,
+    active7: 20,
+    paidMembers: 8,
+    paidWithProgram: 6,
+    plannedWorkouts: 30,
+    completedWorkouts: 21,
+    checkinsThisWeek: 10,
+    atRiskPaid: 2,
+    expiredInPeriod: 1,
+    coachingLeads: 2,
+    videoMinutes: 2400,
+  };
+  it("computes each rate as a percentage", () => {
+    const k = Object.fromEntries(computeKpis(base).map((x) => [x.key, x.value]));
+    expect(k).toMatchObject({
+      activation: 60,
+      free_to_paid: 10,
+      active7: 50,
+      paid_start: 75,
+      adherence: 70,
+      checkin: 50,
+      at_risk: 25,
+      coaching: 10,
+    });
+    expect(k.churn).toBeCloseTo(11.1, 1);
+  });
+  it("shows nothing rather than dividing by zero", () => {
+    const k = computeKpis({
+      ...base,
+      newAccounts: 0,
+      paidMembers: 0,
+      expiredInPeriod: 0,
+    });
+    expect(k.find((x) => x.key === "activation")?.value).toBeNull();
+    expect(k.find((x) => x.key === "churn")?.value).toBeNull();
+  });
+  it("tracks video minutes per paying member", () => {
+    expect(videoMinutesPerMember(2400, 8)).toBe(300);
+    expect(videoMinutesPerMember(null, 8)).toBeNull();
+    expect(videoMinutesPerMember(100, 0)).toBeNull();
+  });
+});

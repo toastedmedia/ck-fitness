@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Nav } from "@/components/app/Nav";
 import { getContext } from "@/lib/app";
+import { track } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       .from("profiles")
       .update({ last_active_at: new Date().toISOString() })
       .eq("user_id", user.id);
+    await track(user.id, "dashboard_viewed");
   }
 
   return (

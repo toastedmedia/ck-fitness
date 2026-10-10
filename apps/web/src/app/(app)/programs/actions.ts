@@ -106,6 +106,8 @@ export async function completeLesson(
     .eq("user_id", user.id)
     .eq("program_id", programId);
 
+  if (!prior?.completed_at)
+    await track(user.id, "lesson_completed", { lesson: lessonId });
   if (!next) {
     await track(user.id, "program_completed", { program: slug });
     await queueCrm(user.id, "program_completed", { program: slug });

@@ -516,3 +516,43 @@ export async function saveSettings(formData: FormData): Promise<void> {
   revalidatePath("/", "layout");
   redirect("/admin/settings?saved=1");
 }
+
+export async function saveVideoMinutes(formData: FormData): Promise<void> {
+  const { supabase, user } = await requireStaff(OPS);
+  const n = Math.max(0, Math.round(Number(formData.get("minutes")) || 0));
+  await supabase
+    .from("app_settings")
+    .upsert({ key: "video_minutes_delivered_month", value: n }, { onConflict: "key" });
+  await audit(supabase, user.id, "settings.video_minutes", "app_settings", {
+    minutes: n,
+  });
+  redirect("/admin/kpis?saved=1");
+}
+
+/** Tags drive filters and categories. Owners add new ones here instead of editing the database. */
+export async function addTag(formData: FormData): Promise<void> {
+  const { supabase, user } = await requireStaff(CONTENT);
+  const group = str(formData, "group", 30);
+  const label = str(formData, "label", 60);
+  if (
+    !["category", "goal", "delivery", "equipment", "duration"].includes(group) ||
+    !label
+  )
+    redirect("/admin/tags?error=1");
+  const { error } = await supabase.from("content_tags").insert({
+    tag_group: group,
+    slug: slugify(label).replace(/-/g, "_"),
+    label,
+    sort_order: 100,
+  });
+  if (error) redirect("/admin/tags?error=1");
+  await audit(supabase, user.id, "tag.add", group, { label });
+  redirect("/admin/tags?saved=1");
+}
+
+export async function deleteTag(id: string): Promise<void> {
+  const { supabase, user } = await requireStaff(CONTENT);
+  await supabase.from("content_tags").delete().eq("id", id);
+  await audit(supabase, user.id, "tag.delete", id);
+  redirect("/admin/tags?saved=1");
+}

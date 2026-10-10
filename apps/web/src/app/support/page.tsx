@@ -1,11 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
+import { createServerSupabase } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Support" };
 
-export default function SupportPage() {
-  const email = process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
+export default async function SupportPage() {
+  // Staff can change the support email in Admin -> Settings; the env value is the fallback.
+  let email = process.env.NEXT_PUBLIC_SUPPORT_EMAIL;
+  try {
+    const supabase = await createServerSupabase();
+    const { data } = await supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "support_email")
+      .maybeSingle();
+    if (typeof data?.value === "string" && data.value) email = data.value;
+  } catch {
+    // Supabase not configured yet: use the fallback.
+  }
   return (
     <>
       <main id="main" className="mx-auto max-w-xl px-4 pt-12">

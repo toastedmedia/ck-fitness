@@ -6,6 +6,7 @@ import { Paywall } from "@/components/app/Paywall";
 import { Button, Card, Cap, Flash, Pill } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
 import { coverUrl, getProgramOutline } from "@/lib/programs";
+import { track } from "@/lib/events";
 import { getViewer } from "@/lib/viewer";
 import { startProgram } from "../actions";
 
@@ -72,6 +73,9 @@ export default async function ProgramPage({
   const doneCount = flat.filter((l) => doneSet.has(l.id)).length;
   const pct = flat.length ? Math.round((doneCount / flat.length) * 100) : 0;
   const cover = coverUrl(program.cover_path);
+  await track(user.id, "program_viewed", { program: slug });
+  if (!allowed && level !== "coach_only")
+    await track(user.id, "paywall_viewed", { source: "program" });
 
   return (
     <>

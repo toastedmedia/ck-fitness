@@ -20,10 +20,15 @@ export async function GET(request: NextRequest) {
     .eq("onboarding_complete", true);
   const { data: prefs } = await db
     .from("notification_preferences")
-    .select("user_id,workout,weekly_checkin");
+    .select("user_id,workout,water,weekly_checkin");
   const pref = new Map(
     (
-      (prefs ?? []) as { user_id: string; workout: boolean; weekly_checkin: boolean }[]
+      (prefs ?? []) as {
+        user_id: string;
+        workout: boolean;
+        water: boolean;
+        weekly_checkin: boolean;
+      }[]
     ).map((p) => [p.user_id, p]),
   );
   const { data: plans } = await db
@@ -83,6 +88,55 @@ export async function GET(request: NextRequest) {
           "/home",
         );
       }
+    }
+
+    // Opt-in water nudge: mid-afternoon, once a day, only if she is behind.
+    if (pr?.water === true && hour >= 14 && hour < 20) {
+      const { data: w } = await db
+        .from("habit_logs")
+        .select("value")
+        .eq("user_id", p.user_id)
+        .eq("habit_type", "water_ml")
+        .eq("log_date", today);
+      const total = (w ?? []).reduce(
+        (sum: number, r: { value: number }) => sum + Number(r.value),
+        0,
+      );
+      if (total < 1000)
+        await send(
+          p.user_id,
+          `water:${today}`,
+          "water",
+          "Time for some water",
+          "A glass now keeps you on track.",
+          "/home",
+        );
+    }
+
+    // Monthly: gentle prompt to log measurements if none in 30 days (day 1 to 7 of the month).
+    if (Number(today.slice(8)) <= 7 && hour >= 10) {
+      const { data: m } = await db
+        .from("body_measurements")
+        .select("log_date")
+        .eq("user_id", p.user_id)
+        .order("log_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const stale =
+        !m ||
+        (new Date(`${today}T00:00:00Z`).getTime() -
+          new Date(`${m.log_date}T00:00:00Z`).getTime()) /
+          86_400_000 >
+          30;
+      if (stale)
+        await send(
+          p.user_id,
+          `measure:${today.slice(0, 7)}`,
+          "progress",
+          "Time for your monthly measurements?",
+          "Optional. It only takes a minute.",
+          "/progress",
+        );
     }
 
     // Friday evening onwards: gentle weekly check-in nudge, once per week.

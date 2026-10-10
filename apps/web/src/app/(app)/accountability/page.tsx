@@ -226,6 +226,12 @@ export default async function AccountabilityPage({
       </Card>
 
       <Link
+        href="/accountability/summary"
+        className="text-center text-xs font-bold text-brand underline underline-offset-4"
+      >
+        See your weekly summary
+      </Link>
+      <Link
         href="/accountability/help"
         className="text-center text-xs font-bold text-brand underline underline-offset-4"
       >

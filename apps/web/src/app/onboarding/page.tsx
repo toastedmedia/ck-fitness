@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { OnboardingFlow } from "@/components/OnboardingFlow";
 import { requireUser } from "@/lib/auth";
+import { trackOnce } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export default async function Page() {
     supabase.from("onboarding_profiles").select("*").eq("user_id", user.id).maybeSingle(),
   ]);
   if (profile?.onboarding_complete) redirect("/home");
+  await trackOnce(user.id, "onboarding_started");
 
   // Resume where she left off: pre-fill anything already saved.
   const initial = {
