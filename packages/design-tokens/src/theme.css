@@ -1,0 +1,40 @@
+/*
+ * CK Fitness theme: the ONE file to edit to change the look of the whole app.
+ * Colours, fonts, corner shapes, spacing and text size all live here as named roles.
+ * Screens use the role names (bg-brand, rounded-card, text-muted ...), never raw values.
+ * Values below are sampled from the Chardikala website; replace with exact brand codes when available.
+ */
+:root {
+  /* Colour roles */
+  --brand: #1b1b36; /* headings, primary buttons */
+  --brand-soft: #2a2a4a; /* hover / secondary dark */
+  --on-brand: #ffffff; /* text on brand colour */
+  --accent: #c8a84b; /* saffron gold highlights, progress, key actions */
+  --accent-strong: #8a6d1a; /* gold used for small text */
+  --on-accent: #1b1b36; /* text on gold */
+  --page: #f3f4f9; /* page background */
+  --surface: #ffffff; /* cards */
+  --line: #dfe2ec; /* borders, dividers */
+  --text: #1b1b36;
+  --text-muted: #5b6075;
+  --success: #1f8a4c;
+  --success-soft: #e6f6ec;
+  --danger: #b3402f;
+
+  /* Typeface roles (font files are loaded in layout.tsx) */
+  --font-body: var(--font-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-display: var(--font-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
+  --heading-weight: 700;
+  --heading-tracking: -0.02em;
+
+  /* Shape roles */
+  --radius-card: 26px;
+  --radius-button: 999px;
+  --radius-chip: 999px;
+
+  /* Size and spacing roles */
+  --text-base: 0.8125rem; /* 13px body text */
+  --space-card: 1rem; /* padding inside cards */
+  --space-stack: 0.75rem; /* gap between cards and sections */
+  --tap-min: 3rem; /* smallest tap target (48px) */
+}

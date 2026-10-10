@@ -8,8 +8,8 @@ export default function SupportPage() {
   return (
     <>
       <main id="main" className="mx-auto max-w-xl px-4 pt-12">
-        <h1 className="font-display text-3xl font-semibold text-green-900">Support</h1>
-        <p className="mt-4 text-ink-600">
+        <h1 className="font-display text-3xl text-brand">Support</h1>
+        <p className="mt-4 text-muted">
           Need help? A real person at CK Fitness will get back to you.
         </p>
         {email ? (

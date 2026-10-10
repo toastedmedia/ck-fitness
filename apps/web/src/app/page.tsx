@@ -5,13 +5,13 @@ export default function WelcomePage() {
   return (
     <>
       <main id="main" className="mx-auto flex max-w-xl flex-col px-4 pt-16">
-        <p className="text-sm font-semibold uppercase tracking-widest text-gold-600">
+        <p className="text-sm font-semibold uppercase tracking-widest text-accent-strong">
           CK Fitness
         </p>
-        <h1 className="mt-3 font-display text-4xl font-semibold leading-tight text-green-900">
+        <h1 className="mt-3 font-display text-4xl leading-tight text-brand">
           Train. Track. Keep going.
         </h1>
-        <p className="mt-4 text-ink-600">
+        <p className="mt-4 text-muted">
           Training, progress and accountability, all in one place and built around your
           week.
         </p>

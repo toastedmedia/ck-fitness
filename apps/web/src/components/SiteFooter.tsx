@@ -8,7 +8,7 @@ const links = [
 
 export function SiteFooter() {
   return (
-    <footer className="mt-16 border-t border-cream-200 px-4 py-8 text-center text-sm text-ink-600">
+    <footer className="mt-16 border-t border-line px-4 py-8 text-center text-sm text-muted">
       <nav aria-label="Legal and support" className="flex justify-center gap-2">
         {links.map((l) => (
           <Link

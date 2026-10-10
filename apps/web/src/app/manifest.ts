@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Training, progress and accountability.",
     start_url: "/",
     display: "standalone",
-    background_color: "#fbf8f1",
-    theme_color: "#0f3d2e",
+    background_color: "#f3f4f9",
+    theme_color: "#1b1b36",
   };
 }

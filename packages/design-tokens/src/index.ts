@@ -1,16 +1,23 @@
 /**
- * CK visual language. Single source of truth for colours and sizing; the web app's
- * globals.css mirrors these values (a test keeps them in sync) and the Phase 2 mobile
- * app will import this file directly.
+ * Raw copy of the colour roles for non-CSS consumers (the Phase 2 mobile app).
+ * The web app's source of truth is theme.css; a test keeps the two in sync.
  */
 export const colors = {
-  green: { 900: "#0f3d2e", 800: "#14513c", 700: "#1b6b4e", 100: "#e3efe9" },
-  cream: { 50: "#fbf8f1", 100: "#f4efe3", 200: "#e8e0cd" },
-  gold: { 600: "#a8801f", 500: "#c9a13b", 100: "#f6ecd0" },
-  ink: { 900: "#1c2420", 600: "#4a5650" },
-  danger: "#a33a2f",
-  white: "#ffffff",
+  brand: "#1b1b36",
+  brandSoft: "#2a2a4a",
+  onBrand: "#ffffff",
+  accent: "#c8a84b",
+  accentStrong: "#8a6d1a",
+  onAccent: "#1b1b36",
+  page: "#f3f4f9",
+  surface: "#ffffff",
+  line: "#dfe2ec",
+  text: "#1b1b36",
+  textMuted: "#5b6075",
+  success: "#1f8a4c",
+  successSoft: "#e6f6ec",
+  danger: "#b3402f",
 } as const;
 
-/** Minimum touch target in px (WCAG 2.2 AA is 24; we go larger for gym-floor thumbs). */
+/** Minimum touch target in px. */
 export const minTapTarget = 48;
