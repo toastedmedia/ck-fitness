@@ -1,5 +1,13 @@
 import type { Metadata } from "next";
-import { addDays, weekStart } from "@ck/core";
+import {
+  addDays,
+  weekStart,
+  asUnits,
+  displayLength,
+  displayWeight,
+  lengthUnit,
+  weightUnit,
+} from "@ck/core";
 import { BarChart, LineChart } from "@/components/app/charts";
 import { Button, Cap, Card, Flash } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
@@ -28,7 +36,8 @@ export default async function ProgressPage({
   searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
   const sp = await searchParams;
-  const { supabase, user, today, goals } = await getContext();
+  const { supabase, user, today, goals, profile } = await getContext();
+  const units = asUnits(profile?.units);
   const since = addDays(weekStart(today), -28);
   const [weighs, meas, acts, water, checkins] = await Promise.all([
     supabase
@@ -104,10 +113,11 @@ export default async function ProgressPage({
         <div className="mt-1">
           <LineChart
             label="Your weight over time"
-            unit=" kg"
-            points={w
-              .slice(-12)
-              .map((p) => ({ x: p.log_date.slice(5), y: Number(p.weight_kg) }))}
+            unit={` ${weightUnit(units)}`}
+            points={w.slice(-12).map((p) => ({
+              x: p.log_date.slice(5),
+              y: displayWeight(Number(p.weight_kg), units),
+            }))}
           />
         </div>
         <p className="mt-1 text-[10.5px] text-muted">
@@ -142,13 +152,19 @@ export default async function ProgressPage({
             {rows.map(([label, key]) => {
               const diff =
                 latest[key] != null && previous?.[key] != null
-                  ? Math.round((Number(latest[key]) - Number(previous[key])) * 10) / 10
+                  ? Math.round(
+                      (displayLength(Number(latest[key]), units) -
+                        displayLength(Number(previous[key]), units)) *
+                        10,
+                    ) / 10
                   : null;
               return (
                 <div key={key}>
                   <dt className="text-[10px] text-muted">{label}</dt>
                   <dd className="text-sm font-extrabold text-brand tabular-nums">
-                    {latest[key] ?? "-"}
+                    {latest[key] != null
+                      ? displayLength(Number(latest[key]), units)
+                      : "-"}
                   </dd>
                   {diff !== null && diff !== 0 ? (
                     <dd className="text-[10px] text-muted">
@@ -163,7 +179,7 @@ export default async function ProgressPage({
         ) : null}
         <details className="mt-2">
           <summary className="flex min-h-10 cursor-pointer items-center text-[11px] font-bold text-brand underline underline-offset-4">
-            Log measurements (cm)
+            Log measurements ({lengthUnit(units)})
           </summary>
           <form action={logMeasurements} className="mt-2 grid grid-cols-2 gap-2">
             {num("waist", "Waist")}

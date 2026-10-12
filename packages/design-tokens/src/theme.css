@@ -10,14 +10,14 @@
   --brand-soft: #2a2a4a; /* hover / secondary dark */
   --on-brand: #ffffff; /* text on brand colour */
   --accent: #c8a84b; /* saffron gold highlights, progress, key actions */
-  --accent-strong: #8a6d1a; /* gold used for small text */
+  --accent-strong: #7a5f12; /* gold used for small text */
   --on-accent: #1b1b36; /* text on gold */
   --page: #f3f4f9; /* page background */
   --surface: #ffffff; /* cards */
   --line: #dfe2ec; /* borders, dividers */
   --text: #1b1b36;
   --text-muted: #5b6075;
-  --success: #1f8a4c;
+  --success: #1a7a43;
   --success-soft: #e6f6ec;
   --danger: #b3402f;
 

@@ -100,6 +100,7 @@ export default async function DevHome({
           </div>
         </DayProvider>
         <WeightProgress
+          units="metric"
           current={67.2}
           change={-1.2}
           points={[68.4, 68.1, 68.0, 67.7, 67.5, 67.2].map((y, i) => ({

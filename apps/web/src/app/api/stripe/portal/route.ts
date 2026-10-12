@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isSameOrigin } from "@/lib/same-origin";
 import { stripeClient } from "@/lib/stripe";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -6,6 +7,8 @@ export const dynamic = "force-dynamic";
 
 /** Opens Stripe's billing portal so members can update their card, see invoices or cancel. */
 export async function POST(request: NextRequest) {
+  if (!isSameOrigin(request))
+    return NextResponse.json({ error: "Bad request." }, { status: 403 });
   const supabase = await createServerSupabase();
   const {
     data: { user },

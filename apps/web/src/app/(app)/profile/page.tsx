@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button, Cap, Card, Flash } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
-import { saveNotificationPrefs, updateProfileName } from "../actions";
+import { saveNotificationPrefs, setUnits, updateProfileName } from "../actions";
 
 export const metadata: Metadata = { title: "Profile" };
 
@@ -96,10 +96,30 @@ export default async function ProfilePage({
               className={input}
             />
           </label>
-          <p className="text-[10.5px] text-muted">
-            Signed in as {user.email}. Units: kilograms and centimetres.
-          </p>
+          <p className="text-[10.5px] text-muted">Signed in as {user.email}.</p>
           <Button variant="primary">Save details</Button>
+        </form>
+      </Card>
+
+      <Card>
+        <Cap>Units</Cap>
+        <form action={setUnits} className="mt-2 flex flex-col gap-2">
+          {[
+            ["metric", "Kilograms and centimetres"],
+            ["imperial", "Pounds and inches"],
+          ].map(([value, label]) => (
+            <label key={value} className="flex min-h-11 items-center gap-3 text-xs">
+              <input
+                type="radio"
+                name="units"
+                value={value}
+                defaultChecked={(profile?.units ?? "metric") === value}
+                className="size-5 accent-brand"
+              />
+              <span className="font-bold text-brand">{label}</span>
+            </label>
+          ))}
+          <Button variant="primary">Save units</Button>
         </form>
       </Card>
 

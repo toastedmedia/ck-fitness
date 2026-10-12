@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { asUnits, cmToFeetInches, displayWeight } from "@ck/core";
 import { OnboardingFlow } from "@/components/OnboardingFlow";
 import { requireUser } from "@/lib/auth";
 import { trackOnce } from "@/lib/events";
@@ -18,7 +19,15 @@ export default async function Page() {
   await trackOnce(user.id, "onboarding_started");
 
   // Resume where she left off: pre-fill anything already saved.
+  const units = asUnits(profile?.units);
+  const feetInches = ob?.height_cm ? cmToFeetInches(Number(ob.height_cm)) : null;
   const initial = {
+    units,
+    heightFt: feetInches?.feet ?? "",
+    heightIn: feetInches?.inches ?? "",
+    weightDisplay: ob?.starting_weight_kg
+      ? displayWeight(Number(ob.starting_weight_kg), units)
+      : "",
     firstName: profile?.first_name ?? "",
     lastName: profile?.last_name ?? "",
     birthDate: profile?.birth_date ?? "",

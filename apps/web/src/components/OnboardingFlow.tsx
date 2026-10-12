@@ -3,12 +3,17 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { saveOnboardingStep } from "@/app/onboarding/actions";
+import { asUnits, feetInchesToCm, lbToKg } from "@ck/core";
 import { ChipGroup, type Option } from "@/components/ui/ChipGroup";
 import { Field, TextArea } from "@/components/ui/Field";
 
 type Data = Record<string, unknown>;
 
 const opt = (pairs: [string, string][]): Option[] => pairs;
+const UNITS = opt([
+  ["metric", "kg and cm"],
+  ["imperial", "lb and ft/in"],
+]);
 const GENDER = opt([
   ["female", "Female"],
   ["male", "Male"],
@@ -111,6 +116,18 @@ export function OnboardingFlow({ initial }: { initial: Data }) {
   const next = () =>
     start(async () => {
       const payload: Data = { ...data };
+      if (step === 1) {
+        // Everything is stored in kg and cm, whatever she types in.
+        const u = asUnits(data.units);
+        payload.units = u;
+        const w = Number(data.weightDisplay);
+        payload.weightKg = u === "imperial" ? lbToKg(w) : w;
+        if (u === "imperial")
+          payload.heightCm = feetInchesToCm(
+            Number(data.heightFt || 0),
+            Number(data.heightIn || 0),
+          );
+      }
       if (step === 3) payload.preferredDays = arr("preferredDays").map(Number);
       if (step === 5) {
         payload.weeklyCommitment = Number(
@@ -173,21 +190,47 @@ export function OnboardingFlow({ initial }: { initial: Data }) {
             onChange={(v) => set("gender", v)}
             error={errors.gender}
           />
-          <Field
-            label="Height (cm)"
-            type="number"
-            inputMode="decimal"
-            value={str("heightCm")}
-            onChange={(e) => set("heightCm", e.target.value)}
-            error={errors.heightCm}
+          <ChipGroup
+            label="Units"
+            options={UNITS}
+            value={asUnits(data.units)}
+            onChange={(v) => set("units", v)}
           />
+          {asUnits(data.units) === "imperial" ? (
+            <div className="grid grid-cols-2 gap-3">
+              <Field
+                label="Height (ft)"
+                type="number"
+                inputMode="numeric"
+                value={str("heightFt")}
+                onChange={(e) => set("heightFt", e.target.value)}
+                error={errors.heightCm}
+              />
+              <Field
+                label="Height (in)"
+                type="number"
+                inputMode="numeric"
+                value={str("heightIn")}
+                onChange={(e) => set("heightIn", e.target.value)}
+              />
+            </div>
+          ) : (
+            <Field
+              label="Height (cm)"
+              type="number"
+              inputMode="decimal"
+              value={str("heightCm")}
+              onChange={(e) => set("heightCm", e.target.value)}
+              error={errors.heightCm}
+            />
+          )}
           <Field
-            label="Weight (kg)"
+            label={asUnits(data.units) === "imperial" ? "Weight (lb)" : "Weight (kg)"}
             type="number"
             inputMode="decimal"
             step="0.1"
-            value={str("weightKg")}
-            onChange={(e) => set("weightKg", e.target.value)}
+            value={str("weightDisplay")}
+            onChange={(e) => set("weightDisplay", e.target.value)}
             error={errors.weightKg}
             hint="This is your starting point. You will log a new weight each week."
           />

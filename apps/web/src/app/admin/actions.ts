@@ -13,6 +13,7 @@ import {
 import { CONTENT, OPS, SUPPORT, audit, requireStaff } from "@/lib/admin";
 import { processCrmQueue } from "@/lib/crm";
 import { notifyUser } from "@/lib/events";
+import { isInternalPath } from "@/lib/same-origin";
 
 const str = (f: FormData, k: string, max = 500) =>
   String(f.get(k) ?? "")
@@ -416,7 +417,7 @@ export async function sendAnnouncement(formData: FormData): Promise<void> {
       : "all"
   ) as AudienceKey;
   if (!title) redirect("/admin/notifications?error=title");
-  if (link && !link.startsWith("/")) redirect("/admin/notifications?error=link");
+  if (link && !isInternalPath(link)) redirect("/admin/notifications?error=link");
 
   const [{ data: profiles }, { data: memberships }] = await Promise.all([
     db.from("profiles").select("user_id").eq("onboarding_complete", true),

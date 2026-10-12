@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { weightUnit, type Units } from "@ck/core";
 import { LineChart } from "@/components/app/charts";
 import { Button, Cap, Card, Pill } from "@/components/app/ui";
 import { logWeight } from "@/app/(app)/actions";
 
 /** Current weight, change and a small trend. Weight matters, but it is not the only progress. */
 export function WeightProgress({
+  units,
   current,
   change,
   points,
@@ -12,6 +14,7 @@ export function WeightProgress({
   daysSince,
   showForm,
 }: {
+  units: Units;
   current: number | null;
   change: number | null;
   points: { x: string; y: number }[];
@@ -35,18 +38,22 @@ export function WeightProgress({
           <p className="text-xs text-muted">Current weight</p>
           <p className="text-2xl font-extrabold leading-none tracking-tight text-brand tabular-nums">
             {current !== null ? current.toFixed(1) : "-"}
-            <span className="text-xs font-semibold text-muted"> kg</span>
+            <span className="text-xs font-semibold text-muted"> {weightUnit(units)}</span>
           </p>
         </div>
         {change !== null ? (
           <Pill tone={change <= 0 ? "success" : "navy"}>
-            {change <= 0 ? "↓" : "↑"} {Math.abs(change)} kg
+            {change <= 0 ? "↓" : "↑"} {Math.abs(change)} {weightUnit(units)}
           </Pill>
         ) : null}
       </div>
       {points.length >= 2 ? (
         <div className="mt-1">
-          <LineChart label="Your weight over time" unit=" kg" points={points} />
+          <LineChart
+            label="Your weight over time"
+            unit={` ${weightUnit(units)}`}
+            points={points}
+          />
         </div>
       ) : null}
       <div className="mt-2 flex gap-1" aria-hidden="true">
@@ -63,7 +70,7 @@ export function WeightProgress({
         </summary>
         <form action={logWeight} className="mt-1 flex items-end gap-2">
           <label className="flex-1 text-xs font-semibold">
-            Weight (kg)
+            Weight ({weightUnit(units)})
             <input
               name="weight"
               type="number"

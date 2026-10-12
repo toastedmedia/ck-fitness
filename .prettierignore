@@ -2,3 +2,4 @@ node_modules
 .next
 package-lock.json
 *.pdf
+docs/design/home-refined.html

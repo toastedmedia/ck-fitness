@@ -79,6 +79,7 @@ export async function saveOnboardingStep(
           last_name: v.lastName,
           birth_date: v.birthDate,
           gender_preference: v.gender,
+          units: v.units,
         })) ??
         (await save("onboarding_profiles", {
           height_cm: v.heightCm,

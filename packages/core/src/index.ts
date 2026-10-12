@@ -7,3 +7,4 @@ export * from "./membership";
 export * from "./admin";
 export * from "./kpis";
 export * from "./checkin";
+export * from "./units";

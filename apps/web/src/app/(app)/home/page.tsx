@@ -4,7 +4,9 @@ import {
   addDays,
   attentionItems,
   buildWeek,
+  asUnits,
   calcBmi,
+  displayWeight,
   ckScore,
   daysBetween,
   greeting,
@@ -163,6 +165,7 @@ export default async function HomePage({
   const lastWeigh = w.length ? w[w.length - 1] : null;
   const weigh = weighInStatus(lastWeigh?.log_date ?? null, today, goals);
   const weighDone = lastWeigh?.log_date === today;
+  const units = asUnits(profile?.units);
   const bmi =
     ob.data?.height_cm && lastWeigh
       ? calcBmi(Number(lastWeigh.weight_kg), Number(ob.data.height_cm))
@@ -271,11 +274,17 @@ export default async function HomePage({
       </DayProvider>
 
       <WeightProgress
-        current={lastWeigh ? Number(lastWeigh.weight_kg) : null}
-        change={change}
-        points={w
-          .slice(-8)
-          .map((p) => ({ x: p.log_date.slice(5), y: Number(p.weight_kg) }))}
+        units={units}
+        current={lastWeigh ? displayWeight(Number(lastWeigh.weight_kg), units) : null}
+        change={
+          change === null
+            ? null
+            : displayWeight(Math.abs(change), units) * (change < 0 ? -1 : 1)
+        }
+        points={w.slice(-8).map((p) => ({
+          x: p.log_date.slice(5),
+          y: displayWeight(Number(p.weight_kg), units),
+        }))}
         cycleDays={goals.weighInEveryDays}
         daysSince={weigh.daysSince}
         showForm={sp.log === "weight"}

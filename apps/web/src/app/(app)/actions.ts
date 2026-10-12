@@ -4,10 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   addDays,
+  asUnits,
   isBarrier,
+  lengthToCm,
   validateDailyCheckin,
   weekStart,
   weekProgress,
+  weightToKg,
   type ActionStatus,
 } from "@ck/core";
 import { getContext } from "@/lib/app";
@@ -75,8 +78,8 @@ export async function setSteps(formData: FormData): Promise<void> {
 }
 
 export async function logWeight(formData: FormData): Promise<void> {
-  const { supabase, user, today } = await getContext();
-  const kg = Math.round(num(formData.get("weight")) * 10) / 10;
+  const { supabase, user, today, profile } = await getContext();
+  const kg = weightToKg(num(formData.get("weight")), asUnits(profile?.units));
   if (!(kg >= 35 && kg <= 300)) redirect("/home?error=weight");
   await supabase
     .from("weigh_ins")
@@ -89,10 +92,12 @@ export async function logWeight(formData: FormData): Promise<void> {
 }
 
 export async function logMeasurements(formData: FormData): Promise<void> {
-  const { supabase, user, today } = await getContext();
+  const { supabase, user, today, profile } = await getContext();
+  const units = asUnits(profile?.units);
   const field = (k: string) => {
     const n = num(formData.get(k));
-    return Number.isFinite(n) && n > 0 && n < 300 ? Math.round(n * 10) / 10 : null;
+    const cm = Number.isFinite(n) ? lengthToCm(n, units) : NaN;
+    return cm > 0 && cm < 300 ? cm : null;
   };
   const row = {
     waist_cm: field("waist"),
@@ -421,4 +426,13 @@ export async function updateProfileName(formData: FormData): Promise<void> {
     .eq("user_id", user.id);
   refresh();
   redirect("/profile?saved=name");
+}
+
+/** Switch between kg/cm and lb/in. Stored values never change; only what she sees and types. */
+export async function setUnits(formData: FormData): Promise<void> {
+  const { supabase, user } = await getContext();
+  const units = asUnits(formData.get("units"));
+  await supabase.from("profiles").update({ units }).eq("user_id", user.id);
+  refresh();
+  redirect("/profile?saved=units");
 }

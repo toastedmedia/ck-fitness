@@ -41,6 +41,7 @@ export interface AboutInput {
   gender: (typeof GENDER)[number];
   heightCm: number;
   weightKg: number;
+  units: "metric" | "imperial";
 }
 export interface GoalInput {
   primaryGoal: (typeof GOALS)[number];
@@ -128,6 +129,7 @@ export function validateAbout(
       gender: raw.gender as AboutInput["gender"],
       heightCm,
       weightKg,
+      units: raw.units === "imperial" ? "imperial" : "metric",
     },
   };
 }

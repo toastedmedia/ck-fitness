@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isSameOrigin } from "@/lib/same-origin";
 import { track } from "@/lib/events";
 import { stripeClient } from "@/lib/stripe";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -7,6 +8,8 @@ export const dynamic = "force-dynamic";
 
 /** Starts Stripe Checkout for the CK Membership. Price and plan come from Stripe, not from the app. */
 export async function POST(request: NextRequest) {
+  if (!isSameOrigin(request))
+    return NextResponse.json({ error: "Bad request." }, { status: 403 });
   const supabase = await createServerSupabase();
   const {
     data: { user },

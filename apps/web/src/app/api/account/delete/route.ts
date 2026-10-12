@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isSameOrigin } from "@/lib/same-origin";
 import { track } from "@/lib/events";
 import { stripeClient } from "@/lib/stripe";
 import { createAdminSupabase } from "@/lib/supabase/admin";
@@ -8,6 +9,8 @@ export const dynamic = "force-dynamic";
 
 /** Permanently deletes the signed-in member. Related rows are removed by database cascade. */
 export async function POST(request: NextRequest) {
+  if (!isSameOrigin(request))
+    return NextResponse.json({ error: "Bad request." }, { status: 403 });
   const supabase = await createServerSupabase();
   const {
     data: { user },
