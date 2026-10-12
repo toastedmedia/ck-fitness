@@ -16,6 +16,8 @@ const TABLES = [
   "milestones",
   "program_enrollments",
   "lesson_progress",
+  "daily_checkins",
+  "progress_photos",
   "memberships",
   "support_requests",
   "notifications",

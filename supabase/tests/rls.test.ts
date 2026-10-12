@@ -554,3 +554,64 @@ describe("daily check-in migration", () => {
     ).rejects.toThrow();
   });
 });
+
+describe("progress photos", () => {
+  const K = "00000000-0000-0000-0000-000000000013";
+  const S = "00000000-0000-0000-0000-000000000014"; // staff: owner + support
+  beforeAll(async () => {
+    await addUser(db, K);
+    await addUser(db, S);
+    await db.query(
+      "insert into public.staff_roles (user_id, role) values ($1,'owner'),($1,'support')",
+      [S],
+    );
+  });
+  const row =
+    "insert into public.progress_photos (user_id, taken_on, week_start, pose, storage_path) values ($1,'2026-10-12','2026-10-12','front', $2)";
+
+  it("lets a member add her own photo record, inside her own folder only", async () => {
+    await asUser(db, K, () => db.query(row, [K, `${K}/abc.jpg`]));
+    await expect(
+      asUser(db, K, () =>
+        db.query(row.replace("'front'", "'back'"), [K, `${A}/stolen.jpg`]),
+      ),
+    ).rejects.toThrow(); // someone else's folder
+    await expect(
+      asUser(db, K, () => db.query(row, [K, `${K}/dup.jpg`])),
+    ).rejects.toThrow(); // one photo per pose per week
+  });
+  it("hides photos from everyone else, including owners and support", async () => {
+    expect(
+      await asUser(
+        db,
+        B,
+        async () => (await db.query("select * from public.progress_photos")).rows.length,
+      ),
+    ).toBe(0);
+    expect(
+      await asUser(
+        db,
+        S,
+        async () => (await db.query("select * from public.progress_photos")).rows.length,
+      ),
+    ).toBe(0);
+  });
+  it("lets her delete her own, but nobody else's", async () => {
+    await asUser(db, S, () => db.query("delete from public.progress_photos"));
+    expect(
+      await asUser(
+        db,
+        K,
+        async () => (await db.query("select * from public.progress_photos")).rows.length,
+      ),
+    ).toBe(1);
+    await asUser(db, K, () => db.query("delete from public.progress_photos"));
+    expect(
+      await asUser(
+        db,
+        K,
+        async () => (await db.query("select * from public.progress_photos")).rows.length,
+      ),
+    ).toBe(0);
+  });
+});

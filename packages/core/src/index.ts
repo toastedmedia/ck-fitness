@@ -8,3 +8,4 @@ export * from "./admin";
 export * from "./kpis";
 export * from "./checkin";
 export * from "./units";
+export * from "./photos";

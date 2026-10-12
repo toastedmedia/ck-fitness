@@ -120,12 +120,16 @@ export default async function ProgramsPage({
     p.program_tag_map.some(
       (m) => m.content_tags.tag_group === group && m.content_tags.slug === slug,
     );
+  const query = (sp.q ?? "").trim().toLowerCase().slice(0, 60);
   const filtered = all.filter(
     (p) =>
       hasTag(p, "goal", sp.goal) &&
       hasTag(p, "delivery", sp.delivery) &&
       hasTag(p, "category", sp.category) &&
-      (!sp.level || p.level === sp.level),
+      (!sp.level || p.level === sp.level) &&
+      (!query ||
+        p.title.toLowerCase().includes(query) ||
+        p.short_description.toLowerCase().includes(query)),
   );
   const t = (g: string) => ((tags.data ?? []) as Tag[]).filter((x) => x.tag_group === g);
 
@@ -220,6 +224,24 @@ export default async function ProgramsPage({
   return (
     <>
       <h1 className="font-display text-[19px] text-brand">Programs</h1>
+      <form method="get" role="search" className="flex gap-2">
+        {Object.entries(sp)
+          .filter(([k, v]) => k !== "q" && v)
+          .map(([k, v]) => (
+            <input key={k} type="hidden" name={k} value={v} />
+          ))}
+        <input
+          type="search"
+          name="q"
+          defaultValue={sp.q ?? ""}
+          placeholder="Search programs"
+          aria-label="Search programs"
+          className="min-h-11 flex-1 rounded-2xl border-2 border-line bg-surface px-3 text-sm"
+        />
+        <button className="min-h-11 rounded-button bg-brand px-4 text-xs font-bold text-on-brand">
+          Search
+        </button>
+      </form>
       <nav
         aria-label="Program views"
         className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1"

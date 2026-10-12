@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import {
   addDays,
   weekStart,
@@ -11,6 +12,7 @@ import {
 import { BarChart, LineChart } from "@/components/app/charts";
 import { Button, Cap, Card, Flash } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
+import { flags } from "@/lib/flags";
 import { logMeasurements } from "../actions";
 
 export const metadata: Metadata = { title: "Progress" };
@@ -195,6 +197,21 @@ export default async function ProgressPage({
           </form>
         </details>
       </Card>
+
+      {flags.progressPhotos ? (
+        <Card>
+          <Cap>Progress photos</Cap>
+          <p className="mt-1 text-xs text-muted">
+            Optional weekly photos. Private to you.
+          </p>
+          <Link
+            href="/progress/photos"
+            className="mt-2 inline-flex min-h-11 items-center rounded-button border-2 border-line px-4 text-xs font-bold text-brand"
+          >
+            Open photos
+          </Link>
+        </Card>
+      ) : null}
 
       <Card>
         <Cap>Weekly check-ins</Cap>

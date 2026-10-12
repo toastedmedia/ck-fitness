@@ -41,6 +41,15 @@ export async function POST(request: NextRequest) {
       });
     }
   }
+  // Photo files are not removed by the database cascade, so delete them explicitly.
+  const { data: photos } = await admin
+    .from("progress_photos")
+    .select("storage_path")
+    .eq("user_id", user.id);
+  const photoPaths = ((photos ?? []) as { storage_path: string }[]).map(
+    (p) => p.storage_path,
+  );
+  if (photoPaths.length) await admin.storage.from("progress-photos").remove(photoPaths);
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (!error) await track(null, "account_deleted");
   if (error)

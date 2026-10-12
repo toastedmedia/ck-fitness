@@ -55,12 +55,22 @@ and running the QA checklist. Nothing has yet been run against a real Supabase, 
 
 ## Planned additions (not in the original spec)
 
-- **Weekly progress photos** (front, side, back, arms raised). Guide says not in Phase 1 unless the privacy flow is complete (preferred Phase 4). Plan: behind the `progressPhotos` flag, private store (Cloudflare R2 with short-lived signed links, or Supabase private bucket), per-photo consent, EXIF stripped, randomised names, member can delete, staff cannot view by default. Needs owner sign-off on the privacy design first. Cloudflare Stream is video-only.
+- **Weekly progress photos**: now BUILT behind the `progressPhotos` flag (off). See below. Original plan note: (front, side, back, arms raised). Guide says not in Phase 1 unless the privacy flow is complete (preferred Phase 4). Plan: behind the `progressPhotos` flag, private store (Cloudflare R2 with short-lived signed links, or Supabase private bucket), per-photo consent, EXIF stripped, randomised names, member can delete, staff cannot view by default. Needs owner sign-off on the privacy design first. Cloudflare Stream is video-only.
 - Web push notifications (optional per guide); in-app notification centre is built.
 
 ## Home refinement (2026-10-10, owner-requested)
 
 Home reorganised into small components (`apps/web/src/components/home`): Header, Needs Attention (one card, any alert type, hidden when empty), Today's Workout hero (rest-day variant), Today's CK Score (only today's scheduled actions, normalised; updates instantly), My Commitment, Water, Weight Progress, BMI (secondary), This Week, Next Milestone, Apple Health preview (feature flags `apple_health_enabled`, `show_apple_health_preview`). New 15-second daily check-in (energy, soreness, sleep, mood, optional note) and missed-workout "what's getting in the way" reasons. Migration 0008. CK Score weights now Workout 40, Water 25, Check-in 15, Steps 10, Weigh-in 10 (editable in Admin -> Settings). Dev-only layout preview at `/dev/home` (404 unless `CK_DEV_PREVIEW=1`).
+
+## Extra hardening and features (2026-10-12)
+- Accessibility scan (axe) on Home preview and public pages: fixed low-contrast gold and green text (tokens darkened).
+- Security review of every endpoint and action. Added same-origin checks on delete-account, checkout, billing portal and sign-out; announcement links must be in-app paths (blocks `//evil.com`).
+- **lb/in units**: members choose kilograms/centimetres or pounds/inches (onboarding, Profile, Home, Progress). Stored values stay kg/cm.
+- Program search box on the Programs page.
+- **Progress photos (flag off)**: consent screen, four poses weekly, photos shrunk on the phone (removes hidden camera data), uploaded straight to a private bucket under random names, shown via 2-minute links, delete one or all, deleted with the account. Staff have no access policy (tested). Turn on only after owners approve the privacy design: set `progressPhotos: true` in `lib/flags.ts` and update the Privacy Policy. Migration 0009.
+
+## Environment note
+This Mac's disk is 98% full, so macOS moves project files (including `node_modules`) to iCloud and builds hang while files re-download. Recommended: free disk space and move the repo out of `~/Documents` (for example `~/Developer/ckfitness`), which is iCloud-synced.
 
 ## Closed after a spec audit (2026-10-10)
 

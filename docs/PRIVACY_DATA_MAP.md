@@ -23,3 +23,5 @@ Updated as each milestone adds tables.
 
 Staff cross-member reads (Admin) go through server routes after a role check and are limited to name, email, plan, activity and progress summaries.
 Account deletion removes all of the above by cascade; export gives the member a copy (Profile).
+| Progress photos (if enabled) | progress_photos + private `progress-photos` bucket | The member only. No staff policy of any kind; deleted with the account |
+| Daily check-in answers | daily_checkins | The member only |

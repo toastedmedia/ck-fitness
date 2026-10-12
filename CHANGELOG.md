@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-12: hardening, units, search, photos (flagged)
+- Contrast fixes from an axe scan; same-origin checks on state-changing POST routes; in-app-only announcement links.
+- lb/in units across onboarding, Profile, Home, Progress. Program search.
+- Progress photos behind `progressPhotos` flag (migration 0009, private bucket, per-set consent, delete one or all, removed on account deletion). DB tests prove staff cannot read them.
+
 ## 2026-10-10: Home refinement
 
 - Home reorganised into reusable components; hierarchy: header, Needs Attention, Today's Workout, Today's CK Score, My Commitment, Water, Weight, BMI, This Week, Next Milestone, Apple Health preview.

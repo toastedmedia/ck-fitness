@@ -14,7 +14,9 @@ Legend: ✅ built (unit/DB tested) · 🔌 built, needs an external account to v
 - 🔌 Secure video (signed Cloudflare Stream links; needs Cloudflare keys)
 - 🔌 Membership checkout, billing portal, cancel (needs Stripe keys)
 - ✅ In-app notification centre; support requests; Profile (details, notification consent, data download, delete account)
-- ⏳ Apple Health (native app), progress photos (planned, privacy design needed), web push
+- ✅ lb/in units, program search
+- 🚧 Progress photos: built, switched off (`progressPhotos` flag) until the privacy design is approved
+- ⏳ Apple Health (native app), web push
 
 ## Admin
 

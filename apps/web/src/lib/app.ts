@@ -12,6 +12,7 @@ export interface Profile {
   created_at: string;
   last_active_at: string | null;
   units: string;
+  photo_consent_at: string | null;
 }
 
 /** Everything most signed-in pages need, fetched once per request. */
@@ -21,7 +22,7 @@ export const getContext = cache(async () => {
     supabase
       .from("profiles")
       .select(
-        "first_name,last_name,onboarding_complete,timezone,hide_bmi,created_at,last_active_at,units",
+        "first_name,last_name,onboarding_complete,timezone,hide_bmi,created_at,last_active_at,units,photo_consent_at",
       )
       .eq("user_id", user.id)
       .maybeSingle(),
