@@ -72,7 +72,7 @@ export default async function Preview({
         </p>
         {!allowed ? (
           <div className="mt-2 max-w-sm">
-            <Paywall price="$29.99 CAD / month" showCta={false} />
+            <Paywall price="$29.99 CAD / month + GST" showCta={false} />
           </div>
         ) : null}
       </Panel>

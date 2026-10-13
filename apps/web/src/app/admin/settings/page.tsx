@@ -51,7 +51,10 @@ export default async function AdminSettings({
               Price shown in the app
               <input
                 name="price"
-                defaultValue={text("membership_price_display", "$29.99 CAD / month")}
+                defaultValue={text(
+                  "membership_price_display",
+                  "$29.99 CAD / month + GST",
+                )}
                 className={aInput}
               />
             </label>

@@ -32,7 +32,25 @@ export async function POST(request: NextRequest) {
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin;
   const session = await stripeClient().checkout.sessions.create({
     mode: "subscription",
-    line_items: [{ price: priceId, quantity: 1 }],
+    // GST: either a fixed Stripe tax rate (STRIPE_TAX_RATE_ID) or Stripe Tax (STRIPE_AUTOMATIC_TAX=true).
+    line_items: [
+      {
+        price: priceId,
+        quantity: 1,
+        ...(process.env.STRIPE_TAX_RATE_ID
+          ? { tax_rates: [process.env.STRIPE_TAX_RATE_ID] }
+          : {}),
+      },
+    ],
+    ...(process.env.STRIPE_AUTOMATIC_TAX === "true" && !process.env.STRIPE_TAX_RATE_ID
+      ? {
+          automatic_tax: { enabled: true },
+          billing_address_collection: "auto" as const,
+          ...(existing?.provider_customer_id
+            ? { customer_update: { address: "auto" as const } }
+            : {}),
+        }
+      : {}),
     client_reference_id: user.id,
     ...(existing?.provider_customer_id
       ? { customer: existing.provider_customer_id }

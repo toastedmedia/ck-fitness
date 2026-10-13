@@ -38,9 +38,9 @@ export default function TermsPage() {
 
         <h2 className={h}>Membership and billing</h2>
         <p className="mt-2">
-          CK Membership is [$29.99 CAD] per month and renews automatically each month
-          until you cancel. Cancel any time in Membership; you keep access until the end
-          of the period you have paid for. Fees already paid are non-refundable except
+          CK Membership is [$29.99 CAD] per month plus GST and renews automatically each
+          month until you cancel. Cancel any time in Membership; you keep access until the
+          end of the period you have paid for. Fees already paid are non-refundable except
           where the law requires. If a payment fails we give a short grace period and then
           pause member access. Prices may change with notice before your next renewal.
         </p>

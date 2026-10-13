@@ -32,7 +32,10 @@ export default async function MembershipPage({
     .select("value")
     .eq("key", "membership_price_display")
     .maybeSingle();
-  const priceText = String(price?.value ?? "$29.99 CAD / month").replace(/^"|"$/g, "");
+  const priceText = String(price?.value ?? "$29.99 CAD / month + GST").replace(
+    /^"|"$/g,
+    "",
+  );
   const { state, endsAt, cancelling, entitlement } = membership;
   if (state !== "active" && state !== "grace")
     await track((await getContext()).user.id, "paywall_viewed", { source: "membership" });
