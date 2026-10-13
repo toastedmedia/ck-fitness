@@ -58,6 +58,27 @@ export async function undoWater(): Promise<ActionResult & { removed?: number }> 
   return { ok: true, removed: data ? Number(data.value) : 0 };
 }
 
+/** Adds steps to what is already logged today, so 2,000 plus 650 becomes 2,650. */
+export async function addSteps(amount: number): Promise<void> {
+  const { supabase, user, today } = await getContext();
+  const add = Math.round(Number(amount));
+  if (!Number.isFinite(add) || add <= 0 || add > 100000) return;
+  const { data: row } = await supabase
+    .from("habit_logs")
+    .select("id,value")
+    .eq("user_id", user.id)
+    .eq("log_date", today)
+    .eq("habit_type", "steps")
+    .maybeSingle();
+  const total = Math.min(100000, Math.round(Number(row?.value ?? 0)) + add);
+  if (row) await supabase.from("habit_logs").update({ value: total }).eq("id", row.id);
+  else
+    await supabase
+      .from("habit_logs")
+      .insert({ user_id: user.id, log_date: today, habit_type: "steps", value: total });
+  refresh();
+}
+
 export async function setSteps(formData: FormData): Promise<void> {
   const { supabase, user, today } = await getContext();
   const steps = Math.round(num(formData.get("steps")));

@@ -36,6 +36,7 @@ export function CKScore({ name }: { name: string }) {
   const [sheet, setSheet] = useState(false);
   const [editSteps, setEditSteps] = useState(false);
   const [stepsDraft, setStepsDraft] = useState("");
+  const [fixTotal, setFixTotal] = useState(false);
 
   const value = (key: string): string => {
     const it = day.items.find((i) => i.key === key);
@@ -97,13 +98,14 @@ export function CKScore({ name }: { name: string }) {
                 <button
                   type="button"
                   onClick={() => {
-                    setStepsDraft(day.steps ? String(day.steps) : "");
+                    setStepsDraft("");
+                    setFixTotal(false);
                     setEditSteps((v) => !v);
                   }}
                   aria-expanded={editSteps}
                   className="min-h-9 pl-1 text-[11px] font-bold text-brand underline underline-offset-4"
                 >
-                  Update
+                  Add steps
                 </button>
               ) : null}
             </li>
@@ -115,28 +117,50 @@ export function CKScore({ name }: { name: string }) {
           onSubmit={(e) => {
             e.preventDefault();
             const n = Math.round(Number(stepsDraft));
-            if (Number.isFinite(n) && n >= 0 && n <= 100000) {
-              void day.saveSteps(n);
-              setEditSteps(false);
-            }
+            if (!Number.isFinite(n) || n < 0 || n > 100000) return;
+            if (fixTotal) void day.saveSteps(n);
+            else if (n > 0) void day.addSteps(n);
+            setEditSteps(false);
           }}
-          className="mt-2 flex items-end gap-2 border-t border-line pt-2"
+          className="mt-2 border-t border-line pt-2"
         >
-          <label className="flex-1 text-xs font-semibold">
-            Steps today
-            <input
-              type="number"
-              inputMode="numeric"
-              min={0}
-              max={100000}
-              value={stepsDraft}
-              onChange={(e) => setStepsDraft(e.target.value)}
-              className="mt-1 min-h-11 w-full rounded-2xl border-2 border-line bg-surface px-3 text-sm"
-            />
-          </label>
-          <button className="min-h-11 rounded-button bg-brand px-4 text-xs font-bold text-on-brand">
-            Save
-          </button>
+          <div className="flex items-end gap-2">
+            <label className="flex-1 text-xs font-semibold">
+              {fixTotal
+                ? "Correct my total steps for today"
+                : `Steps to add (you have ${day.steps.toLocaleString("en-CA")} today)`}
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={100000}
+                value={stepsDraft}
+                onChange={(e) => setStepsDraft(e.target.value)}
+                placeholder={fixTotal ? String(day.steps) : "For example 500"}
+                className="mt-1 min-h-11 w-full rounded-2xl border-2 border-line bg-surface px-3 text-sm"
+              />
+            </label>
+            <button className="min-h-11 rounded-button bg-brand px-4 text-xs font-bold text-on-brand">
+              {fixTotal ? "Save" : "Add"}
+            </button>
+          </div>
+          <div className="mt-1 flex items-center justify-between gap-2 text-[11px]">
+            <span className="text-muted" aria-live="polite">
+              {!fixTotal && Number(stepsDraft) > 0
+                ? `New total: ${(day.steps + Math.round(Number(stepsDraft))).toLocaleString("en-CA")}`
+                : ""}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setFixTotal((v) => !v);
+                setStepsDraft("");
+              }}
+              className="min-h-9 font-bold text-brand underline underline-offset-4"
+            >
+              {fixTotal ? "Add to my total instead" : "Fix my total"}
+            </button>
+          </div>
         </form>
       ) : null}
       {day.error ? (

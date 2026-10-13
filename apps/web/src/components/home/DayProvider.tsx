@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { ckScore, scoreItems, type DailyGoals, type ScoreItem } from "@ck/core";
 import {
+  addSteps as addStepsAction,
   addWater as addWaterAction,
   setSteps as setStepsAction,
   undoWater as undoWaterAction,
@@ -26,6 +27,7 @@ interface DayContextValue extends DayState {
   addWater: (ml: number) => Promise<void>;
   undoWater: () => Promise<void>;
   saveSteps: (steps: number) => Promise<void>;
+  addSteps: (amount: number) => Promise<void>;
   markCheckinDone: () => void;
 }
 
@@ -129,6 +131,16 @@ export function DayProvider({
       fd.set("steps", String(steps));
       try {
         await setStepsAction(fd);
+      } catch {
+        fail(previous, "We could not save your steps. Please try again.");
+      }
+    },
+    async addSteps(amount) {
+      const previous = state;
+      setError(undefined);
+      setState({ ...state, steps: Math.min(100000, state.steps + amount) });
+      try {
+        await addStepsAction(amount);
       } catch {
         fail(previous, "We could not save your steps. Please try again.");
       }

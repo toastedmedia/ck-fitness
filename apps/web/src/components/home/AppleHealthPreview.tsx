@@ -10,7 +10,7 @@ export function AppleHealthPreview() {
         <b className="block text-xs text-brand">Apple Health</b>
         <p className="text-[11px] text-muted">Automatic steps &amp; activity tracking</p>
       </div>
-      <Pill tone="navy">Coming in Phase 2</Pill>
+      <Pill tone="navy">Coming soon</Pill>
     </div>
   );
 }

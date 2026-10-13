@@ -254,6 +254,8 @@ export default async function HomePage({
         initial={(name[0] ?? "?").toUpperCase()}
       />
 
+      {earned ? <NextMilestone text={null} earned={earned} /> : null}
+
       {sp.error === "weight" ? (
         <Flash tone="error">Enter a weight between 35 and 300 kg.</Flash>
       ) : null}
@@ -303,7 +305,7 @@ export default async function HomePage({
         streak={streak}
       />
 
-      <NextMilestone text={milestone?.text ?? null} earned={earned} />
+      <NextMilestone text={milestone?.text ?? null} earned={null} />
 
       {!isMember && !native ? (
         <Card className="bg-page">

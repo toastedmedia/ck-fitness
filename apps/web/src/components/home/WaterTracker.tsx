@@ -39,10 +39,10 @@ export function WaterTracker() {
       </div>
       <div className="mt-3 flex gap-2">
         <button type="button" className={btn} onClick={() => void day.addWater(250)}>
-          +250 mL
+          Add 250 mL
         </button>
         <button type="button" className={btn} onClick={() => void day.addWater(500)}>
-          +500 mL
+          Add 500 mL
         </button>
         {day.waterMl > 0 ? (
           <button
