@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { compressPhoto } from "@/lib/image-compress";
+import { FilePick } from "@/components/admin/FilePick";
 
 /**
  * A file picker for cover images and thumbnails. Big phone photos are shrunk in the browser before
@@ -30,13 +31,13 @@ export function ImageInput({ name, id }: { name: string; id?: string }) {
 
   return (
     <>
-      <input
-        type="file"
+      <FilePick
         id={id}
         name={name}
         accept="image/jpeg,image/png,image/webp"
+        label="Choose image"
+        showName={false}
         onChange={onChange}
-        className="mt-1 block text-sm"
       />
       {note ? (
         <span className="text-xs font-normal text-muted" role="status">

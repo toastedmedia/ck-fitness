@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
+import { FilePick } from "@/components/admin/FilePick";
 
 const PART = 64 * 1024 * 1024; // 64 MB slices; R2 allows up to 10,000, so files up to ~640 GB.
 const PARALLEL = 3;
@@ -114,17 +115,16 @@ export function VideoUploader({
       </p>
       {canEdit ? (
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <input
-            ref={input}
-            type="file"
+          <FilePick
+            inputRef={input}
             accept="video/mp4,video/quicktime,video/webm,video/*"
+            label={attached ? "Replace video" : "Choose video"}
             disabled={pct !== null}
+            showName={false}
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (f) void upload(f);
             }}
-            className="text-sm"
-            aria-label="Choose a video file"
           />
           {attached && pct === null ? (
             <button

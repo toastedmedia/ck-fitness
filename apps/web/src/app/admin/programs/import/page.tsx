@@ -1,3 +1,4 @@
+import { FilePick } from "@/components/admin/FilePick";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ABtn, Flash, H1, Panel, aInput } from "@/components/admin/ui";
@@ -67,7 +68,7 @@ export default async function ImportPrograms({
           className="flex flex-col gap-3"
           encType="multipart/form-data"
         >
-          <input type="file" name="file" accept=".csv,text/csv" className="text-sm" />
+          <FilePick name="file" accept=".csv,text/csv" label="Choose CSV file" />
           <details>
             <summary className="cursor-pointer text-sm font-bold text-brand">
               Or paste the CSV text

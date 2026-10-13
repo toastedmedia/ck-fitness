@@ -9,7 +9,7 @@ import { getViewer } from "@/lib/viewer";
 export const metadata: Metadata = { title: "Programs" };
 
 const VIEWS = [
-  ["discover", "Discover"],
+  ["all", "All programs"],
   ["mine", "My Programs"],
   ["free", "Free"],
   ["member", "Member Library"],
@@ -39,7 +39,7 @@ export default async function ProgramsPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const sp = await searchParams;
-  const view = VIEWS.some(([v]) => v === sp.view) ? sp.view! : "discover";
+  const view = VIEWS.some(([v]) => v === sp.view) ? sp.view! : "all";
   const ctx = await getContext();
   const { supabase, user } = ctx;
   const { viewer } = await getViewer();
@@ -158,7 +158,7 @@ export default async function ProgramsPage({
       <section key={title} className="flex flex-col gap-2">
         <h2 className="text-sm font-bold text-brand">{title}</h2>
         <div className="flex flex-col gap-3">
-          {rows.slice(0, 3).map((p) => (
+          {rows.map((p) => (
             <ProgramCard key={p.slug} p={toCard(p)} />
           ))}
         </div>
@@ -168,7 +168,7 @@ export default async function ProgramsPage({
   if (view === "mine")
     body = list(
       filtered.filter((p) => enrolled.has(p.id)),
-      "You have not started a program yet. Pick one from Discover.",
+      "You have not started a program yet. Pick one from All programs.",
     );
   else if (view === "free")
     body = list(filtered.filter((p) => p.access_level === "free"));
@@ -192,27 +192,19 @@ export default async function ProgramsPage({
       </>
     );
   } else {
+    // Every program appears exactly once: the ones she has started, then free, then the member library.
+    const started = filtered.filter((p) => enrolled.has(p.id));
+    const rest = filtered.filter((p) => !enrolled.has(p.id));
     body = (
       <div className="flex flex-col gap-5">
+        {row("Continue training", started)}
         {row(
-          "Continue training",
-          filtered.filter((p) => enrolled.has(p.id)),
+          "Free programs",
+          rest.filter((p) => p.access_level === "free"),
         )}
         {row(
-          "Start here",
-          all.filter((p) => hasTag(p, "category", "start_here")),
-        )}
-        {row(
-          "Free foundations",
-          filtered.filter((p) => p.access_level === "free"),
-        )}
-        {row(
-          "Popular",
-          filtered.filter((p) => p.featured),
-        )}
-        {row(
-          "New",
-          [...filtered].sort((a, b) => b.created_at.localeCompare(a.created_at)),
+          "Member library",
+          rest.filter((p) => p.access_level !== "free"),
         )}
         {filtered.length === 0 ? (
           <p className="text-xs text-muted">No programs match these filters.</p>
@@ -249,7 +241,7 @@ export default async function ProgramsPage({
         {VIEWS.map(([v, label]) => (
           <Link
             key={v}
-            href={qs({ view: v === "discover" ? undefined : v })}
+            href={qs({ view: v === "all" ? undefined : v })}
             aria-current={view === v ? "page" : undefined}
             className={chip(view === v)}
           >

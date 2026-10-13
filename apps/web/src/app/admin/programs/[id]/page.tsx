@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ABtn, Flash, H1, Panel, Status, Tile, aInput } from "@/components/admin/ui";
+import { FilePick } from "@/components/admin/FilePick";
 import { ImageInput } from "@/components/admin/ImageInput";
 import { LessonPreview } from "@/components/admin/LessonPreview";
 import { VideoUploader } from "@/components/admin/VideoUploader";
@@ -465,31 +466,47 @@ export default async function EditProgram({
                     ) : null}
                     <ImageInput name="cover" />
                   </div>
-                  <fieldset className="md:col-span-2">
-                    <legend className={lab}>Tags</legend>
-                    {[...tagGroups.entries()].map(([group, list]) => (
-                      <div
-                        key={group}
-                        className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1"
-                      >
-                        <span className="w-20 text-[11px] font-bold uppercase text-muted">
-                          {group}
-                        </span>
-                        {list.map((t) => (
-                          <label key={t.id} className="flex items-center gap-1.5 text-sm">
-                            <input
-                              type="checkbox"
-                              name="tags"
-                              value={t.id}
-                              defaultChecked={byTag.has(t.id)}
-                              className="size-4 accent-brand"
-                            />
-                            {t.label}
-                          </label>
-                        ))}
-                      </div>
-                    ))}
-                  </fieldset>
+                  <details
+                    className="rounded-xl border border-line md:col-span-2"
+                    open={byTag.size === 0}
+                  >
+                    <summary className="flex min-h-11 cursor-pointer items-center justify-between gap-2 px-3 text-sm font-bold text-brand">
+                      <span>Tags</span>
+                      <span className="text-xs font-normal text-muted">
+                        {byTag.size ? `${byTag.size} selected` : "None selected yet"}
+                      </span>
+                    </summary>
+                    <div className="flex flex-col gap-3 border-t border-line p-3">
+                      <p className="text-xs text-muted">
+                        Tags help members search and filter. Tap a tag to turn it on or
+                        off. Keep it to a few: Category and Goal matter most.
+                      </p>
+                      {[...tagGroups.entries()].map(([group, list]) => (
+                        <div key={group} className="flex flex-col gap-1.5">
+                          <span className="text-[11px] font-bold uppercase tracking-wide text-muted">
+                            {group}
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {list.map((t) => (
+                              <label
+                                key={t.id}
+                                className="inline-flex min-h-9 cursor-pointer items-center rounded-full border-2 border-line bg-surface px-3 text-xs font-bold text-brand has-[:checked]:border-brand has-[:checked]:bg-brand has-[:checked]:text-on-brand has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent"
+                              >
+                                <input
+                                  type="checkbox"
+                                  name="tags"
+                                  value={t.id}
+                                  defaultChecked={byTag.has(t.id)}
+                                  className="sr-only"
+                                />
+                                {t.label}
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
                   {canEdit ? (
                     <div className="md:col-span-2">
                       <ABtn variant="primary">Save details</ABtn>
@@ -987,20 +1004,15 @@ function LessonForm({
         Safety note
         <input name="safety_notes" defaultValue={v("safety_notes")} className={aInput} />
       </label>
-      <label className={`${lab} md:col-span-2`}>
+      <div className={`${lab} flex flex-col gap-1 md:col-span-2`}>
         Downloadable guide (PDF, under 4 MB)
-        <input
-          type="file"
-          name="resource"
-          accept="application/pdf,image/*"
-          className="mt-1 block text-sm"
-        />
+        <FilePick name="resource" accept="application/pdf,image/*" label="Choose PDF" />
         {lesson.resource_path ? (
           <span className="text-xs font-normal text-muted">
             A file is attached. Uploading replaces it.
           </span>
         ) : null}
-      </label>
+      </div>
       {canEdit ? (
         <div className="flex flex-wrap gap-2 border-t border-line pt-3 md:col-span-2">
           <button
