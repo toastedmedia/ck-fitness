@@ -104,6 +104,145 @@ export async function updateProgram(id: string, formData: FormData): Promise<voi
   redirect(`/admin/programs/${id}?saved=1`);
 }
 
+/** Deletes a thumbnail file only when no lesson uses it any more (cloned lessons share files). */
+async function releaseThumbnail(
+  supabase: Awaited<ReturnType<typeof requireStaff>>["supabase"],
+  db: Awaited<ReturnType<typeof requireStaff>>["db"],
+  path: string | null | undefined,
+) {
+  if (!path) return;
+  const { count } = await db
+    .from("lessons")
+    .select("*", { count: "exact", head: true })
+    .eq("thumbnail_path", path);
+  if (!count) await supabase.storage.from("program-thumbnails").remove([path]);
+}
+
+/** Swaps an item with its neighbour and renumbers the whole list 1..n so order is always clean. */
+async function moveWithin(
+  supabase: Awaited<ReturnType<typeof requireStaff>>["supabase"],
+  table: "lessons" | "program_sections",
+  parentCol: "section_id" | "program_id",
+  parentId: string,
+  id: string,
+  dir: "up" | "down",
+) {
+  const { data } = await supabase
+    .from(table)
+    .select("id")
+    .eq(parentCol, parentId)
+    .order("order_index")
+    .order("id");
+  const ids = ((data ?? []) as { id: string }[]).map((r) => r.id);
+  const i = ids.indexOf(id);
+  const j = dir === "up" ? i - 1 : i + 1;
+  if (i < 0 || j < 0 || j >= ids.length) return;
+  [ids[i], ids[j]] = [ids[j], ids[i]];
+  await Promise.all(
+    ids.map((x, n) =>
+      supabase
+        .from(table)
+        .update({ order_index: n + 1 })
+        .eq("id", x),
+    ),
+  );
+}
+
+export async function moveLesson(
+  programId: string,
+  sectionId: string,
+  lessonId: string,
+  dir: "up" | "down",
+): Promise<void> {
+  const { supabase } = await requireStaff(CONTENT);
+  await moveWithin(supabase, "lessons", "section_id", sectionId, lessonId, dir);
+  redirect(`/admin/programs/${programId}?lesson=${lessonId}`);
+}
+
+export async function moveSection(
+  programId: string,
+  sectionId: string,
+  dir: "up" | "down",
+): Promise<void> {
+  const { supabase } = await requireStaff(CONTENT);
+  await moveWithin(supabase, "program_sections", "program_id", programId, sectionId, dir);
+  redirect(`/admin/programs/${programId}?week=${sectionId}`);
+}
+
+/** Adds an empty draft lesson at the end of a week and opens it. */
+export async function createLesson(programId: string, sectionId: string): Promise<void> {
+  const { supabase, user } = await requireStaff(CONTENT);
+  const { data: last } = await supabase
+    .from("lessons")
+    .select("order_index")
+    .eq("section_id", sectionId)
+    .order("order_index", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const { data, error } = await supabase
+    .from("lessons")
+    .insert({
+      section_id: sectionId,
+      title: "New lesson",
+      order_index: (last?.order_index ?? 0) + 1,
+      published: false,
+    })
+    .select("id")
+    .single();
+  if (error || !data) redirect(`/admin/programs/${programId}?error=save`);
+  await audit(supabase, user.id, "lesson.create", data.id);
+  redirect(`/admin/programs/${programId}?lesson=${data.id}`);
+}
+
+/** Copies a week and all its lessons as drafts (videos and thumbnails are shared, not duplicated). */
+export async function duplicateSection(
+  programId: string,
+  sectionId: string,
+): Promise<void> {
+  const { supabase, user } = await requireStaff(CONTENT);
+  const { data: s } = await supabase
+    .from("program_sections")
+    .select("*")
+    .eq("id", sectionId)
+    .maybeSingle();
+  if (!s) redirect(`/admin/programs/${programId}?error=save`);
+  const { data: last } = await supabase
+    .from("program_sections")
+    .select("order_index")
+    .eq("program_id", programId)
+    .order("order_index", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const { id: _sid, ...srest } = s;
+  void _sid;
+  const { data: copy } = await supabase
+    .from("program_sections")
+    .insert({
+      ...srest,
+      title: `${s.title} (copy)`,
+      order_index: (last?.order_index ?? 0) + 1,
+      published: false,
+    })
+    .select("id")
+    .single();
+  if (!copy) redirect(`/admin/programs/${programId}?error=save`);
+  const { data: ls } = await supabase
+    .from("lessons")
+    .select("*")
+    .eq("section_id", sectionId)
+    .order("order_index");
+  if (ls?.length)
+    await supabase.from("lessons").insert(
+      ls.map((l) => {
+        const { id: _lid, ...rest } = l;
+        void _lid;
+        return { ...rest, section_id: copy.id, published: false };
+      }),
+    );
+  await audit(supabase, user.id, "section.duplicate", sectionId);
+  redirect(`/admin/programs/${programId}?week=${copy.id}&saved=1`);
+}
+
 export async function addSection(programId: string, formData: FormData): Promise<void> {
   const { supabase, user } = await requireStaff(CONTENT);
   const title = str(formData, "title", 120);
@@ -118,14 +257,19 @@ export async function addSection(programId: string, formData: FormData): Promise
   const type = ["phase", "week", "module"].includes(str(formData, "section_type"))
     ? str(formData, "section_type")
     : "week";
-  await supabase.from("program_sections").insert({
-    program_id: programId,
-    title,
-    section_type: type,
-    order_index: (last?.order_index ?? 0) + 1,
-  });
+  const { data: made } = await supabase
+    .from("program_sections")
+    .insert({
+      program_id: programId,
+      title,
+      section_type: type,
+      order_index: (last?.order_index ?? 0) + 1,
+      published: false,
+    })
+    .select("id")
+    .single();
   await audit(supabase, user.id, "section.add", programId, { title });
-  redirect(`/admin/programs/${programId}?saved=1`);
+  redirect(`/admin/programs/${programId}?${made ? `week=${made.id}&` : ""}saved=1`);
 }
 
 export async function updateSection(
@@ -143,12 +287,20 @@ export async function updateSection(
     })
     .eq("id", sectionId);
   await audit(supabase, user.id, "section.update", sectionId);
-  redirect(`/admin/programs/${programId}?saved=1`);
+  redirect(`/admin/programs/${programId}?week=${sectionId}&saved=1`);
 }
 
 export async function deleteSection(programId: string, sectionId: string): Promise<void> {
-  const { supabase, user } = await requireStaff(CONTENT);
+  const { supabase, user, db } = await requireStaff(CONTENT);
+  const { data: gone } = await supabase
+    .from("lessons")
+    .select("video_key,thumbnail_path")
+    .eq("section_id", sectionId);
   await supabase.from("program_sections").delete().eq("id", sectionId);
+  for (const l of gone ?? []) {
+    await releaseVideo(db, l.video_key);
+    await releaseThumbnail(supabase, db, l.thumbnail_path);
+  }
   await audit(supabase, user.id, "section.delete", sectionId);
   redirect(`/admin/programs/${programId}?saved=1`);
 }
@@ -160,7 +312,7 @@ export async function saveLesson(
   lessonId: string,
   formData: FormData,
 ): Promise<void> {
-  const { supabase, user } = await requireStaff(CONTENT);
+  const { supabase, user, db } = await requireStaff(CONTENT);
   const override = str(formData, "access_override");
   const row: Record<string, unknown> = {
     section_id: sectionId,
@@ -173,9 +325,15 @@ export async function saveLesson(
     duration_minutes: int(formData, "duration_minutes") || null,
     access_override: LEVELS.includes(override) ? override : null,
     order_index: int(formData, "order_index"),
-    published: formData.get("published") === "on",
   };
-  if (!row.title) redirect(`/admin/programs/${programId}?error=lesson`);
+  // Save keeps the current status; the two buttons beside it publish or unpublish in one click.
+  const intent = str(formData, "intent");
+  if (intent === "publish") row.published = true;
+  else if (intent === "unpublish") row.published = false;
+  else if (lessonId === "new") row.published = false;
+  const back = (q: string) =>
+    `/admin/programs/${programId}?${lessonId !== "new" ? `lesson=${lessonId}&` : ""}${q}`;
+  if (!row.title) redirect(back("error=lesson"));
   let id = lessonId;
   if (lessonId === "new") {
     const { data, error } = await supabase
@@ -187,7 +345,7 @@ export async function saveLesson(
     id = data.id;
   } else {
     const { error } = await supabase.from("lessons").update(row).eq("id", lessonId);
-    if (error) redirect(`/admin/programs/${programId}?error=save`);
+    if (error) redirect(back("error=save"));
   }
   const file = formData.get("resource");
   if (file instanceof File && file.size > 0) {
@@ -195,12 +353,12 @@ export async function saveLesson(
       !["application/pdf", "image/jpeg", "image/png", "image/webp"].includes(file.type) ||
       file.size > 4_194_304
     )
-      redirect(`/admin/programs/${programId}?error=resource`);
+      redirect(`/admin/programs/${programId}?lesson=${id}&error=resource`);
     const path = `${id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
     const { error } = await supabase.storage
       .from("program-resources")
       .upload(path, file, { contentType: file.type });
-    if (error) redirect(`/admin/programs/${programId}?error=resource`);
+    if (error) redirect(`/admin/programs/${programId}?lesson=${id}&error=resource`);
     await supabase.from("lessons").update({ resource_path: path }).eq("id", id);
   }
   const thumb = formData.get("thumbnail");
@@ -217,18 +375,17 @@ export async function saveLesson(
         !["image/jpeg", "image/png", "image/webp"].includes(thumb.type) ||
         thumb.size > 2_097_152
       )
-        redirect(`/admin/programs/${programId}?error=cover`);
+        redirect(`/admin/programs/${programId}?lesson=${id}&error=cover`);
       const ext =
         thumb.type === "image/png" ? "png" : thumb.type === "image/webp" ? "webp" : "jpg";
       next = `lessons/${id}/${Date.now()}.${ext}`;
       const { error } = await supabase.storage
         .from("program-thumbnails")
         .upload(next, thumb, { contentType: thumb.type });
-      if (error) redirect(`/admin/programs/${programId}?error=cover`);
+      if (error) redirect(`/admin/programs/${programId}?lesson=${id}&error=cover`);
     }
     await supabase.from("lessons").update({ thumbnail_path: next }).eq("id", id);
-    if (cur?.thumbnail_path)
-      await supabase.storage.from("program-thumbnails").remove([cur.thumbnail_path]);
+    await releaseThumbnail(supabase, db, cur?.thumbnail_path);
   }
   await audit(
     supabase,
@@ -238,7 +395,9 @@ export async function saveLesson(
     { title: row.title },
   );
   revalidatePath("/programs");
-  redirect(`/admin/programs/${programId}?saved=1`);
+  redirect(
+    `/admin/programs/${programId}?lesson=${id}&${intent === "publish" ? "lpub=1" : intent === "unpublish" ? "lunpub=1" : "saved=1"}`,
+  );
 }
 
 export async function duplicateLesson(
@@ -254,13 +413,18 @@ export async function duplicateLesson(
   if (l) {
     const { id: _id, ...rest } = l;
     void _id;
-    await supabase.from("lessons").insert({
-      ...rest,
-      title: `${l.title} (copy)`,
-      order_index: l.order_index + 1,
-      published: false,
-    });
+    const { data: copy } = await supabase
+      .from("lessons")
+      .insert({
+        ...rest,
+        title: `${l.title} (copy)`,
+        order_index: l.order_index + 1,
+        published: false,
+      })
+      .select("id")
+      .single();
     await audit(supabase, user.id, "lesson.duplicate", lessonId);
+    if (copy) redirect(`/admin/programs/${programId}?lesson=${copy.id}&cloned=1`);
   }
   redirect(`/admin/programs/${programId}?saved=1`);
 }
@@ -269,11 +433,12 @@ export async function deleteLesson(programId: string, lessonId: string): Promise
   const { supabase, user, db } = await requireStaff(CONTENT);
   const { data: gone } = await supabase
     .from("lessons")
-    .select("video_key")
+    .select("video_key,thumbnail_path")
     .eq("id", lessonId)
     .maybeSingle();
   await supabase.from("lessons").delete().eq("id", lessonId);
   await releaseVideo(db, gone?.video_key);
+  await releaseThumbnail(supabase, db, gone?.thumbnail_path);
   await audit(supabase, user.id, "lesson.delete", lessonId);
   redirect(`/admin/programs/${programId}?saved=1`);
 }

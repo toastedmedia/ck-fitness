@@ -6,7 +6,7 @@ import { compressPhoto } from "@/lib/image-compress";
  * A file picker for cover images and thumbnails. Big phone photos are shrunk in the browser before
  * saving (a few hundred KB instead of many MB), so saving is fast and never hits upload limits.
  */
-export function ImageInput({ name }: { name: string }) {
+export function ImageInput({ name, id }: { name: string; id?: string }) {
   const [note, setNote] = useState("");
 
   async function onChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -32,6 +32,7 @@ export function ImageInput({ name }: { name: string }) {
     <>
       <input
         type="file"
+        id={id}
         name={name}
         accept="image/jpeg,image/png,image/webp"
         onChange={onChange}

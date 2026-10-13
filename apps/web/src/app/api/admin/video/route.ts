@@ -4,6 +4,7 @@ import {
   abortUpload,
   completeUpload,
   partUrl,
+  playbackLink,
   r2Configured,
   r2Missing,
   releaseVideo,
@@ -102,6 +103,11 @@ export async function POST(request: NextRequest) {
       case "abort": {
         if (ownKey(b.key) && b.uploadId) await abortUpload(b.key as string, b.uploadId);
         return NextResponse.json({ ok: true });
+      }
+      case "preview": {
+        const k = lesson.video_key as string | null;
+        if (!k) return err("This lesson has no video yet.", 404);
+        return NextResponse.json({ url: await playbackLink(k, 3600) });
       }
       case "remove": {
         const old = lesson.video_key as string | null;
