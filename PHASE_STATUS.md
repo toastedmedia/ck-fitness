@@ -19,24 +19,26 @@ and running the QA checklist. Nothing has yet been run against a real Supabase, 
 
 `npm run check`: format, lint, types, **core tests (54)**, web tests (5), **database tests (28)** that run every migration in an in-memory Postgres and verify row-level security, production build.
 
-## Accounts checklist
+## Accounts checklist (updated 2026-10-12)
+| Account | Status | Needed by |
+| --- | --- | --- |
+| GitHub `toastedmedia/ck-fitness` | Done, code pushed | 1A |
+| Domain chardikalafitness.com | Owned; app lives at **app.chardikalafitness.com** (www stays for the marketing site) | 1A |
+| Supabase org "CK Fitness" + **staging** project (`vzmypydzqwcztsiwonvk`) | **Done.** All 9 migrations applied, tags loaded | 1A |
+| Vercel project `ck-fitness` (root `apps/web`, Git connected) | **Done.** Live at https://app.chardikalafitness.com. Env vars set: Supabase URL, anon, service role, `NEXT_PUBLIC_SITE_URL`, `CRON_SECRET` | 1A |
+| Supabase redirect URLs (Site URL + `/auth/callback`) | Owner to confirm | 1B |
+| Supabase "Confirm email" | Temporarily off for first test, turn ON after Resend | 1B |
+| **Resend** (sending domain, Supabase SMTP) | **Pending (owner, later)** | 1B |
+| Support inbox (support@chardikalafitness.com) | Pending | before launch |
+| Cloudflare Stream (+ signing key) | Pending | 1D video |
+| Stripe (CAD, business verification, product + webhook) | Pending | 1E payments |
+| Toasted Media CRM API token | Pending | 1F sync |
+| Sentry | Pending | 1G monitoring |
+| Google Analytics | Pending (optional) | 1G |
+| Supabase **production** project (Pro) | Pending | go live |
+| Apple Developer | Owned (Phase 2) | Phase 2 |
 
-| Account                                                | Status                    | Needed by        |
-| ------------------------------------------------------ | ------------------------- | ---------------- |
-| GitHub `toastedmedia/ck-fitness`                       | Done, code pushed         | 1A               |
-| Domain chardikalafitness.com                           | Owned                     | 1A               |
-| Supabase org "CK Fitness"                              | Created                   | 1A               |
-| Supabase **staging** project + keys                    | Pending (owners, morning) | verify 1B onward |
-| Vercel (root dir `apps/web`)                           | Pending                   | deploy           |
-| Resend + Supabase SMTP                                 | Pending                   | sign-up emails   |
-| Support inbox (support@chardikalafitness.com)          | Pending                   | before launch    |
-| Cloudflare Stream (+ signing key)                      | Pending                   | 1D video         |
-| Stripe (CAD, business verification, product + webhook) | Pending                   | 1E payments      |
-| Toasted Media CRM API token                            | Pending                   | 1F sync          |
-| Sentry                                                 | Pending                   | 1G monitoring    |
-| Google Analytics                                       | Pending (optional)        | 1G               |
-| Supabase **production** project (Pro)                  | Pending                   | go live          |
-| Apple Developer                                        | Owned                     | Phase 2          |
+Vercel cleanup still to do: remove unused Supabase-integration variables (`POSTGRES_*`, `SUPABASE_JWT_SECRET`, `SUPABASE_SECRET_KEY`, `SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`); set Node.js to 22.x; tick Preview/Development on the Supabase variables.
 
 ## Next steps (in order)
 
