@@ -68,10 +68,11 @@ export function SignupForm() {
   );
 }
 
-export function LoginForm() {
+export function LoginForm({ next }: { next?: string }) {
   const [state, formAction] = useForm(logIn);
   return (
     <form action={formAction} className="mt-6 flex flex-col gap-4">
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       <Field label="Email" name="email" type="email" autoComplete="email" required />
       <Field
         label="Password"

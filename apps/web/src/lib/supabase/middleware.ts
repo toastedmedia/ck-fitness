@@ -19,6 +19,11 @@ const startsWith = (path: string, list: string[]) =>
 
 /** Refreshes the login session on every request and applies the simple route guards. */
 export async function updateSession(request: NextRequest) {
+  const toLogin = () => {
+    const url = new URL("/login", request.url);
+    url.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);
+    return NextResponse.redirect(url);
+  };
   let response = NextResponse.next({ request });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -26,8 +31,7 @@ export async function updateSession(request: NextRequest) {
 
   // Without Supabase configured (fresh checkout), only protected pages are blocked.
   if (!url || !key) {
-    if (startsWith(path, PROTECTED))
-      return NextResponse.redirect(new URL("/login", request.url));
+    if (startsWith(path, PROTECTED)) return toLogin();
     return response;
   }
 
@@ -49,7 +53,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!user && startsWith(path, PROTECTED)) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return toLogin();
   }
   if (user && (path === "/" || startsWith(path, GUEST_ONLY))) {
     return NextResponse.redirect(new URL("/home", request.url));

@@ -5,6 +5,7 @@ for (const path of ["/home", "/programs", "/progress", "/accountability", "/prof
   test(`${path} sends signed-out visitors to log in`, async ({ page }) => {
     await page.goto(path);
     await expect(page).toHaveURL(/\/login/);
+    await expect(page).toHaveURL(new RegExp(`next=${encodeURIComponent(path).replace(/%/g, "%")}`));
   });
 }
 

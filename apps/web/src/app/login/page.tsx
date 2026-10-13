@@ -7,9 +7,9 @@ export const metadata: Metadata = { title: "Log in" };
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
   return (
     <AuthShell title="Welcome back">
       {error === "link" ? (
@@ -20,7 +20,7 @@ export default async function Page({
           That link has expired. Please log in, or ask for a new reset link.
         </p>
       ) : null}
-      <LoginForm />
+      <LoginForm next={next && /^\/(?![/\\])/.test(next) ? next : undefined} />
     </AuthShell>
   );
 }

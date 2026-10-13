@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { safeNext } from "@/lib/auth";
 import { queueCrm, track } from "@/lib/events";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -65,7 +66,8 @@ export async function logIn(_prev: FormState, formData: FormData): Promise<FormS
   const supabase = await createServerSupabase();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: "That email and password do not match. Please try again." };
-  redirect("/home");
+  // Go back to where she was heading (for example /admin), otherwise Home.
+  redirect(safeNext(String(formData.get("next") ?? ""), "/home"));
 }
 
 export async function requestPasswordReset(
