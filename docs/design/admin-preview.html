@@ -720,6 +720,51 @@
       <div class="panel"><h3>Privacy</h3><p class="note" style="margin:0">Weight, measurements and safety answers are private to each member and are not shown to staff. Every change to access or roles is written to the audit log.</p></div>`,
     },
 
+    client: {
+      label: "Client record",
+      url: "/admin/users/priya-sharma",
+      render: () => `
+      <div class="head"><div><h2 class="pg">Priya Sharma</h2><span class="sub">Member · joined 3 Oct · sample data</span></div><button class="btn">All users</button></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary">Overview</button><button class="btn">Questionnaire</button><button class="btn">Check-ins</button><button class="btn">Progress</button><button class="btn">Photos</button><button class="btn">Notes</button></div>
+      <div class="panel"><h3>Contact details <small>every change is logged</small></h3><div class="form">
+        <div class="f">First name<div>Priya</div></div><div class="f">Last name<div>Sharma</div></div>
+        <div class="f">Email<div>priya@example.com</div></div><div class="f">Phone<div>+1 (604) 555-0123</div></div></div>
+        <div style="margin-top:10px"><button class="btn primary">Save contact details</button></div></div>
+      <div class="grid2">
+        <div class="panel"><h3>Questionnaire <small>shared by Priya</small></h3><div class="form" style="font-size:12.5px">
+          <div class="f">Main goal<div>Fat loss</div></div><div class="f">Level<div>Intermediate</div></div>
+          <div class="f">Trains<div>At home · mat, bands</div></div><div class="f">Training days<div>Mon, Wed, Fri · 7:00 AM</div></div>
+          <div class="f">Food preference<div>Vegetarian</div></div><div class="f">Sleep<div>6 to 7 hours</div></div>
+          <div class="f full">Injuries or limitations<div>Mild knee discomfort on deep lunges</div></div>
+          <div class="f full">Why she is starting<div>Wants energy back after a busy year</div></div></div></div>
+        <div class="panel"><h3>Latest check-ins</h3><table style="min-width:0"><thead><tr><th>Day</th><th>Energy</th><th>Sleep</th><th>Mood</th></tr></thead><tbody>
+          <tr><td>Today</td><td><span class="st ok">Good</span></td><td><span class="st mute">Fair</span></td><td><span class="st ok">Good</span></td></tr>
+          <tr><td>Fri</td><td><span class="st warn">Low</span></td><td><span class="st warn">Poor</span></td><td><span class="st mute">Okay</span></td></tr>
+          <tr><td>Thu</td><td><span class="st ok">Great</span></td><td><span class="st ok">Good</span></td><td><span class="st ok">Great</span></td></tr></tbody></table>
+          <p class="note">Weight 67.2 kg (down 1.2). Waist 74 cm.</p></div>
+      </div>
+      <div class="panel"><h3>Sharing</h3><p style="margin:0;font-size:13px">Priya shares her records with her coach <span class="st ok">Yes</span> and her photos <span class="st mute">No</span>. If she turns sharing off, these tabs lock immediately. Each time you open them it is recorded in the audit log.</p></div>`,
+    },
+
+    billing: {
+      label: "Billing",
+      url: "/admin/billing",
+      render: () => `
+      <div class="head"><div><h2 class="pg">Billing and subscriptions</h2><span class="sub">Sample data</span></div><button class="btn">Open Stripe</button></div>
+      <div class="tiles">
+        <div class="tile"><b>87</b><span>Paying members</span></div><div class="tile"><b>412</b><span>Free members</span></div>
+        <div class="tile"><b>$2,609</b><span>Estimated monthly revenue</span></div><div class="tile"><b>3</b><span>Payment problems</span></div>
+        <div class="tile"><b>5</b><span>Cancelling at period end</span></div><div class="tile"><b>4</b><span>Manual / coaching clients</span></div></div>
+      <div class="panel"><h3>All memberships</h3><div class="scrollx"><table><thead><tr><th>Member</th><th>Plan</th><th>Status</th><th>Renews or ends</th><th>Via</th><th></th></tr></thead><tbody>
+        <tr><td><b>Priya Sharma</b></td><td>Member</td><td><span class="st ok">active</span></td><td>3 Nov 2026</td><td>stripe</td><td><a href="#" onclick="return false">Stripe</a></td></tr>
+        <tr><td><b>Anita Kaur</b></td><td>Member</td><td><span class="st warn">Payment problem</span></td><td>9 Oct 2026</td><td>stripe</td><td><a href="#" onclick="return false">Stripe</a></td></tr>
+        <tr><td><b>Meera Singh</b></td><td>Member</td><td><span class="st warn">Cancelling</span></td><td>21 Oct 2026</td><td>stripe</td><td><a href="#" onclick="return false">Stripe</a></td></tr>
+        <tr><td><b>Harleen Dhillon</b></td><td>Premium</td><td><span class="st ok">active</span></td><td>-</td><td>manual</td><td></td></tr></tbody></table></div></div>
+      <div class="panel"><h3>Recent invoices <small>from Stripe</small></h3><div class="scrollx"><table><thead><tr><th>Date</th><th>Invoice</th><th>Customer</th><th>Amount</th><th>Status</th></tr></thead><tbody>
+        <tr><td>12 Oct</td><td>A1F2-0041</td><td>priya@example.com</td><td>$29.99 CAD</td><td><span class="st ok">paid</span></td></tr>
+        <tr><td>9 Oct</td><td>A1F2-0040</td><td>anita@example.com</td><td>$29.99 CAD</td><td><span class="st warn">open</span></td></tr></tbody></table></div></div>`,
+    },
+
     support: {
       label: "Support",
       url: "/admin/support",

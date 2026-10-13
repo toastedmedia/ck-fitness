@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-12: admin client records, billing, accountability insights
+- Migration 0011: phone, coach-sharing consent, read-only staff access to shared records (database-enforced), private client notes.
+- Admin: client record with Overview/Questionnaire/Check-ins/Progress/Photos/Notes tabs, editable contact details, Billing page with Stripe invoices, contacts CSV, inline program access and thumbnails, KPIs/Tags/Billing in the menu.
+- Member: phone and sharing choices in onboarding and Profile; Accountability tab gains hydration, steps, check-in history, barriers and coach card.
+
 ## 2026-10-12: CI, smoke tests, imports, emails
 - GitHub Actions CI and Playwright live smoke tests; terms acceptance stored (migration 0010); daily cleanup cron; database-aware health check; admin CSV program import; `/auth/confirm` token-hash route and branded email templates.
 

@@ -41,3 +41,8 @@ Set the program or lesson Access to Member so playback requires a signed link. K
 - **Support**: reply in the app (the member is notified), set status, assign to yourself.
 - **CRM sync**: see what was sent to Toasted Media CRM, retry failures, run a sync on demand.
 - **Audit log**: who changed access, publishing, roles and settings.
+
+## Client records (Admin -> Users -> a client)
+
+Tabs: **Overview** (contact details you can edit, plan, Stripe link and invoices, staff roles), **Questionnaire** (everything she answered at onboarding), **Check-ins** (daily and weekly), **Progress** (weight, measurements, water, steps, workouts), **Photos**, **Notes** (private to staff).
+The health tabs show only if the member agreed to share with her coach (photos need a second choice). Other admin pages: **Billing** (all subscriptions, estimated revenue, recent Stripe invoices), **Programs** (change Free/Member inline, upload covers), **Users** (search by name, email or phone; download contacts as CSV).

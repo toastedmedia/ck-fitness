@@ -79,6 +79,13 @@ Home reorganised into small components (`apps/web/src/components/home`): Header,
 - **Program import** (Admin -> Programs -> Import from spreadsheet): CK's inventory CSV becomes draft programs, sections and lessons.
 - **Branded account emails** in `docs/email-templates` plus a cross-device-safe confirmation route (`/auth/confirm`).
 
+## Admin client records and Accountability expansion (2026-10-12)
+- **Client records**: Admin -> Users -> a client shows contact details (editable, logged), the full onboarding questionnaire, daily and weekly check-ins, weight, measurements, water, steps, photos, private staff notes, plan, Stripe link and invoices. Health tabs appear only when the member has agreed to share with her coach; enforced in the database (migration **0011**, run it in Supabase) and every view is audited. Support/content roles never see them.
+- Onboarding now asks for an optional **phone number** and a required **"share my progress with my CK coach"** agreement; Profile lets her change both (and photo sharing) any time.
+- **Admin Billing** page (all subscriptions, estimated revenue, recent Stripe invoices once Stripe is connected), contacts CSV download, inline Free/Member switch and thumbnails in the Programs list. Fixed: KPIs and Tags pages were missing from the admin menu.
+- **Accountability tab** now includes hydration and step consistency (14 days), daily check-in history, "what's getting in the way", and a "Message my coach" card.
+- Privacy Policy draft and `docs/STAFF_ACCESS_POLICY.md` updated to match. **Owners should review this consent wording with a lawyer before launch.**
+
 ## Environment note
 This Mac's disk is 98% full, so macOS moves project files (including `node_modules`) to iCloud and builds hang while files re-download. Recommended: free disk space and move the repo out of `~/Documents` (for example `~/Developer/ckfitness`), which is iCloud-synced.
 

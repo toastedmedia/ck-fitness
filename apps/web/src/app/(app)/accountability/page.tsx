@@ -15,6 +15,7 @@ import { DayPicker } from "@/components/app/Scale";
 import { Button, Cap, Card, Flash, Pill } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
 import { activeDays } from "@/lib/milestones";
+import { AccountabilityInsights } from "@/components/accountability/Insights";
 import { ensurePlan, ensureWeekPlanned } from "@/lib/plan";
 import { recoverWorkout, setCommitment } from "../actions";
 
@@ -224,6 +225,8 @@ export default async function AccountabilityPage({
           </ul>
         )}
       </Card>
+
+      <AccountabilityInsights />
 
       <Link
         href="/accountability/summary"

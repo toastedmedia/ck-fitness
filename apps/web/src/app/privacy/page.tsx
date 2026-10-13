@@ -49,11 +49,14 @@ export default function PrivacyPage() {
 
         <h2 className={h}>Who can see your health information</h2>
         <p className="mt-2">
-          You can. Our staff can see your name, email, membership, program progress and
-          activity so they can support you. Coaches and support staff cannot see your
-          weight, measurements or safety answers unless you choose to share them with us
-          directly. Weight, measurements and health answers are never sent to our email or
-          CRM tools.
+          You can. When you finish onboarding you choose to share your answers, daily and
+          weekly check-ins, weight and measurements with your CK coach so they can support
+          you. Coaches, admins and owners can then see them; support staff and content
+          editors cannot. Progress photos are shared only if you separately choose to
+          share them. You can turn either off at any time in Profile and access stops
+          immediately. Every time staff open your record it is logged. Staff can see your
+          name, email, phone, membership and activity to run the service. Your health
+          information is never sent to our email or CRM tools.
         </p>
 
         <h2 className={h}>Who we share data with</h2>
