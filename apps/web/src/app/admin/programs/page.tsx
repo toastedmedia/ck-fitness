@@ -79,7 +79,12 @@ export default async function AdminPrograms({
                     </span>
                   )}
                   <div>
-                    <b>{p.title}</b>
+                    <Link
+                      href={`/admin/programs/${p.id}`}
+                      className="font-bold text-brand hover:underline focus-visible:underline"
+                    >
+                      {p.title}
+                    </Link>
                     {p.featured ? (
                       <span className="ml-2 text-xs text-muted">featured</span>
                     ) : null}
