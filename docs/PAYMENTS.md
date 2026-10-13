@@ -28,6 +28,13 @@ Apple's server notifications or RevenueCat, without changing any access check. T
 - Test with Stripe test mode and test card `4242 4242 4242 4242` before going live.
 - `STRIPE_SECRET_KEY` is server-only. Never expose it to the browser.
 
+## When a renewal payment fails
+
+1. Stripe tries the card again on its own schedule (set it in Stripe: Settings -> Billing -> Subscriptions and emails -> Manage failed payments; suggested: Smart Retries within 1 week, then **cancel the subscription**). Stripe also emails the member (turn on "Send emails when a payment fails" and "when a card is about to expire").
+2. The app keeps the member's access for a **7 day grace** counted from the day she was last paid up to (for example paid to 5 Nov: access to 12 Nov). She sees a "problem with your payment" notice and the Membership page offers "Update payment method".
+3. If any retry succeeds, Stripe sends `invoice.paid`, the membership turns active again and access is never interrupted.
+4. If not, access ends after the grace window. If Stripe cancels the subscription, access ends then too (never at the end of an unpaid period). She can rejoin from Membership at any time and her progress is kept.
+
 ## Manually assigned premium clients
 
 Staff can insert a `memberships` row with `provider = 'manual'`, `entitlement = 'ck_premium'`. Stripe webhooks never overwrite manual rows.

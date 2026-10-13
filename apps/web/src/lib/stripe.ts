@@ -49,6 +49,8 @@ export async function syncSubscription(subscriptionId: string, fallbackUserId?: 
       cancel_at_period_end: sub.cancel_at_period_end,
       start_date: sub.start_date,
       period_end: periodEnd,
+      period_start: sub.items.data[0]?.current_period_start,
+      ended_at: sub.ended_at,
     },
     userId,
   );

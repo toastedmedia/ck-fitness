@@ -64,6 +64,8 @@ export interface SubscriptionLike {
   cancel_at_period_end: boolean;
   start_date: number;
   period_end: number; // unix seconds, from the subscription item
+  period_start?: number; // unix seconds: when the current (possibly unpaid) period began
+  ended_at?: number | null; // unix seconds: when a cancelled subscription actually ended
 }
 
 export interface MembershipUpsert {
@@ -81,6 +83,21 @@ export interface MembershipUpsert {
 
 const iso = (unix: number) => new Date(unix * 1000).toISOString();
 
+/**
+ * The date her paid access runs to. Normally the end of the current period. Two cases differ:
+ * - A failed renewal (past_due/unpaid): Stripe has already moved to the NEW, unpaid period, so we use
+ *   the day that period began (the day she was last paid up to). The 7-day grace counts from there.
+ * - Cancelled straight away (for example Stripe gave up collecting): access ends when it ended, not at
+ *   the end of a period she never paid for.
+ */
+export function paidThrough(sub: SubscriptionLike, now: Date = new Date()): number {
+  if ((sub.status === "past_due" || sub.status === "unpaid") && sub.period_start)
+    return sub.period_start;
+  if (sub.status === "canceled" && !sub.cancel_at_period_end)
+    return Math.min(sub.period_end, sub.ended_at ?? Math.floor(now.getTime() / 1000));
+  return sub.period_end;
+}
+
 export function membershipFromSubscription(
   sub: SubscriptionLike,
   userId: string,
@@ -93,7 +110,7 @@ export function membershipFromSubscription(
     entitlement: "ck_member",
     status: sub.status,
     started_at: iso(sub.start_date),
-    period_end: iso(sub.period_end),
+    period_end: iso(paidThrough(sub)),
     cancel_at_period_end: sub.cancel_at_period_end,
     source: "web",
   };
