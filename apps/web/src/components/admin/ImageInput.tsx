@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { compressPhoto } from "@/lib/image-compress";
 import { FilePick } from "@/components/admin/FilePick";
+import { announceFile } from "@/components/admin/ImagePreview";
 
 /**
  * A file picker for cover images and thumbnails. Big phone photos are shrunk in the browser before
@@ -22,9 +23,11 @@ export function ImageInput({ name, id }: { name: string; id?: string }) {
       const dt = new DataTransfer();
       dt.items.add(out);
       input.files = dt.files;
+      announceFile(input);
       setNote(`Ready (${Math.max(1, Math.round(out.size / 1024))} KB). Now save.`);
     } catch {
       input.value = "";
+      announceFile(input);
       setNote("We could not read that image. Please choose a JPG or PNG.");
     }
   }

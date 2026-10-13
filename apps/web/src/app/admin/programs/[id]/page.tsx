@@ -1,10 +1,10 @@
-/* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ABtn, Flash, H1, Panel, Status, Tile, aInput } from "@/components/admin/ui";
 import { FilePick } from "@/components/admin/FilePick";
 import { ImageInput } from "@/components/admin/ImageInput";
+import { ImagePreview } from "@/components/admin/ImagePreview";
 import { LessonPreview } from "@/components/admin/LessonPreview";
 import { VideoUploader } from "@/components/admin/VideoUploader";
 import { CONTENT, requireStaff } from "@/lib/admin";
@@ -457,14 +457,15 @@ export default async function EditProgram({
                     <span className={lab}>
                       Cover image (JPG, PNG or WebP, under 2 MB)
                     </span>
-                    {cover ? (
-                      <img
-                        src={cover}
-                        alt=""
-                        className="my-2 h-24 rounded-xl object-cover"
+                    <div className="my-2 max-w-sm">
+                      <ImagePreview
+                        inputId="cover-input"
+                        currentUrl={cover}
+                        shape="wide"
+                        empty="No cover yet"
                       />
-                    ) : null}
-                    <ImageInput name="cover" />
+                    </div>
+                    <ImageInput name="cover" id="cover-input" />
                   </div>
                   <details
                     className="rounded-xl border border-line md:col-span-2"
@@ -554,14 +555,17 @@ export default async function EditProgram({
                 </label>
                 <div className={`${lab} md:col-span-2`}>
                   Headshot (square works best)
-                  {p.instructor_photo_path ? (
-                    <img
-                      src={coverUrl(p.instructor_photo_path) ?? ""}
-                      alt=""
-                      className="my-2 size-24 rounded-full object-cover"
+                  <div className="my-2">
+                    <ImagePreview
+                      inputId="instructor-input"
+                      currentUrl={
+                        p.instructor_photo_path ? coverUrl(p.instructor_photo_path) : null
+                      }
+                      shape="round"
+                      empty="No photo"
                     />
-                  ) : null}
-                  <ImageInput name="instructor_photo" />
+                  </div>
+                  <ImageInput name="instructor_photo" id="instructor-input" />
                   {p.instructor_photo_path ? (
                     <label className="mt-1 flex items-center gap-2 text-xs font-normal">
                       <input
@@ -918,17 +922,7 @@ function LessonForm({
             inputId={thumbId}
           />
           <div className="flex flex-col gap-2">
-            {thumb ? (
-              <img
-                src={thumb}
-                alt="Current thumbnail"
-                className="aspect-video w-full rounded-xl object-cover"
-              />
-            ) : (
-              <span className="grid aspect-video w-full place-items-center rounded-xl border border-dashed border-line text-xs font-normal text-muted">
-                No thumbnail yet
-              </span>
-            )}
+            <ImagePreview inputId={thumbId} currentUrl={thumb} />
             <ImageInput name="thumbnail" id={thumbId} />
             {thumb ? (
               <label className="flex items-center gap-2 text-xs font-normal">

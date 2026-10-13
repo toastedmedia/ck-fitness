@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
+import { announceFile } from "@/components/admin/ImagePreview";
 
 const fmt = (t: number) =>
   `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
@@ -57,6 +58,7 @@ export function LessonPreview({
           const dt = new DataTransfer();
           dt.items.add(new File([b], "frame.jpg", { type: "image/jpeg" }));
           input.files = dt.files;
+          announceFile(input);
           setNote(
             `Frame at ${fmt(v.currentTime)} is ready (${Math.round(b.size / 1024)} KB). Now press Save.`,
           );
