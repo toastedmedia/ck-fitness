@@ -47,6 +47,7 @@ Commands (Node 20+): `npm run check`. **Environment:** the owner's Mac was 98% f
 2. Fix whatever live testing finds. 3. Web push (optional). 4. Production Supabase + Stripe live + beta 20-50 users.
 
 ## Change log (newest first)
+- **2026-10-13 (charts):** Admin -> KPIs now has 30-day trend charts (sign-ups, workouts completed, community posts, comments) with change against the previous 30 days. Pure `dailySeries`/`seriesTotals` in `packages/core/src/trends.ts` (tested); `BarChart` component is accessible (text summary, per-bar tooltips).
 - **2026-10-13:** Onboarding, Profile sharing and photo-consent saves now retry without `sharing_decided_at` if migration 0012 is not applied yet, so signups never fail before the pending SQL (0012 to 0015) is run.
 - **2026-10-12 (community upgrade):** Facebook-style feed: five reactions (change/remove), replies (one level), edit within 15 minutes, CK Team badge + pinned announcements, photo posts (up to 4, shrunk on the phone, private storage) held for staff approval (switch in Admin -> Community), search/filter/sort, Members directory with community cards (bio, opt-out) and member pages, community notifications (comments, replies, reaction milestones; toggle in Profile), admin approvals queue. Videos and groups deliberately NOT built yet (owner asked for photos first; videos cost Cloudflare minutes, groups need a design).
 - **2026-10-12 (later):** Bottom nav now Home / Programs / Progress / Accountability / Community; Profile moved to the top-right avatar menu with Log out.

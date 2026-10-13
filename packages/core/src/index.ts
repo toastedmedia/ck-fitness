@@ -11,3 +11,4 @@ export * from "./units";
 export * from "./photos";
 export * from "./import";
 export * from "./community";
+export * from "./trends";

@@ -20,7 +20,7 @@ Nothing has been verified against live Stripe, Cloudflare or the CRM yet. Status
 - ⏳ Apple Health and iPhone app (Phase 2), web push
 
 ## Admin portal (`/admin`)
-- ✅ Dashboard (members, activity, at-risk, help, billing problems), KPIs (9 launch KPIs + video cost guard), Billing (all subscriptions, revenue estimate, Stripe invoices once connected), Accountability (at-risk list)
+- ✅ Dashboard (members, activity, at-risk, help, billing problems), KPIs (9 launch KPIs, 30-day trend charts for sign-ups, workouts, community posts and comments, video cost guard), Billing (all subscriptions, revenue estimate, Stripe invoices once connected), Accountability (at-risk list)
 - ✅ **Client record (Admin -> Users -> a client):** Overview (editable name/email/phone, plan, Stripe link, invoices, counts-only activity, staff roles), Questionnaire (everything from onboarding), Check-ins (daily + weekly), Progress (weight, measurements, water, steps, workouts), **Programs** (what she can access, stage, per-lesson furthest point, time watched, plays, completion), **Activity** (full timeline of every action and every account change, filterable), Photos, private Notes. Health tabs follow her sharing choice; every view is audited
 - ✅ Users (search by name/email/phone, filters, contacts CSV), Programs (cover upload, inline Free/Member switch, editor, preview as Free/Member, publish checks, CSV spreadsheet import), Tags, Support (reply notifies member), Announcements, **Community moderation** (photo approvals queue, reports queue, hide/restore/remove, mute, ban, pin, audience switch, photo-approval switch), CRM sync (retry/run), Settings (price, goals, CK Score weights), Audit log
 - 🔌 Toasted Media CRM adapter with retry queue (needs the real API)

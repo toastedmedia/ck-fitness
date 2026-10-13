@@ -4,9 +4,12 @@ import {
   resolveMembership,
   videoMinutesPerMember,
   addDays,
+  dailySeries,
   dayKey,
+  seriesTotals,
   weekStart,
 } from "@ck/core";
+import { BarChart } from "@/components/admin/BarChart";
 import { ABtn, Flash, H1, Panel, Tile, aInput } from "@/components/admin/ui";
 import { OPS, requireStaff } from "@/lib/admin";
 import { saveVideoMinutes } from "../actions";
@@ -145,6 +148,40 @@ export default async function AdminKpis({
   ).length;
   const videoMinutes = typeof leads.data?.value === "number" ? leads.data.value : null;
 
+  // Trends: the last 30 days against the 30 before, from timestamps only (no personal content).
+  const since60 = new Date(now.getTime() - 60 * 86_400_000).toISOString();
+  const [signups, workouts, posts, comments] = await Promise.all([
+    db.from("profiles").select("created_at").gte("created_at", since60),
+    db
+      .from("scheduled_actions")
+      .select("completed_at")
+      .eq("status", "completed")
+      .gte("completed_at", since60),
+    db.from("community_posts").select("created_at").gte("created_at", since60),
+    db.from("community_comments").select("created_at").gte("created_at", since60),
+  ]);
+  const trend = (
+    title: string,
+    rows: { [k: string]: string | null }[] | null,
+    col: string,
+  ) => {
+    const all = (rows ?? []).map((r) => r[col]);
+    const cut = since30;
+    const cur = dailySeries(
+      all.filter((t) => t && t >= cut),
+      30,
+      today,
+    );
+    const prev = all.filter((t) => t && t < cut).length;
+    return { title, series: cur, ...seriesTotals(cur, prev) };
+  };
+  const trends = [
+    trend("New sign-ups", signups.data, "created_at"),
+    trend("Workouts completed", workouts.data, "completed_at"),
+    trend("Community posts", posts.data, "created_at"),
+    trend("Community comments", comments.data, "created_at"),
+  ];
+
   const kpis = computeKpis({
     newAccounts: (newProfiles ?? []).length,
     activated,
@@ -183,6 +220,13 @@ export default async function AdminKpis({
           </div>
         ))}
       </div>
+      <Panel title="Trends: last 30 days (change is against the 30 days before)">
+        <div className="grid gap-3 md:grid-cols-2">
+          {trends.map((t) => (
+            <BarChart key={t.title} {...t} />
+          ))}
+        </div>
+      </Panel>
       <Panel title="Video cost guard">
         <div className="grid gap-3 md:grid-cols-[auto_1fr]">
           <Tile
