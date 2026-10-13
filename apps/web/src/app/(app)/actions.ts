@@ -439,14 +439,18 @@ export async function setSharing(formData: FormData): Promise<void> {
   const records = formData.get("records") === "on";
   const photos = records && formData.get("photos") === "on";
   const now = new Date().toISOString();
-  await supabase
+  const sharing = {
+    coach_access_at: records ? (profile?.coach_access_at ?? now) : null,
+    photo_coach_access_at: photos ? (profile?.photo_coach_access_at ?? now) : null,
+  };
+  const { error } = await supabase
     .from("profiles")
-    .update({
-      coach_access_at: records ? (profile?.coach_access_at ?? now) : null,
-      photo_coach_access_at: photos ? (profile?.photo_coach_access_at ?? now) : null,
-      sharing_decided_at: profile?.sharing_decided_at ?? now,
-    })
+    .update({ ...sharing, sharing_decided_at: profile?.sharing_decided_at ?? now })
     .eq("user_id", user.id);
+  if (error) {
+    // The newest database change may not be applied yet; save the choice without it.
+    await supabase.from("profiles").update(sharing).eq("user_id", user.id);
+  }
   await track(user.id, records ? "sharing_on" : "sharing_off", { photos });
   refresh();
   redirect("/profile?saved=sharing");

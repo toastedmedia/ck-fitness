@@ -25,9 +25,17 @@ export async function saveOnboardingStep(
   const { supabase, user } = await requireUser();
   const id = user.id;
   const save = async (table: string, row: Record<string, unknown>) => {
-    const { error } = await supabase
+    let { error } = await supabase
       .from(table)
       .upsert({ user_id: id, ...row }, { onConflict: "user_id" });
+    if (error && "sharing_decided_at" in row) {
+      // The newest database change may not be applied yet; save everything else.
+      const { sharing_decided_at: _skip, ...rest } = row;
+      void _skip;
+      ({ error } = await supabase
+        .from(table)
+        .upsert({ user_id: id, ...rest }, { onConflict: "user_id" }));
+    }
     return error ? fail("We could not save that. Please try again.") : null;
   };
 

@@ -19,17 +19,21 @@ export async function giveConsent(formData: FormData): Promise<void> {
   const now = new Date().toISOString();
   // Sharing with her coach is ticked by default; she can untick it here or later in Profile.
   const share = formData.get("share") === "on";
-  await supabase
+  const base = {
+    photo_consent_at: now,
+    photo_coach_access_at: share ? (profile?.photo_coach_access_at ?? now) : null,
+    // Photos can only be shared together with her other records.
+    ...(share && !profile?.coach_access_at ? { coach_access_at: now } : {}),
+  };
+  const decided = share && !profile?.coach_access_at ? { sharing_decided_at: now } : {};
+  const { error } = await supabase
     .from("profiles")
-    .update({
-      photo_consent_at: now,
-      photo_coach_access_at: share ? (profile?.photo_coach_access_at ?? now) : null,
-      // Photos can only be shared together with her other records.
-      ...(share && !profile?.coach_access_at
-        ? { coach_access_at: now, sharing_decided_at: now }
-        : {}),
-    })
+    .update({ ...base, ...decided })
     .eq("user_id", user.id);
+  if (error) {
+    // The newest database change may not be applied yet; save the rest without it.
+    await supabase.from("profiles").update(base).eq("user_id", user.id);
+  }
   revalidatePath("/progress/photos");
   redirect("/progress/photos");
 }
