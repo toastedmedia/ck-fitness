@@ -59,6 +59,8 @@ workflows:
           npx cap add ios
           npx capacitor-assets generate --ios --iconBackgroundColor '#1b1b36' --splashBackgroundColor '#1b1b36'
           npx cap sync ios
+      - name: Patch iPhone settings
+        script: bash apps/mobile/scripts/patch-ios.sh
       - name: Apply signing
         script: xcode-project use-profiles --project apps/mobile/ios/App/App.xcodeproj
       - name: Build number

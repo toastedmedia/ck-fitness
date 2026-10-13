@@ -13,6 +13,8 @@ const config: CapacitorConfig = {
     url: "https://app.chardikalafitness.com",
     cleartext: false,
     errorPath: "error.html",
+    // Links to other sites open in Safari instead of inside the app.
+    allowNavigation: ["app.chardikalafitness.com", "*.supabase.co"],
   },
   ios: {
     appendUserAgent: "CKFitnessApp",

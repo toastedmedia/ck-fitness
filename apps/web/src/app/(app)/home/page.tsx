@@ -293,7 +293,9 @@ export default async function HomePage({
         <Flash tone="error">Enter a weight between 35 and 300 kg.</Flash>
       ) : null}
 
-      <NeedsAttention items={attention} />
+      <NeedsAttention
+        items={native ? attention.filter((i) => i.kind !== "payment") : attention}
+      />
 
       <TodaysWorkout workout={workout} done={workoutDone} restDay={!workoutScheduled} />
 
