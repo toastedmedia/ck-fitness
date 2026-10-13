@@ -18,6 +18,8 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   transpilePackages: ["@ck/core", "@ck/design-tokens"],
   poweredByHeader: false,
+  // Vercel functions accept up to 4.5 MB per request; images are shrunk in the browser first.
+  experimental: { serverActions: { bodySizeLimit: "4mb" } },
   outputFileTracingRoot: path.join(__dirname, "../.."),
   async headers() {
     return [

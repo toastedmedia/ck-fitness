@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ABtn, Flash, H1, Panel, Status, aInput } from "@/components/admin/ui";
+import { ImageInput } from "@/components/admin/ImageInput";
 import { VideoUploader } from "@/components/admin/VideoUploader";
 import { CONTENT, requireStaff } from "@/lib/admin";
 import { coverUrl } from "@/lib/programs";
@@ -84,7 +85,7 @@ export default async function EditProgram({
   const problems = sp.problems?.split("|").filter(Boolean) ?? [];
   const errorText: Record<string, string> = {
     cover: "Cover must be a JPG, PNG or WebP under 2 MB.",
-    resource: "Resource must be a PDF or image under 20 MB.",
+    resource: "Resource must be a PDF or image under 4 MB.",
     save: "That did not save. Please try again.",
     section: "Please enter a section title.",
     lesson: "Please enter a lesson title.",
@@ -236,12 +237,7 @@ export default async function EditProgram({
             {cover ? (
               <img src={cover} alt="" className="my-2 h-24 rounded-xl object-cover" />
             ) : null}
-            <input
-              type="file"
-              name="cover"
-              accept="image/jpeg,image/png,image/webp"
-              className="mt-1 block text-sm"
-            />
+            <ImageInput name="cover" />
           </div>
           <fieldset className="md:col-span-2">
             <legend className={lab}>Tags</legend>
@@ -469,12 +465,7 @@ function LessonForm({
             className="my-2 h-24 rounded-xl object-cover"
           />
         ) : null}
-        <input
-          type="file"
-          name="thumbnail"
-          accept="image/jpeg,image/png,image/webp"
-          className="mt-1 block text-sm"
-        />
+        <ImageInput name="thumbnail" />
         {lesson?.thumbnail_path ? (
           <label className="mt-1 flex items-center gap-2 text-xs font-normal">
             <input
@@ -519,7 +510,7 @@ function LessonForm({
         />
       </label>
       <label className={lab}>
-        Downloadable guide (PDF)
+        Downloadable guide (PDF, under 4 MB)
         <input
           type="file"
           name="resource"

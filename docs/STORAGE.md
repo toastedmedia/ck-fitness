@@ -1,13 +1,13 @@
 # Storage and video
 
-| Asset              | Where                                                                   | Access                                                                         |
-| ------------------ | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Program videos     | Cloudflare R2 (private bucket)                                          | Signed link from `/api/video-token` after an access check (6 hour expiry)      |
-| Video master files | CK's own archive/backup (not the app)                                   | Owners only. Never rely on Stream as the only copy                             |
-| Program thumbnails | Supabase Storage `program-thumbnails`                                   | Public read; editors write; JPG/PNG/WebP under 2 MB                            |
-| Lesson PDFs        | Supabase Storage `program-resources` (private)                          | Two-minute signed link from `/api/resource` after an access check; under 20 MB |
-| Avatars            | Supabase Storage `avatars`                                              | Each member manages her own folder; under 1 MB                                 |
-| Progress photos    | Not built. Planned behind the `progressPhotos` flag, in a private store | See FEATURES.md                                                                |
+| Asset              | Where                                                                   | Access                                                                                                 |
+| ------------------ | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Program videos     | Cloudflare R2 (private bucket)                                          | Signed link from `/api/video-token` after an access check (6 hour expiry)                              |
+| Video master files | CK's own archive/backup (not the app)                                   | Owners only. Never rely on Stream as the only copy                                                     |
+| Program thumbnails | Supabase Storage `program-thumbnails`                                   | Public read; editors write; JPG/PNG/WebP under 2 MB                                                    |
+| Lesson PDFs        | Supabase Storage `program-resources` (private)                          | Two-minute signed link from `/api/resource` after an access check; under 4 MB (Vercel's request limit) |
+| Avatars            | Supabase Storage `avatars`                                              | Each member manages her own folder; under 1 MB                                                         |
+| Progress photos    | Not built. Planned behind the `progressPhotos` flag, in a private store | See FEATURES.md                                                                                        |
 
 ## Cloudflare R2 video setup (replaces Stream, 13 Oct 2026)
 

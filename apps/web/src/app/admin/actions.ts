@@ -193,7 +193,7 @@ export async function saveLesson(
   if (file instanceof File && file.size > 0) {
     if (
       !["application/pdf", "image/jpeg", "image/png", "image/webp"].includes(file.type) ||
-      file.size > 20_971_520
+      file.size > 4_194_304
     )
       redirect(`/admin/programs/${programId}?error=resource`);
     const path = `${id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
