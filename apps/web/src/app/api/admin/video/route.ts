@@ -5,6 +5,7 @@ import {
   completeUpload,
   partUrl,
   r2Configured,
+  r2Missing,
   releaseVideo,
   startUpload,
   videoKey,
@@ -40,7 +41,11 @@ export async function POST(request: NextRequest) {
     )
   )
     return err("Not allowed.", 403);
-  if (!r2Configured()) return err("Video storage is not connected yet.", 503);
+  if (!r2Configured())
+    return err(
+      `Video storage is not connected yet. Missing in Vercel: ${r2Missing().join(", ")}. Add them for the Production environment, then redeploy.`,
+      503,
+    );
 
   const b = (await request.json().catch(() => ({}))) as {
     op?: string;

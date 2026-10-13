@@ -20,6 +20,16 @@ export function r2Configured(): boolean {
   );
 }
 
+/** Names (never values) of the R2 settings that are not set. Shown to staff only. */
+export function r2Missing(): string[] {
+  return [
+    "R2_ACCOUNT_ID",
+    "R2_ACCESS_KEY_ID",
+    "R2_SECRET_ACCESS_KEY",
+    "R2_BUCKET",
+  ].filter((n) => !process.env[n]?.trim());
+}
+
 function client() {
   return new S3Client({
     region: "auto",

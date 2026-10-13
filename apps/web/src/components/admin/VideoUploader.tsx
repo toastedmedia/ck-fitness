@@ -87,9 +87,7 @@ export function VideoUploader({
     } catch (e) {
       if (key && uploadId)
         await call({ op: "abort", lessonId, key, uploadId }).catch(() => {});
-      setMsg(
-        `Upload stopped: ${(e as Error).message}. Check your connection and try again.`,
-      );
+      setMsg(`Upload stopped. ${(e as Error).message}`);
     } finally {
       setPct(null);
       if (input.current) input.current.value = "";
