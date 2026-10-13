@@ -21,7 +21,7 @@ Done: GitHub, domain (chardikalafitness.com), Supabase org + staging, Vercel (en
 
 ## State
 Phase 1 is code-complete. Not launch-ready until the pending accounts are connected, real flows are tested on staging (`docs/QA_CHECKLIST.md`), content is loaded, legal text is lawyer-approved, and a 20-50 person beta is done. Phase 2 (native iOS) not started.
-Automated checks (all passing): `npm run check` = format, lint, types, 98 core tests, 9 web tests, 71 database tests (every migration runs in an in-memory Postgres/PGlite and row-level security is verified), production build.
+Automated checks (all passing): `npm run check` = format, lint, types, 100 core tests, 8 web tests, 71 database tests (every migration runs in an in-memory Postgres/PGlite and row-level security is verified), production build.
 
 ## Database changes the owners must paste into Supabase SQL Editor
 **Verify what is applied:** run `supabase/check-migrations.sql` (read-only; one APPLIED/MISSING row per migration 0001-0018; add a row to it with every new migration). Owners ran 0012-0017 on staging on 2026-10-13.
@@ -46,9 +46,8 @@ Follow the guide phase by phase; entitlement checks on server AND database; paid
 Commands (Node 20+): `npm run check`. **Environment:** the owner's Mac was 98% full and iCloud evicted `node_modules` so builds hung; builds were verified in a copy outside iCloud (`/private/tmp/ck-verify`). Move the repo out of `~/Documents` or work from GitHub/Codespaces.
 
 ## Pending / next
-0. Owners (13 Oct): run the combined SQL (0012-0017), connect R2 (4 vars + CORS), connect Stripe (CAD $29.99 product; STRIPE_PRICE_ID), build the website landing page (prompt given in chat; docs/APP_STORES.md rules), then Apple/Google/Codemagic accounts per `docs/APP_STORES.md`.
-1. Owners: run SQL 0012-0017 (one combined pending file), finish accounts above, then walk `docs/QA_CHECKLIST.md` on staging (sign up, onboarding, Home, check-ins, photos, community, admin client tabs).
-2. Fix whatever live testing finds. 3. Web push (optional). 4. Production Supabase + Stripe live + beta 20-50 users.
+Owners (as of 13 Oct): run SQL 0018 (0001-0017 confirmed APPLIED on staging by `supabase/check-migrations.sql`); Stripe is in LIVE mode with env vars set (do one real $29.99 payment test, then refund); R2 token + 4 Vercel vars done, upload test passed; still to do: web push keys (optional), Resend + redirect URLs, support inbox, CRM token, Sentry, production Supabase, Vercel cleanup, landing page (prompt given), Apple/Google/Codemagic accounts (`docs/APP_STORES.md`), D-U-N-S for Google Play org account, lawyer review, live QA (`docs/QA_CHECKLIST.md`), 20-50 person beta.
+Next builds (me): native push (APNs/Firebase) for the store apps, logged-in Playwright tests once a test account exists, week description/image and drag-to-reorder in the builder (optional), then whatever live testing finds.
 
 ## Change log (newest first)
 - **2026-10-13 (clean-up):** All admin file pickers are real buttons (`FilePick`: Choose video / image / PDF / CSV); program tags are tap-chips in a collapsible box; member Programs page has no Discover tab (default `All programs`, each program once: Continue training, Free programs, Member library); page titles sit beside the bell/avatar instead of under an empty row.
