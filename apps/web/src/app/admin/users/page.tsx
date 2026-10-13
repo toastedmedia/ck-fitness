@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { resolveMembership } from "@ck/core";
-import { ABtn, H1, Panel, Status, Table, aInput, td } from "@/components/admin/ui";
+import { MemberImport } from "@/components/admin/MemberImport";
+import { ABtn, Flash, H1, Panel, Status, Table, aInput, td } from "@/components/admin/ui";
 import { SUPPORT, requireStaff } from "@/lib/admin";
+import { addMember } from "../actions";
 
 export const metadata: Metadata = { title: "Users" };
 
@@ -18,13 +20,24 @@ const FILTERS = [
 export default async function AdminUsers({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; f?: string }>;
+  searchParams: Promise<{ q?: string; f?: string; view?: string; error?: string }>;
 }) {
-  const { q = "", f = "all" } = await searchParams;
+  const { q = "", f = "all", view, error } = await searchParams;
   const filter = FILTERS.some(([k]) => k === f) ? f : "all";
   const { db, roles } = await requireStaff(SUPPORT);
   const isOps = roles.includes("owner") || roles.includes("admin");
   const term = q.trim().replace(/[%,()]/g, "");
+  const { data: progList } =
+    isOps && (view === "add" || view === "import")
+      ? await db.from("programs").select("id,title").order("sort_order")
+      : { data: [] };
+  const programs = (progList ?? []) as { id: string; title: string }[];
+  const errors: Record<string, string> = {
+    name: "Please enter a first and last name.",
+    email: "Please enter a valid email address.",
+    phone: "Please enter a valid phone number.",
+    save: "We could not create that account. Please try again.",
+  };
 
   let query = db
     .from("profiles")
@@ -100,18 +113,108 @@ export default async function AdminUsers({
       <H1
         right={
           isOps ? (
-            <a
-              href="/admin/users/export"
-              download
-              className="text-sm font-bold text-brand underline"
-            >
-              Download contacts (CSV)
-            </a>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href="/admin/users?view=add"
+                className="inline-flex min-h-10 items-center rounded-button bg-brand px-4 text-sm font-bold text-on-brand"
+              >
+                + Add member
+              </Link>
+              <Link
+                href="/admin/users?view=import"
+                className="inline-flex min-h-10 items-center rounded-button border-2 border-line px-4 text-sm font-bold text-brand"
+              >
+                Import CSV
+              </Link>
+              <a
+                href="/admin/users/export"
+                download
+                className="text-sm font-bold text-brand underline"
+              >
+                Download contacts (CSV)
+              </a>
+            </div>
           ) : null
         }
       >
         Users
       </H1>
+      {isOps && view === "add" ? (
+        <Panel title="Add a member">
+          {error ? <Flash bad>{errors[error] ?? "Something went wrong."}</Flash> : null}
+          <form action={addMember} className="grid gap-3 md:grid-cols-2">
+            <label className="text-xs font-bold text-brand">
+              First name
+              <input name="first_name" required className={aInput} autoComplete="off" />
+            </label>
+            <label className="text-xs font-bold text-brand">
+              Last name
+              <input name="last_name" required className={aInput} autoComplete="off" />
+            </label>
+            <label className="text-xs font-bold text-brand">
+              Email
+              <input
+                name="email"
+                type="email"
+                required
+                className={aInput}
+                autoComplete="off"
+              />
+            </label>
+            <label className="text-xs font-bold text-brand">
+              Phone number
+              <input
+                name="phone"
+                type="tel"
+                required
+                className={aInput}
+                autoComplete="off"
+              />
+            </label>
+            <label className="text-xs font-bold text-brand md:col-span-2">
+              Give access to a program (optional)
+              <select name="program_id" className={aInput}>
+                <option value="">No program, just create the account</option>
+                {programs.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex items-start gap-3 text-sm md:col-span-2">
+              <input
+                name="notify"
+                type="checkbox"
+                className="mt-0.5 size-5 accent-brand"
+              />
+              <span>
+                <b className="block text-brand">
+                  Email a link so they can set a password
+                </b>
+                <span className="text-xs text-muted">
+                  Needs email sending (Resend) connected. Otherwise they sign in with
+                  Forgot password.
+                </span>
+              </span>
+            </label>
+            <div className="flex gap-2 md:col-span-2">
+              <ABtn variant="primary">Add member</ABtn>
+              <Link
+                href="/admin/users"
+                className="inline-flex min-h-10 items-center px-3 text-sm font-bold text-brand underline"
+              >
+                Cancel
+              </Link>
+            </div>
+          </form>
+        </Panel>
+      ) : null}
+      {isOps && view === "import" ? (
+        <Panel title="Import members from a CSV">
+          <MemberImport programs={programs} />
+        </Panel>
+      ) : null}
       <form className="flex flex-wrap gap-2">
         <input
           name="q"

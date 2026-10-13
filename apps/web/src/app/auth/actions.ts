@@ -37,6 +37,18 @@ export async function signUp(_prev: FormState, formData: FormData): Promise<Form
   if (!emailOk(email)) return { error: "Please enter a valid email address." };
   if (password.length < MIN_PASSWORD)
     return { error: `Your password needs at least ${MIN_PASSWORD} characters.` };
+  const first = String(formData.get("first_name") ?? "")
+    .trim()
+    .slice(0, 60);
+  const last = String(formData.get("last_name") ?? "")
+    .trim()
+    .slice(0, 60);
+  const phone = String(formData.get("phone") ?? "")
+    .trim()
+    .slice(0, 30);
+  if (!first || !last) return { error: "Please enter your first and last name." };
+  if (!/^\+?[0-9 ()-]{7,20}$/.test(phone))
+    return { error: "Please enter a valid phone number." };
   if (formData.get("adult") !== "on")
     return { error: "Please confirm you are 18 or older to continue." };
 
@@ -47,7 +59,13 @@ export async function signUp(_prev: FormState, formData: FormData): Promise<Form
     options: {
       emailRedirectTo: `${await siteUrl()}/auth/callback?next=/onboarding`,
       // Recorded on her profile: when she accepted, and which version of the terms.
-      data: { terms_accepted_at: new Date().toISOString(), terms_version: TERMS_VERSION },
+      data: {
+        terms_accepted_at: new Date().toISOString(),
+        terms_version: TERMS_VERSION,
+        first_name: first,
+        last_name: last,
+        phone,
+      },
     },
   });
   if (error) return { error: "We could not create your account. Please try again." };

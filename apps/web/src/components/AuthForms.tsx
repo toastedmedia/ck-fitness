@@ -42,7 +42,17 @@ export function SignupForm() {
   const [state, formAction] = useForm(signUp);
   return (
     <form action={formAction} className="mt-6 flex flex-col gap-4">
+      <Field label="First name" name="first_name" autoComplete="given-name" required />
+      <Field label="Last name" name="last_name" autoComplete="family-name" required />
       <Field label="Email" name="email" type="email" autoComplete="email" required />
+      <Field
+        label="Phone number"
+        name="phone"
+        type="tel"
+        autoComplete="tel"
+        hint="So your coach can reach you."
+        required
+      />
       <Field
         label="Password"
         name="password"

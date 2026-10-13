@@ -6,7 +6,8 @@ import {
   type AccessLevel,
   type Units,
 } from "@ck/core";
-import { Panel, Status, Table, td } from "@/components/admin/ui";
+import { ABtn, Panel, Status, Table, aInput, td } from "@/components/admin/ui";
+import { giveAccessToUser } from "../../actions";
 import type { requireStaff } from "@/lib/admin";
 
 type Ctx = Awaited<ReturnType<typeof requireStaff>>;
@@ -728,5 +729,48 @@ export async function ActivityTab({
         audit log.
       </p>
     </>
+  );
+}
+
+/** Owner/admin: give this member a program the way a payment would (manual membership + enrol). */
+export async function GiveAccess({
+  userId,
+  db,
+  firstName,
+}: {
+  userId: string;
+  db: Ctx["db"];
+  firstName: string;
+}) {
+  const { data } = await db
+    .from("programs")
+    .select("id,title,access_level")
+    .order("sort_order");
+  const list = (data ?? []) as { id: string; title: string; access_level: string }[];
+  return (
+    <Panel title="Give access to a program">
+      <p className="text-sm text-muted">
+        Use this when {firstName} has paid you directly. For a paid program it gives them
+        CK Membership (all member programs, same as a payment) and adds the program to My
+        Programs. Take it away later under Overview, Assign manually.
+      </p>
+      <form
+        action={giveAccessToUser.bind(null, userId)}
+        className="mt-3 flex flex-wrap items-end gap-2"
+      >
+        <label className="min-w-60 flex-1 text-xs font-bold text-brand">
+          Program
+          <select name="program_id" required className={aInput}>
+            <option value="">Choose a program</option>
+            {list.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.title} ({p.access_level === "free" ? "free" : "paid"})
+              </option>
+            ))}
+          </select>
+        </label>
+        <ABtn variant="primary">Give access</ABtn>
+      </form>
+    </Panel>
   );
 }

@@ -5,7 +5,7 @@ Nothing has been verified against live Stripe, Cloudflare or the CRM yet. Status
 
 ## Members (mobile-first web app / PWA)
 - ✅ **Navigation:** bottom bar = Home, Programs, Progress, Accountability, **Community**. Top right of every page = notifications bell + round avatar menu (Profile, Membership, Help and support, **Log out**)
-- ✅ Welcome, sign up (18+ and terms recorded), log in (returns to the page you were heading for), forgot/reset password, log out
+- ✅ Welcome, sign up (name, phone, 18+ and terms recorded), log in (returns to the page you were heading for), forgot/reset password, log out
 - 🔌 Email confirmation and reset emails (needs Resend; branded templates ready)
 - ✅ 5-step onboarding with resume, optional phone, lb/in or kg/cm, safety guidance, coach-sharing agreement (on by default)
 - ✅ **Home:** greeting + supportive line, Needs Attention (one card: missed workout with Do it today / Move on / Need help + reasons, weigh-in overdue, weekly check-in, payment, sharing choice), Today's Workout hero (rest-day version), Today's CK Score (instant), My Commitment, Water, Weight Progress, BMI (secondary, hideable), This Week with CK Streak, Next Milestone, Community card, Apple Health preview ("Coming in Phase 2")
@@ -22,6 +22,7 @@ Nothing has been verified against live Stripe, Cloudflare or the CRM yet. Status
 - 🔌 Web push notifications (built; switches on when the three VAPID variables are added in Vercel; per-device button in Profile)
 
 ## Admin portal (`/admin`)
+- ✅ **Members by hand:** add a member (name, email, phone), import a CSV of contacts (e.g. Go High Level, 1,500+ in batches), give a program/membership manually after an offline payment, from a client page or a program
 - ✅ Program settings (instructor profile shown to members, autoplay next/first lesson, auto-complete) and per-program member progress dashboard with CSV
 - ✅ Admin polish: every file picker is a labelled button (Choose video / image / PDF / CSV); program tags are tap-chips in a collapsible box; program names in the list open the editor
 - ✅ Program builder: outline tree + editor, clone lesson/week, move up/down, per-lesson Save / Save and publish, status pills

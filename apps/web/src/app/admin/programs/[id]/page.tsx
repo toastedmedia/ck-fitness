@@ -18,6 +18,7 @@ import {
   deleteSection,
   duplicateLesson,
   duplicateSection,
+  giveProgramAccess,
   moveLesson,
   moveSection,
   publishProgram,
@@ -98,6 +99,9 @@ export default async function EditProgram({
     save: "That did not save. Please try again.",
     section: "Please enter a section title.",
     lesson: "Please enter a lesson title.",
+    email: "Please enter a valid email address.",
+    nouser:
+      "No member has that email yet. Add them first under Users, then give access here.",
   };
 
   type LessonRow = Record<string, string | number | boolean | null>;
@@ -114,7 +118,9 @@ export default async function EditProgram({
         ? "settings"
         : sp.view === "progress"
           ? "progress"
-          : "details";
+          : sp.view === "access"
+            ? "access"
+            : "details";
   const progress = view === "progress" ? await loadProgramProgress(db, id) : null;
   const q = (sp.q ?? "").trim().toLowerCase();
   const filtered = (progress?.members ?? []).filter(
@@ -168,6 +174,16 @@ export default async function EditProgram({
       {sp.lunpub ? (
         <Flash>Moved to draft. Members no longer see this lesson.</Flash>
       ) : null}
+      {sp.granted ? (
+        <Flash>
+          {sp.who} now has this program in My Programs.
+          {sp.granted === "granted"
+            ? " They were given CK Membership, as if they had paid."
+            : sp.granted === "already"
+              ? " They already have a paid membership."
+              : ""}
+        </Flash>
+      ) : null}
       {sp.cloned ? (
         <Flash>Cloned. This copy is a draft right under the original.</Flash>
       ) : null}
@@ -184,7 +200,7 @@ export default async function EditProgram({
 
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
         <aside
-          className={`rounded-card border border-line bg-surface p-2 ${view === "details" || view === "settings" || view === "progress" ? "" : "order-2 lg:order-none"}`}
+          className={`rounded-card border border-line bg-surface p-2 ${view === "details" || view === "settings" || view === "progress" || view === "access" ? "" : "order-2 lg:order-none"}`}
           aria-label="Program outline"
         >
           <div className="px-2 pb-1 pt-2 text-sm font-extrabold text-brand">
@@ -195,6 +211,7 @@ export default async function EditProgram({
               ["details", "Details and publish", ""],
               ["settings", "Instructor and settings", "?view=settings"],
               ["progress", "Member progress", "?view=progress"],
+              ["access", "Add members", "?view=access"],
             ] as const
           ).map(([key, label, qs]) => (
             <Link
@@ -627,6 +644,56 @@ export default async function EditProgram({
                   </div>
                 ) : null}
               </form>
+            </Panel>
+          ) : null}
+
+          {view === "access" ? (
+            <Panel title="Add a member to this program">
+              <p className="text-sm text-muted">
+                Use this when someone has paid you directly. Enter the email they signed
+                up with. For a paid program this also gives them CK Membership, the same
+                as a payment, and puts the program under My Programs so they can start. To
+                take access away, open the person under Users and use Assign manually.
+              </p>
+              {canEdit && roles.some((r) => r === "owner" || r === "admin") ? (
+                <form
+                  action={giveProgramAccess.bind(null, id)}
+                  className="mt-3 flex flex-wrap items-end gap-2"
+                >
+                  <label className={`${lab} min-w-60 flex-1`}>
+                    Member email
+                    <input
+                      name="email"
+                      type="email"
+                      required
+                      className={aInput}
+                      placeholder="name@example.com"
+                    />
+                  </label>
+                  <ABtn variant="primary">Give access</ABtn>
+                </form>
+              ) : (
+                <p className="mt-3 text-sm font-bold text-muted">
+                  Only owners and admins can give access.
+                </p>
+              )}
+              <p className="mt-3 text-sm">
+                Not on the app yet?{" "}
+                <Link
+                  href="/admin/users?view=add"
+                  className="font-bold text-brand underline"
+                >
+                  Add a member
+                </Link>{" "}
+                or{" "}
+                <Link
+                  href="/admin/users?view=import"
+                  className="font-bold text-brand underline"
+                >
+                  import a CSV
+                </Link>
+                .
+              </p>
             </Panel>
           ) : null}
 

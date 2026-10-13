@@ -1548,4 +1548,21 @@ describe("community feed: reactions, photos with approval, edits, replies, direc
     );
     expect(mine).toBe(1);
   });
+  it("copies the name and phone given at sign-up onto the new profile", async () => {
+    const id = "00000000-0000-0000-0000-0000000000f9";
+    await db.query(
+      "insert into auth.users (id, email, raw_user_meta_data) values ($1,'new@example.com',$2)",
+      [
+        id,
+        JSON.stringify({ first_name: "Asha", last_name: "Brar", phone: "+16045550100" }),
+      ],
+    );
+    const row = (
+      await db.query(
+        "select first_name, last_name, phone from public.profiles where user_id = $1",
+        [id],
+      )
+    ).rows[0] as { first_name: string; last_name: string; phone: string };
+    expect(row).toEqual({ first_name: "Asha", last_name: "Brar", phone: "+16045550100" });
+  });
 });

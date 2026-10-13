@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import {
   audienceMatches,
   canManageRole,
+  normalizePhone,
   parseProgramImport,
   resolveMembership,
   validateForPublish,
@@ -14,6 +15,7 @@ import {
 import { CONTENT, OPS, SUPPORT, audit, requireStaff } from "@/lib/admin";
 import { processCrmQueue } from "@/lib/crm";
 import { notifyUser } from "@/lib/events";
+import { createMember, grantAccess } from "@/lib/members";
 import { releaseVideo } from "@/lib/r2";
 import { isInternalPath } from "@/lib/same-origin";
 
@@ -1156,4 +1158,84 @@ export async function setPhotoApproval(formData: FormData): Promise<void> {
     .upsert({ key: "community_photo_approval", value }, { onConflict: "key" });
   await audit(supabase, user.id, "community.photo_approval", value);
   redirect("/admin/community?saved=1");
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Adds one member by hand (owner/admin). She signs in by choosing "Forgot password" with this email. */
+export async function addMember(formData: FormData): Promise<void> {
+  const { supabase, user, db } = await requireStaff(OPS);
+  const first = str(formData, "first_name", 60);
+  const last = str(formData, "last_name", 60);
+  const email = str(formData, "email", 200).toLowerCase();
+  const rawPhone = str(formData, "phone", 30);
+  const phone = normalizePhone(rawPhone);
+  const programId = str(formData, "program_id");
+  const back = "/admin/users?view=add";
+  if (!first || !last) redirect(`${back}&error=name`);
+  if (!EMAIL_RE.test(email)) redirect(`${back}&error=email`);
+  if (!phone) redirect(`${back}&error=phone`);
+  let id = "";
+  let created = false;
+  try {
+    ({ id, created } = await createMember(db, { first, last, email, phone }));
+    if (programId) await grantAccess(db, id, programId);
+    if (created && formData.get("notify") === "on") {
+      const site = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+      if (site)
+        await db.auth.resetPasswordForEmail(email, {
+          redirectTo: `${site}/auth/callback?next=/reset-password`,
+        });
+    }
+  } catch {
+    redirect(`${back}&error=save`);
+  }
+  await audit(supabase, user.id, "member.add", id, {
+    email,
+    created,
+    programId: programId || null,
+  });
+  redirect(`/admin/users/${id}?saved=1${created ? "&added=1" : "&existed=1"}`);
+}
+
+/** Gives a member a program the way a payment would (manual CK Membership + enrol). From a client page. */
+export async function giveAccessToUser(
+  userId: string,
+  formData: FormData,
+): Promise<void> {
+  const { supabase, user, db } = await requireStaff(OPS);
+  const programId = str(formData, "program_id");
+  if (!programId) redirect(`/admin/users/${userId}?tab=programs&error=program`);
+  try {
+    await grantAccess(db, userId, programId);
+  } catch {
+    redirect(`/admin/users/${userId}?tab=programs&error=save`);
+  }
+  await audit(supabase, user.id, "member.grant_access", userId, { programId });
+  redirect(`/admin/users/${userId}?tab=programs&saved=1`);
+}
+
+/** Same thing from a program page, looked up by the member's email. */
+export async function giveProgramAccess(
+  programId: string,
+  formData: FormData,
+): Promise<void> {
+  const { supabase, user, db } = await requireStaff(OPS);
+  const email = str(formData, "email", 200).toLowerCase();
+  const back = `/admin/programs/${programId}?view=access`;
+  if (!EMAIL_RE.test(email)) redirect(`${back}&error=email`);
+  const { data: prof } = await db
+    .from("profiles")
+    .select("user_id")
+    .eq("email", email)
+    .maybeSingle();
+  if (!prof) redirect(`${back}&error=nouser`);
+  let r: Awaited<ReturnType<typeof grantAccess>>;
+  try {
+    r = await grantAccess(db, prof.user_id, programId);
+  } catch {
+    redirect(`${back}&error=save`);
+  }
+  await audit(supabase, user.id, "member.grant_access", prof.user_id, { programId });
+  redirect(`${back}&granted=${r.membership}&who=${encodeURIComponent(email)}`);
 }
