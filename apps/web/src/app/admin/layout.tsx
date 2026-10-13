@@ -30,6 +30,11 @@ const NAV = [
     label: "Support",
     roles: ["owner", "admin", "support", "coach"],
   },
+  {
+    href: "/admin/community",
+    label: "Community",
+    roles: ["owner", "admin", "support", "coach"],
+  },
   { href: "/admin/billing", label: "Billing", roles: ["owner", "admin"] },
   { href: "/admin/kpis", label: "KPIs", roles: ["owner", "admin"] },
   { href: "/admin/tags", label: "Tags", roles: ["owner", "admin", "content_manager"] },

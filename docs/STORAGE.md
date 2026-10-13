@@ -7,7 +7,7 @@
 | Program thumbnails | Supabase Storage `program-thumbnails`                                   | Public read; editors write; JPG/PNG/WebP under 2 MB                                        |
 | Lesson PDFs        | Supabase Storage `program-resources` (private)                          | Two-minute signed link from `/api/resource` after an access check; under 20 MB             |
 | Avatars            | Supabase Storage `avatars`                                              | Each member manages her own folder; under 1 MB                                             |
-| Progress photos    | Not built. Planned behind the `progressPhotos` flag, in a private store | See PHASE_STATUS planned additions                                                         |
+| Progress photos    | Not built. Planned behind the `progressPhotos` flag, in a private store | See FEATURES.md                                                                            |
 
 ## Cloudflare Stream setup
 

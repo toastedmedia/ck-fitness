@@ -38,6 +38,7 @@ import { getContext } from "@/lib/app";
 import { activeDays } from "@/lib/milestones";
 import { ensurePlan, ensureWeekPlanned } from "@/lib/plan";
 import { getTodayWorkout } from "@/lib/programs";
+import { flags } from "@/lib/flags";
 import { getViewer } from "@/lib/viewer";
 
 export const metadata: Metadata = { title: "Home" };
@@ -318,6 +319,40 @@ export default async function HomePage({
             See what is included
           </Link>
         </Card>
+      ) : null}
+
+      {flags.community ? (
+        <Link
+          href="/community"
+          className="flex items-center gap-3 rounded-card border border-line bg-surface p-3"
+        >
+          <span
+            aria-hidden="true"
+            className="grid size-10 shrink-0 place-items-center rounded-full bg-brand text-on-brand"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="size-5 fill-none stroke-current"
+              strokeWidth="1.9"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="9" cy="8" r="3" />
+              <path d="M3 20c.5-3.5 3-5 6-5s5.5 1.5 6 5" />
+              <circle cx="17" cy="9" r="2.4" />
+              <path d="M16 14.2c2.6 0 4.5 1.3 5 4.3" />
+            </svg>
+          </span>
+          <span className="min-w-0 flex-1">
+            <b className="block text-[13px] text-brand">CK Community</b>
+            <span className="text-[11px] text-muted">
+              Share wins, ask questions, cheer each other on.
+            </span>
+          </span>
+          <span aria-hidden="true" className="text-muted">
+            ›
+          </span>
+        </Link>
       ) : null}
 
       <AppleHealthPreview />

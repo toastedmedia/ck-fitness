@@ -1,32 +1,35 @@
-# Feature status (Phase 1)
+# CK Fitness App: FEATURES (single features file, updated 2026-10-12)
 
-Legend: ✅ built (unit/DB tested) · 🔌 built, needs an external account to verify · ⏳ planned
+Legend: ✅ built and tested in code · 🔌 built, needs an outside account/keys to work live · 🚧 built, needs owner action · ⏳ not built.
+Nothing has been verified against live Stripe, Cloudflare or the CRM yet. Status of accounts and decisions is in `CLAUDE.md`.
 
-## Members
+## Members (mobile-first web app / PWA)
+- ✅ Welcome, sign up (18+ and terms recorded), log in (returns to the page you were heading for), forgot/reset password, log out
+- 🔌 Email confirmation and reset emails (needs Resend; branded templates ready)
+- ✅ 5-step onboarding with resume, optional phone, lb/in or kg/cm, safety guidance, coach-sharing agreement (on by default)
+- ✅ **Home:** greeting + supportive line, Needs Attention (one card: missed workout with Do it today / Move on / Need help + reasons, weigh-in overdue, weekly check-in, payment, sharing choice), Today's Workout hero (rest-day version), Today's CK Score (instant), My Commitment, Water, Weight Progress, BMI (secondary, hideable), This Week with CK Streak, Next Milestone, Community card, Apple Health preview ("Coming in Phase 2")
+- ✅ 15-second daily check-in (energy, soreness, sleep, mood, optional note); weekly check-in with weekly summary
+- ✅ **Accountability:** My Week, commitment, missed-day recovery, consistency, streak, milestones, hydration and step consistency (14 days), check-in history, what's getting in the way, message my coach
+- ✅ **Progress:** weight trend, workouts per week, water, measurements, check-in history; 🚧 weekly progress photos (front, side, back, arms raised; private, consent screen, delete one or all)
+- ✅ **Programs:** Discover, My Programs, Free, Member Library, Categories, filters, search; program detail, lesson player, PDF via signed link, complete, "I cannot do this today"
+- 🔌 Secure video (Cloudflare Stream signed links, resume, tracks furthest point and real watch time)
+- 🔌 Membership checkout, billing portal, cancel (Stripe direct)
+- ✅ **Community:** feed with categories, comments, likes, community guidelines (must accept to post), report, block, no links, daily limits, staff announcements
+- ✅ Notifications centre, support requests with staff replies, Profile (details, units, sharing choices, notification consent, data download, delete account)
+- ⏳ Apple Health and iPhone app (Phase 2), web push
 
-- ✅ Welcome, sign up, log in, forgot/reset password, 18+ check
-- 🔌 Email confirmation and reset emails (needs Resend + Supabase SMTP)
-- ✅ 5-step onboarding with resume and safety guidance
-- ✅ Home: Needs Attention, Today's Workout hero, Today's CK Score, My Commitment, water, steps (manual), weight + BMI (hideable), This Week with CK Streak, Next Milestone, 15-second daily check-in, missed-workout recovery with reasons, notification bell
-- ✅ Accountability: My Week, commitment, weekly check-in, missed-day recovery, consistency, streak
-- ✅ Progress: weight trend, workouts per week, water consistency, measurements, check-in history
-- ✅ Programs: Discover, My Programs, Free, Member Library, Categories, filters, program detail, lesson player
-- 🔌 Secure video (signed Cloudflare Stream links; needs Cloudflare keys)
-- 🔌 Membership checkout, billing portal, cancel (needs Stripe keys)
-- ✅ In-app notification centre; support requests; Profile (details, notification consent, data download, delete account)
-- ✅ lb/in units, program search
-- 🚧 Progress photos: built, switched off (`progressPhotos` flag) until the privacy design is approved
-- ⏳ Apple Health (native app), web push
-
-## Admin
-
-- ✅ Dashboard, programs/lessons editor, preview as Free/Member, publish checks, unpublish, covers and PDFs
-- ✅ Users (privacy-limited), manual premium assignment, staff roles (owners), accountability view, support replies, announcements, settings, audit log
-- 🔌 CRM sync queue with retries (needs Toasted Media CRM API)
+## Admin portal (`/admin`)
+- ✅ Dashboard (members, activity, at-risk, help, billing problems), KPIs (9 launch KPIs + video cost guard), Billing (all subscriptions, revenue estimate, Stripe invoices once connected), Accountability (at-risk list)
+- ✅ **Client record (Admin -> Users -> a client):** Overview (editable name/email/phone, plan, Stripe link, invoices, counts-only activity, staff roles), Questionnaire (everything from onboarding), Check-ins (daily + weekly), Progress (weight, measurements, water, steps, workouts), **Programs** (what she can access, stage, per-lesson furthest point, time watched, plays, completion), **Activity** (full timeline of every action and every account change, filterable), Photos, private Notes. Health tabs follow her sharing choice; every view is audited
+- ✅ Users (search by name/email/phone, filters, contacts CSV), Programs (cover upload, inline Free/Member switch, editor, preview as Free/Member, publish checks, CSV spreadsheet import), Tags, Support (reply notifies member), Announcements, **Community moderation** (reports queue, hide/restore/remove, mute, ban, pin, audience switch), CRM sync (retry/run), Settings (price, goals, CK Score weights), Audit log
+- 🔌 Toasted Media CRM adapter with retry queue (needs the real API)
 
 ## Platform
+- ✅ Row-level security on every table; staff access to client data enforced in the database and only with consent; community safety rules in the database
+- ✅ Entitlement rules (free/member/premium, cancel-until-period-end, 7-day grace) in TypeScript and SQL
+- ✅ Cron jobs: hourly reminders, daily at-risk detection, CRM sync every 10 min, daily cleanup
+- ✅ GitHub Actions CI, daily live smoke tests, security headers, privacy-safe Sentry hooks (needs DSN), PWA icons, error/loading pages, accessibility scan fixes
+- ✅ Account deletion removes data, photos and cancels Stripe; data download
 
-- ✅ Row-level security on every table, tested in an in-memory Postgres
-- ✅ Entitlement rules enforced in the database and the server; hidden/locked content never leaks text or video IDs
-- ✅ Cron jobs: hourly reminders, daily risk detection, CRM sync every 10 minutes
-- ✅ PWA manifest + icons, security headers, error pages, privacy-safe Sentry hooks
+## Still to do before launch (owners)
+Accounts above in `CLAUDE.md`, live QA, content (programs, videos, covers, safety notes), lawyer-approved Privacy Policy and Terms, 20-50 person beta, production project.

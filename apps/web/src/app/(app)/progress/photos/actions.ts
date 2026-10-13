@@ -14,11 +14,21 @@ async function gate() {
 }
 
 /** She agrees to store private progress photos. Asked once, and she can delete everything later. */
-export async function giveConsent(): Promise<void> {
-  const { supabase, user } = await gate();
+export async function giveConsent(formData: FormData): Promise<void> {
+  const { supabase, user, profile } = await gate();
+  const now = new Date().toISOString();
+  // Sharing with her coach is ticked by default; she can untick it here or later in Profile.
+  const share = formData.get("share") === "on";
   await supabase
     .from("profiles")
-    .update({ photo_consent_at: new Date().toISOString() })
+    .update({
+      photo_consent_at: now,
+      photo_coach_access_at: share ? (profile?.photo_coach_access_at ?? now) : null,
+      // Photos can only be shared together with her other records.
+      ...(share && !profile?.coach_access_at
+        ? { coach_access_at: now, sharing_decided_at: now }
+        : {}),
+    })
     .eq("user_id", user.id);
   revalidatePath("/progress/photos");
   redirect("/progress/photos");

@@ -13,6 +13,7 @@ import { LineChart } from "@/components/app/charts";
 import { ABtn, Flash, H1, Panel, Status, Table, aInput, td } from "@/components/admin/ui";
 import { audit, SUPPORT, requireStaff } from "@/lib/admin";
 import { listInvoices } from "@/lib/stripe";
+import { ActivityTab, ProgramsTab } from "./sections";
 import {
   addClientNote,
   deleteClientNote,
@@ -28,10 +29,18 @@ const TABS = [
   ["questionnaire", "Questionnaire"],
   ["checkins", "Check-ins"],
   ["progress", "Progress"],
+  ["programs", "Programs"],
+  ["activity", "Activity"],
   ["photos", "Photos"],
   ["notes", "Notes"],
 ] as const;
-const SENSITIVE = new Set(["questionnaire", "checkins", "progress", "photos"]);
+const SENSITIVE = new Set([
+  "questionnaire",
+  "checkins",
+  "progress",
+  "photos",
+  "activity",
+]);
 const label = (v: unknown) =>
   v == null || v === "" ? "-" : String(v).replace(/_/g, " ");
 const lab = "text-xs font-bold text-brand";
@@ -41,7 +50,7 @@ export default async function AdminClient({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; saved?: string; error?: string }>;
+  searchParams: Promise<{ tab?: string; kind?: string; saved?: string; error?: string }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
@@ -101,6 +110,38 @@ export default async function AdminClient({
       </nav>
     </>
   );
+
+  /* ----------------------------------------------------- programs and activity */
+  const ctx = { supabase, db, roles, user: me };
+  if (tab === "programs") {
+    if (shared && canSeeRecords)
+      await audit(supabase, me.id, "client_record.view", id, { tab });
+    return (
+      <>
+        {head}
+        <ProgramsTab
+          ctx={ctx}
+          id={id}
+          shared={shared && canSeeRecords}
+          firstName={p.first_name ?? "She"}
+        />
+      </>
+    );
+  }
+  if (tab === "activity" && open) {
+    return (
+      <>
+        {head}
+        <ActivityTab
+          ctx={ctx}
+          id={id}
+          units={units}
+          photosShared={photosShared}
+          kind={sp.kind ?? "all"}
+        />
+      </>
+    );
+  }
 
   /* ------------------------------------------------------------ locked */
   if (SENSITIVE.has(tab) && !open) {

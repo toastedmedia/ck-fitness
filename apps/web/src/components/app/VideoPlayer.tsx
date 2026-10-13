@@ -49,27 +49,37 @@ export function VideoPlayer({
     if (!src || !frame.current) return;
     const script = document.createElement("script");
     script.src = "https://embed.videodelivery.net/embed/sdk.latest.js";
-    let last = 0;
-    const save = (player: StreamPlayer) => {
-      const s = Math.floor(player.currentTime);
-      if (s > 0)
-        void fetch("/api/lesson-progress", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ lessonId, seconds: s }),
-          keepalive: true,
-        });
+    let lastSent = 0;
+    let lastTime = -1;
+    let pending = 0; // seconds genuinely watched since the last update
+    let firstUpdate = true;
+    const send = (player: StreamPlayer) => {
+      const seconds = Math.floor(player.currentTime);
+      if (seconds <= 0 && pending === 0) return;
+      const watched = Math.round(pending);
+      pending = 0;
+      void fetch("/api/lesson-progress", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ lessonId, seconds, watched, session: firstUpdate }),
+        keepalive: true,
+      });
+      firstUpdate = false;
     };
     script.onload = () => {
       if (!window.Stream || !frame.current) return;
       const player = window.Stream(frame.current);
       player.addEventListener("timeupdate", () => {
-        if (Date.now() - last > 15_000) {
-          last = Date.now();
-          save(player);
+        const t = player.currentTime;
+        // Count normal playback only (small forward steps); skipping ahead is not "watching".
+        if (lastTime >= 0 && t > lastTime && t - lastTime < 2.5) pending += t - lastTime;
+        lastTime = t;
+        if (Date.now() - lastSent > 15_000) {
+          lastSent = Date.now();
+          send(player);
         }
       });
-      player.addEventListener("pause", () => save(player));
+      player.addEventListener("pause", () => send(player));
     };
     document.body.appendChild(script);
     return () => script.remove();

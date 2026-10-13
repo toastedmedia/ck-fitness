@@ -1,6 +1,6 @@
 /** Later-phase features stay off until their phase ships (Build Guide §1). */
 export const flags = {
-  community: false,
+  community: true,
   aiCoach: false,
   nutrition: false,
   /** Apple Health needs the native iPhone app (Phase 2). Flip to true when it ships. */

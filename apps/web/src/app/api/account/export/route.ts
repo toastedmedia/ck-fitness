@@ -18,6 +18,8 @@ const TABLES = [
   "lesson_progress",
   "daily_checkins",
   "progress_photos",
+  "community_posts",
+  "community_comments",
   "memberships",
   "support_requests",
   "notifications",

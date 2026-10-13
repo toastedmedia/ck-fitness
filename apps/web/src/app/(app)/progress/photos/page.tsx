@@ -67,7 +67,16 @@ export default async function PhotosPage({
             <li>They are stored securely and shown to you through short-lived links.</li>
             <li>You can delete any photo, or all of them, at any time.</li>
           </ul>
-          <form action={giveConsent} className="mt-3">
+          <form action={giveConsent} className="mt-3 flex flex-col gap-3">
+            <label className="flex min-h-12 items-start gap-3 text-xs">
+              <input
+                type="checkbox"
+                name="share"
+                defaultChecked
+                className="mt-0.5 size-5 accent-brand"
+              />
+              <span>Let my CK coach see my progress photos.</span>
+            </label>
             <Button variant="primary" className="min-h-12 w-full">
               I understand, turn on photos
             </Button>

@@ -739,3 +739,106 @@ export async function updateProgramAccess(id: string, formData: FormData): Promi
   revalidatePath("/programs");
   redirect("/admin/programs?saved=1");
 }
+
+/* --------------------------------------------------------------- community moderation */
+const POST_TABLE = (kind: string) =>
+  kind === "comment" ? "community_comments" : "community_posts";
+
+/** Hide, restore or remove a post or comment. Open reports about it are marked as handled. */
+export async function moderateContent(
+  kind: "post" | "comment",
+  id: string,
+  status: "visible" | "hidden" | "removed",
+): Promise<void> {
+  const { supabase, user } = await requireStaff(SUPPORT);
+  await supabase.from(POST_TABLE(kind)).update({ status }).eq("id", id);
+  await supabase
+    .from("community_reports")
+    .update({ status: "resolved", resolved_by: user.id })
+    .eq(kind === "post" ? "post_id" : "comment_id", id)
+    .eq("status", "open");
+  await audit(supabase, user.id, `community.${status}`, id, { kind });
+  revalidatePath("/community");
+  redirect("/admin/community?saved=1");
+}
+
+/** The reports were not valid: keep the content visible and close the reports. */
+export async function dismissReports(
+  kind: "post" | "comment",
+  id: string,
+): Promise<void> {
+  const { supabase, user } = await requireStaff(SUPPORT);
+  await supabase.from(POST_TABLE(kind)).update({ status: "visible" }).eq("id", id);
+  await supabase
+    .from("community_reports")
+    .update({ status: "resolved", resolved_by: user.id })
+    .eq(kind === "post" ? "post_id" : "comment_id", id)
+    .eq("status", "open");
+  await audit(supabase, user.id, "community.dismiss", id, { kind });
+  revalidatePath("/community");
+  redirect("/admin/community?saved=1");
+}
+
+export async function muteMember(userId: string, formData: FormData): Promise<void> {
+  const { supabase, user, db } = await requireStaff(SUPPORT);
+  const days = Math.min(
+    90,
+    Math.max(1, parseInt(String(formData.get("days") ?? "7"), 10) || 7),
+  );
+  await db
+    .from("profiles")
+    .update({
+      community_muted_until: new Date(Date.now() + days * 86_400_000).toISOString(),
+    })
+    .eq("user_id", userId);
+  await notifyUser(userId, {
+    kind: "community",
+    title: "Your community posting is paused",
+    body: `You can read the community, but not post for ${days} day${days === 1 ? "" : "s"}. Please review the guidelines.`,
+    link: "/community/guidelines",
+  });
+  await audit(supabase, user.id, "community.mute", userId, { days });
+  redirect("/admin/community?saved=1");
+}
+
+export async function setCommunityBan(userId: string, banned: boolean): Promise<void> {
+  const { supabase, user, db } = await requireStaff(OPS);
+  await db.from("profiles").update({ community_banned: banned }).eq("user_id", userId);
+  await audit(supabase, user.id, banned ? "community.ban" : "community.unban", userId);
+  redirect("/admin/community?saved=1");
+}
+
+export async function postAnnouncement(formData: FormData): Promise<void> {
+  const { supabase, user } = await requireStaff(SUPPORT);
+  const body = str(formData, "body", 1000);
+  if (!body) redirect("/admin/community?error=1");
+  const { data } = await supabase
+    .from("community_posts")
+    .insert({ user_id: user.id, body, category: "announcement" })
+    .select("id")
+    .single();
+  if (data && formData.get("pinned") === "on")
+    await supabase.from("community_posts").update({ pinned: true }).eq("id", data.id);
+  await audit(supabase, user.id, "community.announce", data?.id ?? "-");
+  revalidatePath("/community");
+  redirect("/admin/community?saved=1");
+}
+
+export async function togglePin(id: string, pinned: boolean): Promise<void> {
+  const { supabase, user } = await requireStaff(SUPPORT);
+  await supabase.from("community_posts").update({ pinned }).eq("id", id);
+  await audit(supabase, user.id, pinned ? "community.pin" : "community.unpin", id);
+  revalidatePath("/community");
+  redirect("/admin/community?saved=1");
+}
+
+export async function setCommunityAudience(formData: FormData): Promise<void> {
+  const { supabase, user } = await requireStaff(OPS);
+  const value = str(formData, "audience") === "members" ? "members" : "all";
+  await supabase
+    .from("app_settings")
+    .upsert({ key: "community_audience", value }, { onConflict: "key" });
+  await audit(supabase, user.id, "community.audience", value);
+  revalidatePath("/community");
+  redirect("/admin/community?saved=1");
+}

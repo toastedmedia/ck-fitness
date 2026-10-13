@@ -758,3 +758,490 @@ describe("client records for coaching staff", () => {
     expect(await rows(SUPPORT, "client_notes")).toHaveLength(1);
   });
 });
+
+describe("client activity: watch detail and change log", () => {
+  const N1 = "00000000-0000-0000-0000-000000000030"; // shares
+  const N2 = "00000000-0000-0000-0000-000000000031"; // does not share
+  const CO = "00000000-0000-0000-0000-000000000032"; // coach
+  beforeAll(async () => {
+    for (const u of [N1, N2, CO]) await addUser(db, u);
+    await db.query("insert into public.staff_roles (user_id, role) values ($1,'coach')", [
+      CO,
+    ]);
+    await db.query(
+      "update public.profiles set coach_access_at = now() where user_id = $1",
+      [N1],
+    );
+  });
+  const seen = (user: string, table: string) =>
+    asUser(
+      db,
+      user,
+      async () => (await db.query(`select user_id from public.${table}`)).rows.length,
+    );
+
+  it("logs what a member changes on her account, ignoring housekeeping updates", async () => {
+    await asUser(db, N1, () =>
+      db.query(
+        "update public.profiles set phone = '+1 604 555 0100', units = 'imperial' where user_id = $1",
+        [N1],
+      ),
+    );
+    const count = async () =>
+      Number(
+        (
+          (
+            await db.query(
+              "select count(*)::int as n from public.client_changes where user_id = $1",
+              [N1],
+            )
+          ).rows[0] as { n: number }
+        ).n,
+      );
+    const before = await count();
+    await db.query(
+      "update public.profiles set last_active_at = now() where user_id = $1",
+      [N1],
+    ); // housekeeping only
+    expect(await count()).toBe(before);
+    const rows = (
+      await db.query(
+        "select details from public.client_changes where user_id = $1 and details ? 'phone'",
+        [N1],
+      )
+    ).rows as { details: Record<string, { from: unknown; to: unknown }> }[];
+    expect(rows).toHaveLength(1);
+    expect(Object.keys(rows[0].details).sort()).toEqual(["phone", "units"]);
+    expect(rows[0].details.units).toEqual({ from: "metric", to: "imperial" });
+  });
+  it("logs plan and notification changes", async () => {
+    await db.query(
+      "insert into public.accountability_plans (user_id, weekly_target_workouts) values ($1, 3)",
+      [N1],
+    );
+    await asUser(db, N1, () =>
+      db.query(
+        "update public.accountability_plans set weekly_target_workouts = 5 where user_id = $1",
+        [N1],
+      ),
+    );
+    await asUser(db, N1, () =>
+      db.query(
+        "update public.notification_preferences set marketing = true where user_id = $1",
+        [N1],
+      ),
+    );
+    const sources = (
+      (
+        await db.query(
+          "select distinct source from public.client_changes where user_id = $1",
+          [N1],
+        )
+      ).rows as { source: string }[]
+    ).map((r) => r.source);
+    expect(sources).toEqual(
+      expect.arrayContaining([
+        "accountability_plans",
+        "notification_preferences",
+        "profiles",
+      ]),
+    );
+  });
+  it("shows the change log to a coach only for members who share", async () => {
+    await db.query("update public.profiles set phone = '123' where user_id = $1", [N2]);
+    const owners = await asUser(
+      db,
+      CO,
+      async () =>
+        (await db.query("select distinct user_id from public.client_changes")).rows as {
+          user_id: string;
+        }[],
+    );
+    const ids = owners.map((r) => r.user_id);
+    expect(ids).toContain(N1);
+    expect(ids).not.toContain(N2);
+  });
+  it("lets members read nothing from the change log and never write to it", async () => {
+    expect(await seen(N1, "client_changes")).toBe(0);
+    await expect(
+      asUser(db, N1, () =>
+        db.query("insert into public.client_changes (user_id, source) values ($1,'x')", [
+          N1,
+        ]),
+      ),
+    ).rejects.toThrow();
+  });
+  it("tracks how much of a video she watched", async () => {
+    const lessonProgress = `00000000-0000-0000-0000-0000000000a1`;
+    await db.query(
+      "insert into public.programs (id, slug, title, access_level, published) values ('90000000-0000-0000-0000-000000000001','p-watch','Watch','free',true)",
+    );
+    await db.query(
+      "insert into public.program_sections (id, program_id, title) values ('91000000-0000-0000-0000-000000000001','90000000-0000-0000-0000-000000000001','W1')",
+    );
+    await db.query(
+      "insert into public.lessons (id, section_id, title) values ($1,'91000000-0000-0000-0000-000000000001','L')",
+      [lessonProgress],
+    );
+    await asUser(db, N1, () =>
+      db.query(
+        "insert into public.lesson_progress (user_id, lesson_id, furthest_seconds, watch_seconds, play_count, last_watched_at) values ($1,$2,400,380,2, now())",
+        [N1, lessonProgress],
+      ),
+    );
+    const row = await asUser(
+      db,
+      CO,
+      async () =>
+        (
+          await db.query(
+            "select furthest_seconds, watch_seconds, play_count from public.lesson_progress",
+          )
+        ).rows[0] as {
+          furthest_seconds: number;
+          watch_seconds: number;
+          play_count: number;
+        },
+    );
+    expect(row).toEqual({ furthest_seconds: 400, watch_seconds: 380, play_count: 2 });
+  });
+  it("turns sharing on for existing pre-launch accounts (the 0013 backfill)", async () => {
+    const O = "00000000-0000-0000-0000-000000000033";
+    await addUser(db, O);
+    await db.query(
+      "update public.profiles set onboarding_complete = true where user_id = $1",
+      [O],
+    );
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const sql = readFileSync(
+      join(__dirname, "..", "migrations", "20261020000013_client_activity.sql"),
+      "utf8",
+    );
+    await db.exec(sql.slice(sql.indexOf("update public.profiles")));
+    const row = (
+      await db.query(
+        "select coach_access_at, photo_coach_access_at from public.profiles where user_id = $1",
+        [O],
+      )
+    ).rows[0] as { coach_access_at: Date | null; photo_coach_access_at: Date | null };
+    expect(row.coach_access_at).not.toBeNull();
+    expect(row.photo_coach_access_at).not.toBeNull();
+  });
+});
+
+describe("community", () => {
+  const P = ["a", "b", "c", "d"].map(
+    (c, i) => `00000000-0000-0000-0000-0000000000${(40 + i).toString()}`,
+  );
+  const [U1, U2, U3, U4] = P;
+  const MOD = "00000000-0000-0000-0000-000000000050";
+  const NEW = "00000000-0000-0000-0000-000000000051"; // has not accepted the guidelines
+  const MUTED = "00000000-0000-0000-0000-000000000052";
+  const post = (user: string, body = "Hello community") =>
+    asUser(db, user, () =>
+      db.query(
+        "insert into public.community_posts (user_id, body, category) values ($1,$2,'win') returning id",
+        [user, body],
+      ),
+    );
+
+  beforeAll(async () => {
+    for (const u of [...P, MOD, NEW, MUTED]) await addUser(db, u);
+    await db.query(
+      "insert into public.staff_roles (user_id, role) values ($1,'support')",
+      [MOD],
+    );
+    await db.query(
+      "update public.profiles set onboarding_complete = true, community_accepted_at = now(), first_name = 'Priya', last_name = 'Sharma' where user_id = any($1::uuid[])",
+      [[U1, U2, U3, U4]],
+    );
+    await db.query(
+      "update public.profiles set onboarding_complete = true where user_id = any($1::uuid[])",
+      [[NEW, MUTED]],
+    );
+    await db.query(
+      "update public.profiles set community_accepted_at = now(), community_muted_until = now() + interval '3 days' where user_id = $1",
+      [MUTED],
+    );
+  });
+
+  it("sets the author name from her profile and ignores any name she tries to send", async () => {
+    const r = await asUser(db, U1, () =>
+      db.query(
+        "insert into public.community_posts (user_id, author_name, body) values ($1,'Someone Else','Hi') returning author_name",
+        [U1],
+      ),
+    );
+    expect((r.rows[0] as { author_name: string }).author_name).toBe("Priya S.");
+  });
+  it("blocks posting until the guidelines are accepted, and while muted", async () => {
+    await expect(post(NEW)).rejects.toThrow();
+    await expect(post(MUTED)).rejects.toThrow();
+  });
+  it("blocks posting as someone else", async () => {
+    await expect(
+      asUser(db, U1, () =>
+        db.query(
+          "insert into public.community_posts (user_id, body) values ($1,'spoof')",
+          [U2],
+        ),
+      ),
+    ).rejects.toThrow();
+  });
+  it("shows visible posts to members, and a member can still see her own hidden posts", async () => {
+    const r = await post(U2, "Visible post");
+    const id = (r.rows[0] as { id: string }).id;
+    expect(
+      (
+        await asUser(
+          db,
+          U3,
+          async () =>
+            (await db.query("select id from public.community_posts where id = $1", [id]))
+              .rows,
+        )
+      ).length,
+    ).toBe(1);
+    await db.query("update public.community_posts set status = 'hidden' where id = $1", [
+      id,
+    ]);
+    expect(
+      (
+        await asUser(
+          db,
+          U3,
+          async () =>
+            (await db.query("select id from public.community_posts where id = $1", [id]))
+              .rows,
+        )
+      ).length,
+    ).toBe(0);
+    expect(
+      (
+        await asUser(
+          db,
+          U2,
+          async () =>
+            (await db.query("select id from public.community_posts where id = $1", [id]))
+              .rows,
+        )
+      ).length,
+    ).toBe(1);
+    expect(
+      (
+        await asUser(
+          db,
+          MOD,
+          async () =>
+            (await db.query("select id from public.community_posts where id = $1", [id]))
+              .rows,
+        )
+      ).length,
+    ).toBe(1);
+  });
+  it("hides a blocked member's posts in both directions", async () => {
+    const id = ((await post(U3, "From U3")).rows[0] as { id: string }).id;
+    await asUser(db, U4, () =>
+      db.query(
+        "insert into public.community_blocks (blocker_id, blocked_id) values ($1,$2)",
+        [U4, U3],
+      ),
+    );
+    expect(
+      (
+        await asUser(
+          db,
+          U4,
+          async () =>
+            (await db.query("select id from public.community_posts where id = $1", [id]))
+              .rows,
+        )
+      ).length,
+    ).toBe(0);
+    const id4 = ((await post(U4, "From U4")).rows[0] as { id: string }).id;
+    expect(
+      (
+        await asUser(
+          db,
+          U3,
+          async () =>
+            (await db.query("select id from public.community_posts where id = $1", [id4]))
+              .rows,
+        )
+      ).length,
+    ).toBe(0);
+  });
+  it("hides a post automatically after three different members report it", async () => {
+    const id = ((await post(U1, "Questionable post")).rows[0] as { id: string }).id;
+    for (const reporter of [U2, U3, U4])
+      await asUser(db, reporter, () =>
+        db.query(
+          "insert into public.community_reports (reporter_id, post_id, reason) values ($1,$2,'spam')",
+          [reporter, id],
+        ),
+      );
+    const row = (
+      await db.query(
+        "select status, report_count from public.community_posts where id = $1",
+        [id],
+      )
+    ).rows[0] as { status: string; report_count: number };
+    expect(row).toEqual({ status: "hidden", report_count: 3 });
+  });
+  it("lets a member report something only once", async () => {
+    const id = ((await post(U1, "Another")).rows[0] as { id: string }).id;
+    await asUser(db, U2, () =>
+      db.query(
+        "insert into public.community_reports (reporter_id, post_id, reason) values ($1,$2,'spam')",
+        [U2, id],
+      ),
+    );
+    await expect(
+      asUser(db, U2, () =>
+        db.query(
+          "insert into public.community_reports (reporter_id, post_id, reason) values ($1,$2,'other')",
+          [U2, id],
+        ),
+      ),
+    ).rejects.toThrow();
+  });
+  it("counts likes and comments, and keeps reports private to the reporter and staff", async () => {
+    const id = ((await post(U1, "Count me")).rows[0] as { id: string }).id;
+    await asUser(db, U2, () =>
+      db.query("insert into public.community_likes (post_id, user_id) values ($1,$2)", [
+        id,
+        U2,
+      ]),
+    );
+    await asUser(db, U3, () =>
+      db.query("insert into public.community_likes (post_id, user_id) values ($1,$2)", [
+        id,
+        U3,
+      ]),
+    );
+    await asUser(db, U2, () =>
+      db.query(
+        "insert into public.community_comments (post_id, user_id, body) values ($1,$2,'Well done')",
+        [id, U2],
+      ),
+    );
+    const row = (
+      await db.query(
+        "select like_count, comment_count from public.community_posts where id = $1",
+        [id],
+      )
+    ).rows[0] as { like_count: number; comment_count: number };
+    expect(row).toEqual({ like_count: 2, comment_count: 1 });
+    // U1 has reported nothing, so she sees no reports (even about her own posts); staff see them all.
+    expect(
+      (
+        await asUser(
+          db,
+          U1,
+          async () => (await db.query("select * from public.community_reports")).rows,
+        )
+      ).length,
+    ).toBe(0);
+    expect(
+      (
+        await asUser(
+          db,
+          MOD,
+          async () => (await db.query("select * from public.community_reports")).rows,
+        )
+      ).length,
+    ).toBeGreaterThan(0);
+  });
+  it("stops members editing or hiding other people's posts", async () => {
+    const id = ((await post(U1, "Mine")).rows[0] as { id: string }).id;
+    await asUser(db, U2, () =>
+      db.query("update public.community_posts set status = 'removed' where id = $1", [
+        id,
+      ]),
+    );
+    await asUser(db, U2, () =>
+      db.query("delete from public.community_posts where id = $1", [id]),
+    );
+    expect(
+      (
+        (await db.query("select status from public.community_posts where id = $1", [id]))
+          .rows[0] as { status: string }
+      ).status,
+    ).toBe("visible");
+  });
+  it("limits a member to ten posts a day", async () => {
+    const R = "00000000-0000-0000-0000-000000000053";
+    await addUser(db, R);
+    await db.query(
+      "update public.profiles set onboarding_complete = true, community_accepted_at = now() where user_id = $1",
+      [R],
+    );
+    for (let i = 0; i < 10; i++) await post(R, `post ${i}`);
+    await expect(post(R, "one too many")).rejects.toThrow();
+  });
+  it("lets only staff post announcements, shown as the CK Team", async () => {
+    await expect(
+      asUser(db, U1, () =>
+        db.query(
+          "insert into public.community_posts (user_id, body, category) values ($1,'x','announcement')",
+          [U1],
+        ),
+      ),
+    ).rejects.toThrow();
+    const r = await asUser(db, MOD, () =>
+      db.query(
+        "insert into public.community_posts (user_id, body, category) values ($1,'Welcome!','announcement') returning author_name",
+        [MOD],
+      ),
+    );
+    expect((r.rows[0] as { author_name: string }).author_name).toBe("CK Team");
+  });
+  it("closes the community to free members when the audience is set to members", async () => {
+    await db.query(
+      "update public.app_settings set value = '\"members\"' where key = 'community_audience'",
+    );
+    expect(
+      (
+        await asUser(
+          db,
+          U1,
+          async () => (await db.query("select id from public.community_posts")).rows,
+        )
+      ).length,
+    ).toBeGreaterThanOrEqual(0);
+    const visible = await asUser(
+      db,
+      U3,
+      async () =>
+        (
+          await db.query(
+            "select id from public.community_posts where status = 'visible' and user_id <> $1",
+            [U3],
+          )
+        ).rows,
+    );
+    expect(visible).toHaveLength(0);
+    await db.query(
+      "update public.app_settings set value = '\"all\"' where key = 'community_audience'",
+    );
+  });
+});
+
+describe("migrations that are meant to be repeatable", () => {
+  it("can be pasted and run a second time without errors (0012 to 0014)", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const fresh = await freshDb();
+    for (const f of [
+      "20261019000012_sharing_decision.sql",
+      "20261020000013_client_activity.sql",
+      "20261021000014_community.sql",
+    ]) {
+      await fresh.exec(readFileSync(join(__dirname, "..", "migrations", f), "utf8")); // second run
+    }
+    const n = (await fresh.query("select count(*)::int as n from public.community_posts"))
+      .rows[0] as { n: number };
+    expect(n.n).toBe(0);
+  });
+});
