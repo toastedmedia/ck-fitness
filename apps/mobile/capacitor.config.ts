@@ -1,0 +1,40 @@
+import type { CapacitorConfig } from "@capacitor/cli";
+
+/**
+ * The app is a native shell around the live CK Fitness web app, so every web update reaches
+ * members instantly with no store review. "CKFitnessApp" in the browser identity tells the web app
+ * to hide prices and purchase buttons inside the store apps (see apps/web/src/lib/native.ts).
+ */
+const config: CapacitorConfig = {
+  appId: "com.chardikalafitness.app",
+  appName: "CK Fitness",
+  webDir: "www",
+  server: {
+    url: "https://app.chardikalafitness.com",
+    cleartext: false,
+    errorPath: "error.html",
+  },
+  ios: {
+    appendUserAgent: "CKFitnessApp",
+    contentInset: "always",
+    backgroundColor: "#1b1b36",
+    limitsNavigationsToAppBoundDomains: false,
+  },
+  android: {
+    appendUserAgent: "CKFitnessApp",
+    backgroundColor: "#1b1b36",
+    allowMixedContent: false,
+  },
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 1200,
+      launchAutoHide: true,
+      backgroundColor: "#1b1b36",
+      showSpinner: false,
+    },
+    StatusBar: { style: "DARK", backgroundColor: "#1b1b36" },
+    Keyboard: { resize: "body" },
+  },
+};
+
+export default config;

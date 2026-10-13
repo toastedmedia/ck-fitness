@@ -4,3 +4,6 @@ package-lock.json
 *.pdf
 docs/design/home-refined.html
 e2e/playwright-report
+apps/mobile/android
+apps/mobile/ios
+apps/mobile/www
