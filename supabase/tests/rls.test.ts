@@ -649,3 +649,112 @@ describe("terms acceptance", () => {
     expect(row.terms_accepted_at).toBeNull();
   });
 });
+
+describe("client records for coaching staff", () => {
+  const M1 = "00000000-0000-0000-0000-000000000020"; // shared records, not photos
+  const M2 = "00000000-0000-0000-0000-000000000021"; // shared nothing
+  const M3 = "00000000-0000-0000-0000-000000000022"; // shared records and photos
+  const COACH = "00000000-0000-0000-0000-000000000023";
+  const SUPPORT = "00000000-0000-0000-0000-000000000024";
+
+  beforeAll(async () => {
+    for (const u of [M1, M2, M3, COACH, SUPPORT]) await addUser(db, u);
+    await db.query(
+      "insert into public.staff_roles (user_id, role) values ($1,'coach'),($2,'support')",
+      [COACH, SUPPORT],
+    );
+    await db.query(
+      "update public.profiles set coach_access_at = now() where user_id in ($1, $2)",
+      [M1, M3],
+    );
+    await db.query(
+      "update public.profiles set photo_coach_access_at = now() where user_id = $1",
+      [M3],
+    );
+    for (const u of [M1, M2, M3]) {
+      await db.query(
+        "insert into public.weigh_ins (user_id, log_date, weight_kg) values ($1,'2026-10-12',70)",
+        [u],
+      );
+      await db.query(
+        "insert into public.daily_checkins (user_id, check_date, energy, soreness, sleep, mood) values ($1,'2026-10-12','good','mild','fair','okay')",
+        [u],
+      );
+      await db.query(
+        'insert into public.onboarding_profiles (user_id, height_cm, safety_flags) values ($1, 165, \'{"limitations":"knee"}\')',
+        [u],
+      );
+    }
+    for (const u of [M1, M3])
+      await db.query(
+        "insert into public.progress_photos (user_id, taken_on, week_start, pose, storage_path) values ($1,'2026-10-12','2026-10-12','front', $2)",
+        [u, `${u}/x.jpg`],
+      );
+  });
+
+  const rows = (user: string, table: string) =>
+    asUser(
+      db,
+      user,
+      async () =>
+        (await db.query(`select user_id from public.${table}`)).rows as {
+          user_id: string;
+        }[],
+    );
+
+  it("lets a coach read only the records of members who agreed to share", async () => {
+    for (const t of ["weigh_ins", "daily_checkins", "onboarding_profiles"]) {
+      expect((await rows(COACH, t)).map((r) => r.user_id).sort()).toEqual(
+        [M1, M3].sort(),
+      );
+    }
+  });
+  it("lets a coach see photos only when photo sharing is also on", async () => {
+    expect((await rows(COACH, "progress_photos")).map((r) => r.user_id)).toEqual([M3]);
+  });
+  it("keeps support staff away from health records entirely", async () => {
+    for (const t of [
+      "weigh_ins",
+      "daily_checkins",
+      "onboarding_profiles",
+      "progress_photos",
+    ])
+      expect(await rows(SUPPORT, t)).toHaveLength(0);
+  });
+  it("stops access the moment a member withdraws", async () => {
+    await db.query(
+      "update public.profiles set coach_access_at = null where user_id = $1",
+      [M1],
+    );
+    expect((await rows(COACH, "weigh_ins")).map((r) => r.user_id)).toEqual([M3]);
+    await db.query(
+      "update public.profiles set coach_access_at = now() where user_id = $1",
+      [M1],
+    );
+  });
+  it("never lets staff change a member's records", async () => {
+    await asUser(db, COACH, () => db.query("update public.weigh_ins set weight_kg = 1"));
+    const w = (
+      await db.query("select weight_kg from public.weigh_ins where user_id = $1", [M1])
+    ).rows[0] as { weight_kg: string };
+    expect(Number(w.weight_kg)).toBe(70);
+  });
+  it("keeps staff notes away from members and lets staff add notes as themselves only", async () => {
+    await asUser(db, COACH, () =>
+      db.query(
+        "insert into public.client_notes (user_id, author_id, body) values ($1,$2,'Prefers morning sessions')",
+        [M1, COACH],
+      ),
+    );
+    await expect(
+      asUser(db, COACH, () =>
+        db.query(
+          "insert into public.client_notes (user_id, author_id, body) values ($1,$2,'forged')",
+          [M1, SUPPORT],
+        ),
+      ),
+    ).rejects.toThrow();
+    expect(await rows(M1, "client_notes")).toHaveLength(0);
+    expect(await rows(SUPPORT, "client_notes")).toHaveLength(1);
+  });
+});

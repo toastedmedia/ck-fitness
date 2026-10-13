@@ -60,7 +60,10 @@ export default async function PhotosPage({
           <Cap>Before you start</Cap>
           <ul className="mt-2 flex flex-col gap-1.5 text-xs">
             <li>Photos are optional and completely private. Only you can see them.</li>
-            <li>CK staff, coaches and support cannot see your photos.</li>
+            <li>
+              CK staff cannot see your photos unless you choose to share them with your
+              coach in Profile. That choice is off by default.
+            </li>
             <li>They are stored securely and shown to you through short-lived links.</li>
             <li>You can delete any photo, or all of them, at any time.</li>
           </ul>

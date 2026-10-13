@@ -490,6 +490,11 @@ export async function saveSettings(formData: FormData): Promise<void> {
   };
   const entries = {
     membership_price_display: JSON.stringify(str(formData, "price", 60)),
+    membership_price_amount: JSON.stringify(
+      Number(formData.get("price_amount")) > 0
+        ? Number(formData.get("price_amount"))
+        : 29.99,
+    ),
     support_email: JSON.stringify(str(formData, "support_email", 120)),
     privacy_url: JSON.stringify(str(formData, "privacy_url", 200)),
     terms_url: JSON.stringify(str(formData, "terms_url", 200)),
@@ -667,4 +672,70 @@ export async function importPrograms(formData: FormData): Promise<void> {
   redirect(
     `/admin/programs/import?done=${created}-${lessons}&problems=${encodeURIComponent([...notes, ...parsed.skipped].slice(0, 12).join("|"))}`,
   );
+}
+
+/** Staff correct a client's contact details. The change (before and after) is logged. */
+export async function updateClientContact(
+  userId: string,
+  formData: FormData,
+): Promise<void> {
+  const { supabase, user, db } = await requireStaff(OPS);
+  const first = str(formData, "first_name", 60),
+    last = str(formData, "last_name", 60);
+  const phone = str(formData, "phone", 30),
+    email = str(formData, "email", 200).toLowerCase();
+  if (!first || !last) redirect(`/admin/users/${userId}?error=name`);
+  if (phone && !/^\+?[0-9 ()-]{7,20}$/.test(phone))
+    redirect(`/admin/users/${userId}?error=phone`);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    redirect(`/admin/users/${userId}?error=email`);
+
+  const { data: before } = await db
+    .from("profiles")
+    .select("first_name,last_name,phone,email")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (before && before.email !== email) {
+    const { error } = await db.auth.admin.updateUserById(userId, {
+      email,
+      email_confirm: true,
+    });
+    if (error) redirect(`/admin/users/${userId}?error=email`);
+  }
+  await db
+    .from("profiles")
+    .update({ first_name: first, last_name: last, phone: phone || null, email })
+    .eq("user_id", userId);
+  await audit(supabase, user.id, "client.contact_update", userId, {
+    before,
+    after: { first_name: first, last_name: last, phone: phone || null, email },
+  });
+  redirect(`/admin/users/${userId}?saved=1`);
+}
+
+export async function addClientNote(userId: string, formData: FormData): Promise<void> {
+  const { supabase, user } = await requireStaff(SUPPORT);
+  const body = str(formData, "body", 2000);
+  if (body)
+    await supabase
+      .from("client_notes")
+      .insert({ user_id: userId, author_id: user.id, body });
+  redirect(`/admin/users/${userId}?tab=notes&saved=1`);
+}
+
+export async function deleteClientNote(userId: string, noteId: string): Promise<void> {
+  const { supabase } = await requireStaff(SUPPORT);
+  await supabase.from("client_notes").delete().eq("id", noteId);
+  redirect(`/admin/users/${userId}?tab=notes&saved=1`);
+}
+
+/** Quick switch between Free and Member (and the other levels) from the programs list. */
+export async function updateProgramAccess(id: string, formData: FormData): Promise<void> {
+  const { supabase, user } = await requireStaff(CONTENT);
+  const level = str(formData, "access_level");
+  if (!LEVELS.includes(level)) redirect("/admin/programs");
+  await supabase.from("programs").update({ access_level: level }).eq("id", id);
+  await audit(supabase, user.id, "program.access", id, { access_level: level });
+  revalidatePath("/programs");
+  redirect("/admin/programs?saved=1");
 }

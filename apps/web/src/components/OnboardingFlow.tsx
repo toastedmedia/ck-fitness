@@ -183,6 +183,16 @@ export function OnboardingFlow({ initial }: { initial: Data }) {
             error={errors.birthDate}
             autoComplete="bday"
           />
+          <Field
+            label="Phone number (optional)"
+            type="tel"
+            inputMode="tel"
+            value={str("phone")}
+            onChange={(e) => set("phone", e.target.value)}
+            error={errors.phone}
+            autoComplete="tel"
+            hint="Only used if you ask us to contact you, or if you choose text reminders."
+          />
           <ChipGroup
             label="Gender"
             options={GENDER}
@@ -369,6 +379,24 @@ export function OnboardingFlow({ initial }: { initial: Data }) {
           {errors.acknowledged ? (
             <p role="alert" className="text-sm font-semibold text-danger">
               {errors.acknowledged}
+            </p>
+          ) : null}
+          <label className="flex min-h-12 items-start gap-3">
+            <input
+              type="checkbox"
+              className="mt-1 size-5 accent-brand"
+              checked={data.coachAccess === true}
+              onChange={(e) => set("coachAccess", e.target.checked)}
+            />
+            <span>
+              I agree that my CK coach can see my answers, check-ins, weight and
+              measurements so they can support me. I can turn this off any time in
+              Profile.
+            </span>
+          </label>
+          {errors.coachAccess ? (
+            <p role="alert" className="text-sm font-semibold text-danger">
+              {errors.coachAccess}
             </p>
           ) : null}
         </>

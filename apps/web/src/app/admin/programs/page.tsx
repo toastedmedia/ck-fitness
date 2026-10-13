@@ -1,8 +1,9 @@
+/* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ABtn, Flash, H1, Panel, Status, Table, aInput, td } from "@/components/admin/ui";
 import { CONTENT, requireStaff } from "@/lib/admin";
-import { createProgram } from "../actions";
+import { createProgram, updateProgramAccess } from "../actions";
 
 export const metadata: Metadata = { title: "Programs" };
 
@@ -15,7 +16,9 @@ export default async function AdminPrograms({
   const { supabase } = await requireStaff([...CONTENT, "coach"]);
   const { data } = await supabase
     .from("programs")
-    .select("id,title,slug,access_level,published,featured,duration_label,sort_order")
+    .select(
+      "id,title,slug,access_level,published,featured,duration_label,sort_order,cover_path",
+    )
     .order("sort_order")
     .order("created_at", { ascending: false });
   const rows = (data ?? []) as {
@@ -26,6 +29,7 @@ export default async function AdminPrograms({
     published: boolean;
     featured: boolean;
     duration_label: string | null;
+    cover_path: string | null;
   }[];
   return (
     <>
@@ -62,16 +66,48 @@ export default async function AdminPrograms({
           {rows.map((p) => (
             <tr key={p.id}>
               <td className={td}>
-                <b>{p.title}</b>
-                {p.featured ? (
-                  <span className="ml-2 text-xs text-muted">featured</span>
-                ) : null}
-                <span className="block text-xs text-muted">/{p.slug}</span>
+                <div className="flex items-center gap-3">
+                  {p.cover_path ? (
+                    <img
+                      src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/program-thumbnails/${p.cover_path}`}
+                      alt=""
+                      className="size-10 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <span className="grid size-10 place-items-center rounded-lg bg-page text-[10px] text-muted">
+                      No image
+                    </span>
+                  )}
+                  <div>
+                    <b>{p.title}</b>
+                    {p.featured ? (
+                      <span className="ml-2 text-xs text-muted">featured</span>
+                    ) : null}
+                    <span className="block text-xs text-muted">/{p.slug}</span>
+                  </div>
+                </div>
               </td>
               <td className={td}>
-                <Status tone={p.access_level === "free" ? "ok" : "mute"}>
-                  {p.access_level.replace("_", " ")}
-                </Status>
+                <form
+                  action={updateProgramAccess.bind(null, p.id)}
+                  className="flex items-center gap-1"
+                >
+                  <select
+                    name="access_level"
+                    defaultValue={p.access_level}
+                    aria-label={`Access for ${p.title}`}
+                    className="min-h-9 rounded-lg border-2 border-line bg-surface px-2 text-xs"
+                  >
+                    <option value="free">Free</option>
+                    <option value="member">Member</option>
+                    <option value="premium_preview">Premium preview</option>
+                    <option value="coach_only">Coach only</option>
+                    <option value="hidden">Hidden</option>
+                  </select>
+                  <ABtn variant="ghost" className="min-h-9 px-3">
+                    Set
+                  </ABtn>
+                </form>
               </td>
               <td className={td}>{p.duration_label ?? "-"}</td>
               <td className={td}>

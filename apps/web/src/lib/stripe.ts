@@ -98,3 +98,44 @@ export async function syncSubscription(subscriptionId: string, fallbackUserId?: 
       });
   }
 }
+
+export interface InvoiceRow {
+  id: string;
+  number: string | null;
+  customerId: string | null;
+  customerEmail: string | null;
+  status: string | null;
+  amount: number;
+  currency: string;
+  created: string;
+  hostedUrl: string | null;
+}
+
+const toRow = (i: Stripe.Invoice): InvoiceRow => ({
+  id: i.id ?? "",
+  number: i.number,
+  customerId: typeof i.customer === "string" ? i.customer : (i.customer?.id ?? null),
+  customerEmail: i.customer_email,
+  status: i.status,
+  amount: (i.amount_paid || i.amount_due) / 100,
+  currency: (i.currency ?? "cad").toUpperCase(),
+  created: new Date(i.created * 1000).toISOString(),
+  hostedUrl: i.hosted_invoice_url ?? null,
+});
+
+/** Recent invoices from Stripe, or null when Stripe is not connected yet. Read-only. */
+export async function listInvoices(
+  opts: { customerId?: string; limit?: number } = {},
+): Promise<InvoiceRow[] | null> {
+  if (!process.env.STRIPE_SECRET_KEY) return null;
+  try {
+    const res = await stripeClient().invoices.list({
+      limit: opts.limit ?? 20,
+      ...(opts.customerId ? { customer: opts.customerId } : {}),
+    });
+    return res.data.map(toRow);
+  } catch (e) {
+    console.error("stripe invoices failed", (e as Error).message);
+    return null;
+  }
+}

@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button, Cap, Card, Flash } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
-import { saveNotificationPrefs, setUnits, updateProfileName } from "../actions";
+import {
+  saveNotificationPrefs,
+  setSharing,
+  setUnits,
+  updateProfileName,
+} from "../actions";
 
 export const metadata: Metadata = { title: "Profile" };
 
@@ -71,6 +76,9 @@ export default async function ProfilePage({
           We could not delete your account. Please contact support.
         </Flash>
       ) : null}
+      {sp.error === "phone" ? (
+        <Flash tone="error">Enter a valid phone number, or leave it blank.</Flash>
+      ) : null}
       {sp.error === "name" ? (
         <Flash tone="error">Please enter your first and last name.</Flash>
       ) : null}
@@ -93,6 +101,16 @@ export default async function ProfilePage({
               name="last_name"
               defaultValue={profile?.last_name ?? ""}
               required
+              className={input}
+            />
+          </label>
+          <label className="text-xs font-bold text-brand">
+            Phone (optional)
+            <input
+              name="phone"
+              type="tel"
+              defaultValue={profile?.phone ?? ""}
+              autoComplete="tel"
               className={input}
             />
           </label>
@@ -120,6 +138,44 @@ export default async function ProfilePage({
             </label>
           ))}
           <Button variant="primary">Save units</Button>
+        </form>
+      </Card>
+
+      <Card>
+        <Cap>Sharing with your coach</Cap>
+        <form action={setSharing} className="mt-2 flex flex-col gap-1">
+          <label className="flex min-h-12 items-start gap-3 text-xs">
+            <input
+              type="checkbox"
+              name="records"
+              defaultChecked={Boolean(profile?.coach_access_at)}
+              className="mt-0.5 size-5 accent-brand"
+            />
+            <span>
+              <b className="block text-brand">My answers and progress</b>Lets your CK
+              coach see your questionnaire, daily check-ins, weight and measurements so
+              they can support you.
+            </span>
+          </label>
+          <label className="flex min-h-12 items-start gap-3 text-xs">
+            <input
+              type="checkbox"
+              name="photos"
+              defaultChecked={Boolean(profile?.photo_coach_access_at)}
+              className="mt-0.5 size-5 accent-brand"
+            />
+            <span>
+              <b className="block text-brand">My progress photos</b>Optional. Only if you
+              use photos. Off by default.
+            </span>
+          </label>
+          <p className="text-[10.5px] text-muted">
+            Turn either off and your coach loses access immediately. Every time staff open
+            your record, it is logged.
+          </p>
+          <Button variant="primary" className="mt-1">
+            Save sharing choices
+          </Button>
         </form>
       </Card>
 

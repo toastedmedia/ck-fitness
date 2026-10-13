@@ -23,6 +23,7 @@ export default async function Page() {
   const feetInches = ob?.height_cm ? cmToFeetInches(Number(ob.height_cm)) : null;
   const initial = {
     units,
+    phone: profile?.phone ?? "",
     heightFt: feetInches?.feet ?? "",
     heightIn: feetInches?.inches ?? "",
     weightDisplay: ob?.starting_weight_kg

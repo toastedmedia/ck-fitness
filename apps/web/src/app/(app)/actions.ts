@@ -419,13 +419,35 @@ export async function updateProfileName(formData: FormData): Promise<void> {
   const last = String(formData.get("last_name") ?? "")
     .trim()
     .slice(0, 60);
+  const phone = String(formData.get("phone") ?? "")
+    .trim()
+    .slice(0, 30);
   if (!first || !last) redirect("/profile?error=name");
+  if (phone && !/^\+?[0-9 ()-]{7,20}$/.test(phone)) redirect("/profile?error=phone");
   await supabase
     .from("profiles")
-    .update({ first_name: first, last_name: last })
+    .update({ first_name: first, last_name: last, phone: phone || null })
     .eq("user_id", user.id);
   refresh();
   redirect("/profile?saved=name");
+}
+
+/** What her CK coach may see. Withdrawing records also withdraws photos. Takes effect immediately. */
+export async function setSharing(formData: FormData): Promise<void> {
+  const { supabase, user, profile } = await getContext();
+  const records = formData.get("records") === "on";
+  const photos = records && formData.get("photos") === "on";
+  const now = new Date().toISOString();
+  await supabase
+    .from("profiles")
+    .update({
+      coach_access_at: records ? (profile?.coach_access_at ?? now) : null,
+      photo_coach_access_at: photos ? (profile?.photo_coach_access_at ?? now) : null,
+    })
+    .eq("user_id", user.id);
+  await track(user.id, records ? "sharing_on" : "sharing_off", { photos });
+  refresh();
+  redirect("/profile?saved=sharing");
 }
 
 /** Switch between kg/cm and lb/in. Stored values never change; only what she sees and types. */

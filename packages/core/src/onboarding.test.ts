@@ -90,3 +90,47 @@ describe("other steps", () => {
     expect(needsSafetyGuidance({ limitations: "", pregnancyContext: "no" })).toBe(false);
   });
 });
+
+describe("phone and coach sharing", () => {
+  const base = {
+    firstName: "P",
+    lastName: "S",
+    birthDate: "1992-03-14",
+    gender: "female",
+    heightCm: 168,
+    weightKg: 67,
+  };
+  it("accepts a normal phone number or none at all", () => {
+    const ok = validateAbout(
+      { ...base, phone: "+1 (604) 555-0123" },
+      new Date("2026-10-10T12:00:00Z"),
+    );
+    expect(ok.ok && ok.value.phone).toBe("+1 (604) 555-0123");
+    const none = validateAbout(base, new Date("2026-10-10T12:00:00Z"));
+    expect(none.ok && none.value.phone).toBe("");
+  });
+  it("rejects nonsense phone numbers", () => {
+    const bad = validateAbout(
+      { ...base, phone: "call me" },
+      new Date("2026-10-10T12:00:00Z"),
+    );
+    expect(!bad.ok && bad.errors.phone).toBeDefined();
+  });
+  it("requires agreement to share progress with the coach", () => {
+    const r = validateSafety({
+      pregnancyContext: "no",
+      weeklyCommitment: 3,
+      acknowledged: true,
+      coachAccess: false,
+    });
+    expect(!r.ok && r.errors.coachAccess).toMatch(/CK coach/);
+    expect(
+      validateSafety({
+        pregnancyContext: "no",
+        weeklyCommitment: 3,
+        acknowledged: true,
+        coachAccess: true,
+      }).ok,
+    ).toBe(true);
+  });
+});

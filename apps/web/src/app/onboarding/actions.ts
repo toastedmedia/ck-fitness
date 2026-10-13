@@ -57,7 +57,10 @@ export async function saveOnboardingStep(
         { onConflict: "user_id,log_date" },
       );
     }
-    const done = await save("profiles", { onboarding_complete: true });
+    const done = await save("profiles", {
+      onboarding_complete: true,
+      coach_access_at: new Date().toISOString(),
+    });
     if (!done) {
       await queueCrm(id, "onboarding_completed", {
         goal: ob?.primary_goal,
@@ -80,6 +83,7 @@ export async function saveOnboardingStep(
           birth_date: v.birthDate,
           gender_preference: v.gender,
           units: v.units,
+          phone: v.phone || null,
         })) ??
         (await save("onboarding_profiles", {
           height_cm: v.heightCm,

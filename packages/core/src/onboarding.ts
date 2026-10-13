@@ -42,6 +42,7 @@ export interface AboutInput {
   heightCm: number;
   weightKg: number;
   units: "metric" | "imperial";
+  phone: string;
 }
 export interface GoalInput {
   primaryGoal: (typeof GOALS)[number];
@@ -66,6 +67,8 @@ export interface SafetyInput {
   startingReason: string;
   weeklyCommitment: number;
   acknowledged: boolean;
+  /** Agreed to share her answers and progress with her CK coach. */
+  coachAccess: boolean;
 }
 
 export function ageFromBirthDate(birthDate: string, now: Date = new Date()): number {
@@ -117,6 +120,9 @@ export function validateAbout(
   if (!isOneOf(GENDER, raw.gender)) errors.gender = "Please choose an option.";
   if (!(heightCm >= 120 && heightCm <= 230))
     errors.heightCm = "Enter your height in centimetres (120 to 230).";
+  const phone = text(raw.phone, 30);
+  if (phone && !/^\+?[0-9 ()-]{7,20}$/.test(phone))
+    errors.phone = "Enter a valid phone number, or leave it blank.";
   if (!(weightKg >= 35 && weightKg <= 300))
     errors.weightKg = "Enter your weight in kilograms (35 to 300).";
   if (Object.keys(errors).length) return { ok: false, errors };
@@ -130,6 +136,7 @@ export function validateAbout(
       heightCm,
       weightKg,
       units: raw.units === "imperial" ? "imperial" : "metric",
+      phone,
     },
   };
 }
@@ -213,6 +220,9 @@ export function validateSafety(raw: Record<string, unknown>): Result<SafetyInput
   if (pregnancy !== "yes" && pregnancy !== "no" && pregnancy !== "prefer_not_to_say")
     errors.pregnancyContext = "Please choose an option.";
   if (raw.acknowledged !== true) errors.acknowledged = "Please confirm to continue.";
+  if (raw.coachAccess !== true)
+    errors.coachAccess =
+      "Please agree to share your progress with your CK coach so they can support you.";
   if (Object.keys(errors).length) return { ok: false, errors };
   return {
     ok: true,
@@ -222,6 +232,7 @@ export function validateSafety(raw: Record<string, unknown>): Result<SafetyInput
       startingReason: text(raw.startingReason, 500),
       weeklyCommitment,
       acknowledged: true,
+      coachAccess: true,
     },
   };
 }

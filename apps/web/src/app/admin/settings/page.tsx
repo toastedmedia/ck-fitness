@@ -39,6 +39,16 @@ export default async function AdminSettings({
               />
             </label>
             <label className={lab}>
+              Monthly price as a number (for revenue estimates)
+              <input
+                name="price_amount"
+                type="number"
+                step="0.01"
+                defaultValue={text("membership_price_amount", "29.99")}
+                className={aInput}
+              />
+            </label>
+            <label className={lab}>
               Support email
               <input
                 name="support_email"
