@@ -65,7 +65,10 @@ export default async function LessonPage({
         </Link>
         <h1 className="font-display text-[19px] text-brand">{flat[idx].title}</h1>
         <Paywall
-          price={String(price?.value ?? "$29.99 CAD / month + GST").replace(/^"|"$/g, "")}
+          price={String(price?.value ?? "$31.49 CAD / month (includes GST)").replace(
+            /^"|"$/g,
+            "",
+          )}
         />
       </>
     );

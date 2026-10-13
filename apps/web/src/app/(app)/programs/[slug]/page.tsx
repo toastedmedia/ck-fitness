@@ -205,7 +205,10 @@ export default async function ProgramPage({
         </Card>
       ) : (
         <Paywall
-          price={String(price?.value ?? "$29.99 CAD / month + GST").replace(/^"|"$/g, "")}
+          price={String(price?.value ?? "$31.49 CAD / month (includes GST)").replace(
+            /^"|"$/g,
+            "",
+          )}
         />
       )}
 

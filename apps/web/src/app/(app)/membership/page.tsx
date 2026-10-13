@@ -32,7 +32,7 @@ export default async function MembershipPage({
     .select("value")
     .eq("key", "membership_price_display")
     .maybeSingle();
-  const priceText = String(price?.value ?? "$29.99 CAD / month + GST").replace(
+  const priceText = String(price?.value ?? "$31.49 CAD / month (includes GST)").replace(
     /^"|"$/g,
     "",
   );

@@ -53,13 +53,13 @@ export default async function AdminSettings({
                 name="price"
                 defaultValue={text(
                   "membership_price_display",
-                  "$29.99 CAD / month + GST",
+                  "$31.49 CAD / month (includes GST)",
                 )}
                 className={aInput}
               />
             </label>
             <label className={lab}>
-              Monthly price as a number (for revenue estimates)
+              Monthly price before GST, as a number (for revenue estimates)
               <input
                 name="price_amount"
                 type="number"
