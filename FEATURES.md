@@ -34,7 +34,7 @@ Nothing has been verified against live Stripe, Cloudflare or the CRM yet. Status
 
 ## Platform
 - ✅ Row-level security on every table; staff access to client data enforced in the database and only with consent; community safety rules in the database
-- ✅ Entitlement rules (free/member/premium, cancel-until-period-end, 7-day grace) in TypeScript and SQL
+- ✅ Entitlement rules (free/member/premium, cancel-until-period-end, 3-day grace) in TypeScript and SQL
 - ✅ Cron jobs: hourly reminders, daily at-risk detection, CRM sync every 10 min, daily cleanup
 - ✅ GitHub Actions CI, daily live smoke tests, security headers, privacy-safe Sentry hooks (needs DSN), PWA icons, error/loading pages, accessibility scan fixes
 - ✅ Account deletion removes data, photos and cancels Stripe; data download

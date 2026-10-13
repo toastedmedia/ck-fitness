@@ -267,9 +267,9 @@ describe("programs, lessons and access", () => {
     ).toEqual({ e: "ck_member" });
   });
 
-  it("gives a 7 day grace window for billing problems, then stops", async () => {
+  it("gives a 3 day grace window for billing problems, then stops", async () => {
     await db.query(
-      "update public.memberships set status='past_due', period_end = now() - interval '3 days' where user_id = $1",
+      "update public.memberships set status='past_due', period_end = now() - interval '2 days' where user_id = $1",
       [D],
     );
     expect(

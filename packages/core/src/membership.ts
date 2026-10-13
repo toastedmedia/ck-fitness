@@ -10,7 +10,8 @@ export interface MembershipRow {
   cancel_at_period_end: boolean;
 }
 
-const GRACE_DAYS = 7;
+/** Days a member keeps access after a failed renewal while payment is retried. */
+const GRACE_DAYS = 3;
 const DAY = 86_400_000;
 
 export function resolveMembership(
@@ -86,7 +87,7 @@ const iso = (unix: number) => new Date(unix * 1000).toISOString();
 /**
  * The date her paid access runs to. Normally the end of the current period. Two cases differ:
  * - A failed renewal (past_due/unpaid): Stripe has already moved to the NEW, unpaid period, so we use
- *   the day that period began (the day she was last paid up to). The 7-day grace counts from there.
+ *   the day that period began (the day she was last paid up to). The 3-day grace counts from there.
  * - Cancelled straight away (for example Stripe gave up collecting): access ends when it ended, not at
  *   the end of a period she never paid for.
  */

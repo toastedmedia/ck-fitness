@@ -14,7 +14,7 @@ Apple's server notifications or RevenueCat, without changing any access check. T
 4. Access is computed from `memberships` (`resolveMembership()` in TypeScript and `current_entitlement()` in the database):
    - active/trialing: access until period end
    - cancelled: keeps access until the paid period ends
-   - past due: 7 day grace window, then access stops
+   - past due: 3 day grace window, then access stops
 5. Lifecycle events (`membership_started/cancelled/expired`, `billing_problem`) are queued for Toasted Media CRM and shown to the member as in-app notifications.
 6. _Manage billing or cancel_ opens Stripe's customer portal (`POST /api/stripe/portal`).
 
@@ -31,7 +31,7 @@ Apple's server notifications or RevenueCat, without changing any access check. T
 ## When a renewal payment fails
 
 1. Stripe tries the card again on its own schedule (set it in Stripe: Settings -> Billing -> Subscriptions and emails -> Manage failed payments; suggested: Smart Retries within 1 week, then **cancel the subscription**). Stripe also emails the member (turn on "Send emails when a payment fails" and "when a card is about to expire").
-2. The app keeps the member's access for a **7 day grace** counted from the day she was last paid up to (for example paid to 5 Nov: access to 12 Nov). She sees a "problem with your payment" notice and the Membership page offers "Update payment method".
+2. The app keeps the member's access for a **3 day grace** counted from the day she was last paid up to (for example paid to 5 Nov: access to 8 Nov). She sees a "problem with your payment" notice and the Membership page offers "Update payment method".
 3. If any retry succeeds, Stripe sends `invoice.paid`, the membership turns active again and access is never interrupted.
 4. If not, access ends after the grace window. If Stripe cancels the subscription, access ends then too (never at the end of an unpaid period). She can rejoin from Membership at any time and her progress is kept.
 

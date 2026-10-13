@@ -315,10 +315,10 @@ describe("membership", () => {
       ).entitlement,
     ).toBe("free");
   });
-  it("gives a 7 day grace window for billing problems", () => {
+  it("gives a 3 day grace window for billing problems", () => {
     expect(
       resolveMembership(
-        row({ status: "past_due", period_end: "2026-10-05T00:00:00Z" }),
+        row({ status: "past_due", period_end: "2026-10-09T00:00:00Z" }),
         now,
       ).state,
     ).toBe("grace");

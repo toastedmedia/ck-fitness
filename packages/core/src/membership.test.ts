@@ -15,22 +15,22 @@ const sub = (over: Record<string, unknown>) => ({
 
 describe("failed renewal", () => {
   const row = membershipFromSubscription(sub({ status: "past_due" }), "u1");
-  it("counts the 7 day grace from the day she was last paid up to", () => {
+  it("counts the 3 day grace from the day she was last paid up to", () => {
     expect(row.period_end).toBe("2026-11-05T00:00:00.000Z");
     const day = (d: string) => resolveMembership(row, new Date(d));
     expect(day("2026-11-06T12:00:00Z")).toMatchObject({
       entitlement: "ck_member",
       state: "grace",
     });
-    expect(day("2026-11-12T00:00:00Z")).toMatchObject({ state: "grace" });
-    expect(day("2026-11-13T00:00:00Z")).toMatchObject({
+    expect(day("2026-11-08T00:00:00Z")).toMatchObject({ state: "grace" });
+    expect(day("2026-11-09T00:00:00Z")).toMatchObject({
       entitlement: "free",
       state: "expired",
     });
   });
   it("restores full access the moment a retry succeeds", () => {
     const paid = membershipFromSubscription(sub({ status: "active" }), "u1");
-    expect(resolveMembership(paid, new Date("2026-11-13T00:00:00Z"))).toMatchObject({
+    expect(resolveMembership(paid, new Date("2026-11-09T00:00:00Z"))).toMatchObject({
       entitlement: "ck_member",
       state: "active",
     });
