@@ -1,5 +1,6 @@
 -- CK Fitness: all database migrations in order, for pasting into the Supabase SQL editor.
--- Run ONCE on a new, empty project (staging first, then production). Do not run seed.sql on production.
+-- Run ONCE on a new, empty project. To update an existing project, run only the NEW migration files.
+-- Do not run seed.sql on production.
 
 -- ===== 20261009000001_base.sql =====
 -- Milestone 1A: base tables every later milestone depends on.
@@ -713,4 +714,26 @@ begin
   execute $p$create policy "progress photos: own folder" on storage.objects for all
     using (bucket_id = 'progress-photos' and (storage.foldername(name))[1] = auth.uid()::text)
     with check (bucket_id = 'progress-photos' and (storage.foldername(name))[1] = auth.uid()::text)$p$;
+end $$;
+
+-- ===== 20261017000010_terms_acceptance.sql =====
+-- Record when each member accepted the Terms and Privacy Policy, and which version.
+alter table public.profiles
+  add column if not exists terms_accepted_at timestamptz,
+  add column if not exists terms_version text;
+
+-- The sign-up form passes these in the account's metadata; copy them onto the profile.
+create or replace function public.handle_new_user() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.profiles (user_id, email, terms_accepted_at, terms_version)
+  values (
+    new.id,
+    new.email,
+    nullif(new.raw_user_meta_data ->> 'terms_accepted_at', '')::timestamptz,
+    nullif(new.raw_user_meta_data ->> 'terms_version', '')
+  )
+  on conflict (user_id) do update set email = excluded.email;
+  insert into public.notification_preferences (user_id) values (new.id) on conflict do nothing;
+  return new;
 end $$;

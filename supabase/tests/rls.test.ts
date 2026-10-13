@@ -615,3 +615,37 @@ describe("progress photos", () => {
     ).toBe(0);
   });
 });
+
+describe("terms acceptance", () => {
+  it("copies the acceptance recorded at sign-up onto the profile", async () => {
+    const L = "00000000-0000-0000-0000-000000000015";
+    await db.query(
+      "insert into auth.users (id, email, raw_user_meta_data) values ($1, 'l@example.com', $2)",
+      [
+        L,
+        JSON.stringify({
+          terms_accepted_at: "2026-10-12T10:00:00Z",
+          terms_version: "2026-10",
+        }),
+      ],
+    );
+    const row = (
+      await db.query(
+        "select terms_accepted_at, terms_version from public.profiles where user_id = $1",
+        [L],
+      )
+    ).rows[0] as { terms_accepted_at: Date; terms_version: string };
+    expect(row.terms_version).toBe("2026-10");
+    expect(new Date(row.terms_accepted_at).toISOString()).toBe(
+      "2026-10-12T10:00:00.000Z",
+    );
+  });
+  it("leaves it empty for accounts created without it", async () => {
+    const row = (
+      await db.query("select terms_accepted_at from public.profiles where user_id = $1", [
+        A,
+      ])
+    ).rows[0] as { terms_accepted_at: Date | null };
+    expect(row.terms_accepted_at).toBeNull();
+  });
+});

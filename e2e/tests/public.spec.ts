@@ -31,7 +31,9 @@ test.describe("public pages", () => {
   test("health check reports the app is connected", async ({ request }) => {
     const res = await request.get("/api/health");
     expect(res.ok()).toBe(true);
-    expect((await res.json()).supabaseConfigured).toBe(true);
+    const body = await res.json();
+    expect(body.supabaseConfigured).toBe(true);
+    expect(body.database).toBe(true);
   });
 
   test("security headers are present", async ({ request }) => {

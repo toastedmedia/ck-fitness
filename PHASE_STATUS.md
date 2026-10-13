@@ -71,6 +71,14 @@ Home reorganised into small components (`apps/web/src/components/home`): Header,
 - Program search box on the Programs page.
 - **Progress photos (flag off)**: consent screen, four poses weekly, photos shrunk on the phone (removes hidden camera data), uploaded straight to a private bucket under random names, shown via 2-minute links, delete one or all, deleted with the account. Staff have no access policy (tested). Turn on only after owners approve the privacy design: set `progressPhotos: true` in `lib/flags.ts` and update the Privacy Policy. Migration 0009.
 
+## Built while accounts were pending (2026-10-12)
+- **GitHub Actions CI** (`.github/workflows/ci.yml`): every push runs format, lint, types, all tests and the production build on GitHub's servers.
+- **Live smoke tests** (`e2e/`, `.github/workflows/smoke.yml`): a real browser (phone and desktop) checks the deployed site daily and on demand: public pages, signed-out guards, locked endpoints, health, security headers. Add repository secrets `E2E_EMAIL` and `E2E_PASSWORD` (a staging test account) to also test a real login.
+- **Terms acceptance** recorded at sign-up (`profiles.terms_accepted_at`, `terms_version`). Migration 0010 (run it in Supabase).
+- **Daily cleanup cron** for old sent CRM events, read notifications and 2-year-old analytics. Health endpoint now also checks the database.
+- **Program import** (Admin -> Programs -> Import from spreadsheet): CK's inventory CSV becomes draft programs, sections and lessons.
+- **Branded account emails** in `docs/email-templates` plus a cross-device-safe confirmation route (`/auth/confirm`).
+
 ## Environment note
 This Mac's disk is 98% full, so macOS moves project files (including `node_modules`) to iCloud and builds hang while files re-download. Recommended: free disk space and move the repo out of `~/Documents` (for example `~/Developer/ckfitness`), which is iCloud-synced.
 

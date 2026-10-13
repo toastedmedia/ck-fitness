@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import {
   audienceMatches,
   canManageRole,
+  parseProgramImport,
   resolveMembership,
   validateForPublish,
   STAFF_ROLES,
@@ -556,4 +557,114 @@ export async function deleteTag(id: string): Promise<void> {
   await supabase.from("content_tags").delete().eq("id", id);
   await audit(supabase, user.id, "tag.delete", id);
   redirect("/admin/tags?saved=1");
+}
+
+/**
+ * Bulk-create DRAFT programs from CK's inventory spreadsheet (docs/program-import-template.csv).
+ * Nothing is published automatically; existing programs with the same web address are skipped.
+ */
+export async function importPrograms(formData: FormData): Promise<void> {
+  const { supabase, user } = await requireStaff(CONTENT);
+  const file = formData.get("file");
+  const text =
+    file instanceof File && file.size > 0
+      ? await file.text()
+      : str(formData, "csv", 200_000);
+  if (!text.trim())
+    redirect(
+      "/admin/programs/import?problems=" +
+        encodeURIComponent("Choose a CSV file or paste its contents."),
+    );
+  if (text.length > 1_000_000)
+    redirect(
+      "/admin/programs/import?problems=" + encodeURIComponent("That file is too large."),
+    );
+
+  const parsed = parseProgramImport(text);
+  if (parsed.programs.length === 0) {
+    redirect(
+      "/admin/programs/import?problems=" +
+        encodeURIComponent(
+          [...parsed.problems, ...parsed.skipped].slice(0, 8).join("|") ||
+            "Nothing to import.",
+        ),
+    );
+  }
+
+  const { data: tags } = await supabase.from("content_tags").select("id,tag_group,label");
+  const tagId = (group: string, label: string) =>
+    ((tags ?? []) as { id: string; tag_group: string; label: string }[]).find(
+      (t) =>
+        t.tag_group === group && t.label.toLowerCase() === label.trim().toLowerCase(),
+    )?.id;
+
+  let created = 0,
+    lessons = 0;
+  const notes = [...parsed.problems];
+  for (const p of parsed.programs) {
+    const slug = slugify(p.name);
+    const { data: clash } = await supabase
+      .from("programs")
+      .select("id")
+      .eq("slug", slug)
+      .maybeSingle();
+    if (clash) {
+      notes.push(`"${p.name}" already exists, so it was skipped.`);
+      continue;
+    }
+    const { data: prog, error } = await supabase
+      .from("programs")
+      .insert({
+        slug,
+        title: p.name,
+        access_level: p.access,
+        level: p.level,
+        duration_label: p.duration || null,
+        published: false,
+      })
+      .select("id")
+      .single();
+    if (error || !prog) {
+      notes.push(`"${p.name}" could not be created.`);
+      continue;
+    }
+    created++;
+
+    const wanted = [
+      ["category", p.category],
+      ...p.delivery.map((d) => ["delivery", d]),
+    ].filter(([, label]) => label);
+    const ids = wanted.map(([g, l]) => ({ g, l, id: tagId(g, l) }));
+    ids
+      .filter((x) => !x.id)
+      .forEach((x) =>
+        notes.push(`"${p.name}": no ${x.g} tag called "${x.l}" (add it under Tags).`),
+      );
+    const rows = ids
+      .filter((x) => x.id)
+      .map((x) => ({ program_id: prog.id, tag_id: x.id as string }));
+    if (rows.length) await supabase.from("program_tag_map").insert(rows);
+
+    for (const [si, s] of p.sections.entries()) {
+      const { data: sec } = await supabase
+        .from("program_sections")
+        .insert({ program_id: prog.id, title: s.title, order_index: si + 1 })
+        .select("id")
+        .single();
+      if (!sec) continue;
+      const lessonRows = s.lessons.map((l, li) => ({
+        section_id: sec.id,
+        title: l.title,
+        stream_uid: l.streamUid,
+        order_index: li + 1,
+        published: true,
+      }));
+      const { error: le } = await supabase.from("lessons").insert(lessonRows);
+      if (!le) lessons += lessonRows.length;
+    }
+    await audit(supabase, user.id, "program.import", prog.id, { title: p.name });
+  }
+  redirect(
+    `/admin/programs/import?done=${created}-${lessons}&problems=${encodeURIComponent([...notes, ...parsed.skipped].slice(0, 12).join("|"))}`,
+  );
 }

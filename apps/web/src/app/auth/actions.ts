@@ -11,6 +11,8 @@ export interface FormState {
 }
 
 const MIN_PASSWORD = 8;
+/** Bump this whenever the Terms or Privacy Policy change in a way members must re-accept. */
+const TERMS_VERSION = "2026-10-draft";
 const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
 async function siteUrl(): Promise<string> {
@@ -41,7 +43,11 @@ export async function signUp(_prev: FormState, formData: FormData): Promise<Form
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: `${await siteUrl()}/auth/callback?next=/onboarding` },
+    options: {
+      emailRedirectTo: `${await siteUrl()}/auth/callback?next=/onboarding`,
+      // Recorded on her profile: when she accepted, and which version of the terms.
+      data: { terms_accepted_at: new Date().toISOString(), terms_version: TERMS_VERSION },
+    },
   });
   if (error) return { error: "We could not create your account. Please try again." };
   if (data.user && (data.user.identities?.length ?? 0) > 0) {

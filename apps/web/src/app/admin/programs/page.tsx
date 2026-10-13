@@ -29,7 +29,18 @@ export default async function AdminPrograms({
   }[];
   return (
     <>
-      <H1>Programs and content</H1>
+      <H1
+        right={
+          <Link
+            href="/admin/programs/import"
+            className="text-sm font-bold text-brand underline"
+          >
+            Import from spreadsheet
+          </Link>
+        }
+      >
+        Programs and content
+      </H1>
       {sp.error ? <Flash bad>Please enter a program title.</Flash> : null}
       <Panel title="New program">
         <form action={createProgram} className="flex flex-wrap items-end gap-2">

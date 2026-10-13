@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-10-12: CI, smoke tests, imports, emails
+- GitHub Actions CI and Playwright live smoke tests; terms acceptance stored (migration 0010); daily cleanup cron; database-aware health check; admin CSV program import; `/auth/confirm` token-hash route and branded email templates.
+
 ## 2026-10-12: hardening, units, search, photos (flagged)
 - Contrast fixes from an axe scan; same-origin checks on state-changing POST routes; in-app-only announcement links.
 - lb/in units across onboarding, Profile, Home, Progress. Program search.
