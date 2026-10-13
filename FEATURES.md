@@ -13,7 +13,7 @@ Nothing has been verified against live Stripe, Cloudflare or the CRM yet. Status
 - ✅ **Accountability:** My Week, commitment, missed-day recovery, consistency, streak, milestones, hydration and step consistency (14 days), check-in history, what's getting in the way, message my coach
 - ✅ **Progress:** weight trend, workouts per week, water, measurements, check-in history; 🚧 weekly progress photos (front, side, back, arms raised; private, consent screen, delete one or all)
 - ✅ **Programs:** Discover, My Programs, Free, Member Library, Categories, filters, search; program detail, lesson player, PDF via signed link, complete, "I cannot do this today"
-- 🔌 Secure video (Cloudflare Stream signed links, resume, tracks furthest point and real watch time)
+- 🔌 Secure video (Cloudflare R2 private bucket, signed links, no viewing fees, any length or size, resume, tracks furthest point and real watch time). Admin: upload/replace/remove video with progress bar, lesson thumbnails
 - 🔌 Membership checkout, billing portal, cancel (Stripe direct)
 - ✅ **Community (Facebook-style feed):** posts by type (Win, Question, Tip, Motivation) + CK Team announcements/pinned posts; **five reactions** (Like, Love, Strong, Celebrate, Support); comments with replies; edit within 15 min; **photo posts** (up to 4, private storage, staff approval on by default); search, filters, Newest/Top; **Members directory** and community cards (bio, can opt out); report, block, auto-hide after 3 reports; guidelines gate; daily limits; community notifications (toggle in Profile). ⏳ Video posts and groups not built
 - ✅ Notifications centre, support requests with staff replies, Profile (details, units, sharing choices, notification consent, data download, delete account)

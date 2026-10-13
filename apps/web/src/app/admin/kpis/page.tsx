@@ -235,7 +235,7 @@ export default async function AdminKpis({
           />
           <form action={saveVideoMinutes} className="flex flex-wrap items-end gap-2">
             <label className="text-xs font-bold text-brand">
-              Minutes delivered this month (from the Cloudflare Stream dashboard)
+              Minutes delivered this month (optional, for your own tracking)
               <input
                 name="minutes"
                 type="number"

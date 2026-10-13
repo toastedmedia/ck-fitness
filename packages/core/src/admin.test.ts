@@ -20,7 +20,7 @@ const ready = {
     {
       title: "L1",
       section_id: "s1",
-      stream_uid: "abc",
+      video_key: "lessons/x/1-a.mp4",
       instructions: "",
       published: true,
     },
@@ -33,7 +33,7 @@ describe("validateForPublish", () => {
     const problems = validateForPublish({
       program: { ...ready.program, short_description: "", level: null },
       sections: [...ready.sections, { id: "s2", title: "Week 2" }],
-      lessons: [{ ...ready.lessons[0], stream_uid: null }],
+      lessons: [{ ...ready.lessons[0], video_key: null }],
     });
     expect(problems).toContain("Add a one-line benefit (short description).");
     expect(problems).toContain("Choose a level.");

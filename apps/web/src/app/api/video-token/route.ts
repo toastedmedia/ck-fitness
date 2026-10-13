@@ -1,13 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { canAccess, type AccessLevel, type StaffRole } from "@ck/core";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { playbackUrl, signStreamToken } from "@/lib/stream-token";
+import { playbackLink, r2Configured } from "@/lib/r2";
 import { resolveMembership } from "@ck/core";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Issues a short-lived signed playback link. Two independent checks: the database only returns
+ * Issues a signed playback link (good for one long session; R2 charges nothing for viewing). Two independent checks: the database only returns
  * the lesson if she may see it, and the access rule is checked again here.
  */
 export async function POST(request: NextRequest) {
@@ -17,15 +17,14 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Please log in." }, { status: 401 });
 
-  const { lessonId, startSeconds } = (await request.json().catch(() => ({}))) as {
+  const { lessonId } = (await request.json().catch(() => ({}))) as {
     lessonId?: string;
-    startSeconds?: number;
   };
   if (!lessonId) return NextResponse.json({ error: "Missing lesson." }, { status: 400 });
 
   const { data: lesson } = await supabase
     .from("lessons")
-    .select("id,stream_uid,access_override,program_sections(programs(access_level))")
+    .select("id,video_key,access_override,program_sections(programs(access_level))")
     .eq("id", lessonId)
     .maybeSingle();
   if (!lesson)
@@ -52,25 +51,15 @@ export async function POST(request: NextRequest) {
   };
   if (!canAccess(viewer, level))
     return NextResponse.json({ error: "This video is for members." }, { status: 403 });
-  if (!lesson.stream_uid)
+  if (!lesson.video_key)
     return NextResponse.json({ error: "This video is coming soon." }, { status: 404 });
-
-  const keyId = process.env.CLOUDFLARE_STREAM_SIGNING_KEY_ID;
-  const pem = process.env.CLOUDFLARE_STREAM_SIGNING_KEY_PEM;
-  if (!keyId || !pem)
+  if (!r2Configured())
     return NextResponse.json(
       { error: "Video is not available right now." },
       { status: 503 },
     );
-
-  const token = signStreamToken({
-    videoId: lesson.stream_uid,
-    keyId,
-    pemBase64: pem,
-    ttlSeconds: 600,
-  });
   return NextResponse.json(
-    { src: playbackUrl(token, Number(startSeconds) || 0) },
+    { src: await playbackLink(lesson.video_key) },
     { headers: { "cache-control": "no-store" } },
   );
 }

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ABtn, Flash, H1, Panel, Status, aInput } from "@/components/admin/ui";
+import { VideoUploader } from "@/components/admin/VideoUploader";
 import { CONTENT, requireStaff } from "@/lib/admin";
 import { coverUrl } from "@/lib/programs";
 import {
@@ -324,7 +325,7 @@ export default async function EditProgram({
                     {String(l.title)}{" "}
                     <span className="font-normal text-muted">
                       · {l.published ? "published" : "hidden"}
-                      {l.stream_uid ? " · video attached" : ""}
+                      {l.video_key ? " · video attached" : ""}
                     </span>
                   </summary>
                   <LessonForm
@@ -448,15 +449,47 @@ function LessonForm({
         Equipment
         <input name="equipment" defaultValue={v("equipment")} className={aInput} />
       </label>
-      <label className={lab}>
-        Video ID (Cloudflare Stream)
-        <input
-          name="stream_uid"
-          defaultValue={v("stream_uid")}
-          placeholder="Paste the video ID, never a URL"
-          className={aInput}
+      {lesson ? (
+        <VideoUploader
+          lessonId={String(lesson.id)}
+          hasVideo={Boolean(lesson.video_key)}
+          canEdit={canEdit}
         />
-      </label>
+      ) : (
+        <p className="text-xs text-muted md:col-span-2">
+          Save the lesson first, then you can upload its video and thumbnail.
+        </p>
+      )}
+      <div className={`${lab} md:col-span-2`}>
+        Thumbnail (JPG, PNG or WebP under 2 MB)
+        {lesson?.thumbnail_path ? (
+          <img
+            src={coverUrl(String(lesson.thumbnail_path)) ?? ""}
+            alt=""
+            className="my-2 h-24 rounded-xl object-cover"
+          />
+        ) : null}
+        <input
+          type="file"
+          name="thumbnail"
+          accept="image/jpeg,image/png,image/webp"
+          className="mt-1 block text-sm"
+        />
+        {lesson?.thumbnail_path ? (
+          <label className="mt-1 flex items-center gap-2 text-xs font-normal">
+            <input
+              type="checkbox"
+              name="remove_thumbnail"
+              className="size-4 accent-brand"
+            />
+            Remove the current thumbnail
+          </label>
+        ) : (
+          <span className="text-xs font-normal text-muted">
+            Shown on the video before it plays. Uploading replaces it.
+          </span>
+        )}
+      </div>
       <label className={`${lab} md:col-span-2`}>
         Safety note
         <input name="safety_notes" defaultValue={v("safety_notes")} className={aInput} />

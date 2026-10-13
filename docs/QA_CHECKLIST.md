@@ -69,7 +69,7 @@ on a real iPhone (Safari), a real Android phone (Chrome) and a desktop browser. 
 ## KPIs
 
 - [ ] Admin -> KPIs loads, shows "Not enough data yet" with no division errors on an empty database
-- [ ] Enter this month's Stream minutes and see minutes per paying member
+- [ ] Enter this month's minutes watched and see minutes per paying member
 
 ## Quality
 

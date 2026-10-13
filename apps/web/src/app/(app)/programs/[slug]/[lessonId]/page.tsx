@@ -7,7 +7,7 @@ import { ActionButton } from "@/components/app/ActionButton";
 import { Button, Cap, Card, Pill } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
 import { track } from "@/lib/events";
-import { getProgramOutline } from "@/lib/programs";
+import { coverUrl, getProgramOutline } from "@/lib/programs";
 import { recoverWorkout } from "../../../actions";
 import { completeLesson } from "../../actions";
 
@@ -36,7 +36,7 @@ export default async function LessonPage({
   const { data: lesson } = await supabase
     .from("lessons")
     .select(
-      "id,title,summary,instructions,equipment,safety_notes,duration_minutes,stream_uid,resource_path",
+      "id,title,summary,instructions,equipment,safety_notes,duration_minutes,video_key,thumbnail_path,resource_path",
     )
     .eq("id", lessonId)
     .maybeSingle();
@@ -96,7 +96,8 @@ export default async function LessonPage({
       <VideoPlayer
         lessonId={lesson.id}
         startSeconds={prog?.playback_seconds ?? 0}
-        hasVideo={Boolean(lesson.stream_uid)}
+        hasVideo={Boolean(lesson.video_key)}
+        poster={coverUrl(lesson.thumbnail_path)}
       />
       <div>
         <div className="flex flex-wrap gap-1.5">

@@ -1,25 +1,52 @@
 # Storage and video
 
-| Asset              | Where                                                                   | Access                                                                                     |
-| ------------------ | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Program videos     | Cloudflare Stream                                                       | Signed playback link issued by `/api/video-token` after an access check (10 minute expiry) |
-| Video master files | CK's own archive/backup (not the app)                                   | Owners only. Never rely on Stream as the only copy                                         |
-| Program thumbnails | Supabase Storage `program-thumbnails`                                   | Public read; editors write; JPG/PNG/WebP under 2 MB                                        |
-| Lesson PDFs        | Supabase Storage `program-resources` (private)                          | Two-minute signed link from `/api/resource` after an access check; under 20 MB             |
-| Avatars            | Supabase Storage `avatars`                                              | Each member manages her own folder; under 1 MB                                             |
-| Progress photos    | Not built. Planned behind the `progressPhotos` flag, in a private store | See FEATURES.md                                                                            |
+| Asset              | Where                                                                   | Access                                                                         |
+| ------------------ | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Program videos     | Cloudflare R2 (private bucket)                                          | Signed link from `/api/video-token` after an access check (6 hour expiry)      |
+| Video master files | CK's own archive/backup (not the app)                                   | Owners only. Never rely on Stream as the only copy                             |
+| Program thumbnails | Supabase Storage `program-thumbnails`                                   | Public read; editors write; JPG/PNG/WebP under 2 MB                            |
+| Lesson PDFs        | Supabase Storage `program-resources` (private)                          | Two-minute signed link from `/api/resource` after an access check; under 20 MB |
+| Avatars            | Supabase Storage `avatars`                                              | Each member manages her own folder; under 1 MB                                 |
+| Progress photos    | Not built. Planned behind the `progressPhotos` flag, in a private store | See FEATURES.md                                                                |
 
-## Cloudflare Stream setup
+## Cloudflare R2 video setup (replaces Stream, 13 Oct 2026)
 
-1. Cloudflare dashboard -> Stream. Note the **Account ID** (`CLOUDFLARE_ACCOUNT_ID`).
-2. Create an API token limited to Stream edit (`CLOUDFLARE_STREAM_API_TOKEN`). Server-side only.
-3. Create a **signing key** (Stream -> Signing keys, or API `POST /accounts/{id}/stream/keys`). The response contains an `id`
-   (`CLOUDFLARE_STREAM_SIGNING_KEY_ID`) and a `pem`, which is already base64 (`CLOUDFLARE_STREAM_SIGNING_KEY_PEM`).
-4. Upload each final video, wait for "Ready", copy the **video ID** into the lesson in Admin.
-5. For every paid video, enable **Require signed URLs** on the video (API: `requireSignedURLs: true`) so the plain video ID cannot be played.
-   This step is essential: without it the signed link is not enforced by Cloudflare.
+Why: Stream bills per minute watched. R2 charges for storage only (about US$0.015 per GB per month) and **nothing for viewing**
+(no egress fees). There is no limit on video length or file size.
 
-## Cost
+1. Cloudflare dashboard -> R2 -> **Create bucket** (for example `ck-videos`). Keep it **private** (do not turn on public access).
+2. R2 -> **Manage R2 API Tokens** -> create a token with **Object Read & Write** on that bucket. Copy the Access Key ID and Secret.
+   Your **Account ID** is on the R2 overview page.
+3. Vercel env vars: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`. Redeploy.
+4. Bucket -> Settings -> **CORS policy**, so the admin page can upload straight to R2 (replace the origin with your live address):
 
-Stream bills per minute stored (US$5 per 1,000) and per minute delivered (US$1 per 1,000). Nothing loads until a member taps Play,
-so only minutes actually watched are billed. Re-check pricing before launch.
+   ```json
+   [
+     {
+       "AllowedOrigins": ["https://app.chardikalafitness.com"],
+       "AllowedMethods": ["GET", "PUT", "HEAD"],
+       "AllowedHeaders": ["*"],
+       "ExposeHeaders": ["ETag"],
+       "MaxAgeSeconds": 3600
+     }
+   ]
+   ```
+
+5. In Admin -> Programs -> open a lesson -> **Lesson video** -> choose the file. It uploads in slices with a progress bar; keep the
+   page open. Replace or remove it any time. Add a thumbnail in the same form.
+
+How playback works: the member taps Play, `/api/video-token` checks her access, then returns a signed R2 link valid for 6 hours
+(long enough for an hour-long session with pauses). The link is never stored or shown on pages.
+
+Export videos as **MP4 (H.264 + AAC), "fast start"** (HandBrake preset "Fast 1080p30" or 720p for long sessions). R2 serves one file,
+not adaptive quality, so a smaller encode (about 2-4 Mbps, roughly 1-2 GB per hour) plays better on slow connections.
+Keep the original masters in your own backup too.
+
+## Cost (R2)
+
+Storage about US$0.015 per GB per month; 100 hours of 1080p at 3 Mbps is about 135 GB, roughly US$2 a month. Viewing is free.
+First 10 GB per month is free. Re-check Cloudflare pricing before launch.
+
+## Old: Cloudflare Stream
+
+Not used any more. The `stream_uid` column stays in the database (unused) so nothing is lost.

@@ -1364,3 +1364,9 @@ drop policy if exists "push: add own" on public.push_subscriptions;
 create policy "push: add own" on public.push_subscriptions for insert with check (user_id = auth.uid());
 drop policy if exists "push: remove own" on public.push_subscriptions;
 create policy "push: remove own" on public.push_subscriptions for delete using (user_id = auth.uid());
+
+-- ===== 20261024000017_lesson_video_thumbnail.sql =====
+-- Videos now live in Cloudflare R2 (no per-view fees). The lesson stores only the private object key,
+-- never a playback link. Each lesson can also have its own thumbnail (public-read bucket path).
+alter table public.lessons add column if not exists video_key text;
+alter table public.lessons add column if not exists thumbnail_path text;

@@ -13,7 +13,7 @@ export interface PublishCheck {
   lessons: {
     title: string;
     section_id: string;
-    stream_uid: string | null;
+    video_key: string | null;
     instructions: string;
     published: boolean;
   }[];
@@ -36,7 +36,7 @@ export function validateForPublish({
   if (live.length === 0) problems.push("Add at least one published lesson.");
   for (const l of live) {
     if (!l.title.trim()) problems.push("A lesson is missing its title.");
-    if (!l.stream_uid && !l.instructions.trim())
+    if (!l.video_key && !l.instructions.trim())
       problems.push(
         `"${l.title || "Untitled lesson"}" needs a video or written instructions.`,
       );

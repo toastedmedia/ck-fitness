@@ -14,6 +14,7 @@ import {
 import { CONTENT, OPS, SUPPORT, audit, requireStaff } from "@/lib/admin";
 import { processCrmQueue } from "@/lib/crm";
 import { notifyUser } from "@/lib/events";
+import { releaseVideo } from "@/lib/r2";
 import { isInternalPath } from "@/lib/same-origin";
 
 const str = (f: FormData, k: string, max = 500) =>
@@ -170,7 +171,6 @@ export async function saveLesson(
     equipment: str(formData, "equipment", 120),
     safety_notes: str(formData, "safety_notes", 600),
     duration_minutes: int(formData, "duration_minutes") || null,
-    stream_uid: str(formData, "stream_uid", 80) || null,
     access_override: LEVELS.includes(override) ? override : null,
     order_index: int(formData, "order_index"),
     published: formData.get("published") === "on",
@@ -202,6 +202,33 @@ export async function saveLesson(
       .upload(path, file, { contentType: file.type });
     if (error) redirect(`/admin/programs/${programId}?error=resource`);
     await supabase.from("lessons").update({ resource_path: path }).eq("id", id);
+  }
+  const thumb = formData.get("thumbnail");
+  const wipe = formData.get("remove_thumbnail") === "on";
+  if ((thumb instanceof File && thumb.size > 0) || wipe) {
+    const { data: cur } = await supabase
+      .from("lessons")
+      .select("thumbnail_path")
+      .eq("id", id)
+      .maybeSingle();
+    let next: string | null = null;
+    if (thumb instanceof File && thumb.size > 0) {
+      if (
+        !["image/jpeg", "image/png", "image/webp"].includes(thumb.type) ||
+        thumb.size > 2_097_152
+      )
+        redirect(`/admin/programs/${programId}?error=cover`);
+      const ext =
+        thumb.type === "image/png" ? "png" : thumb.type === "image/webp" ? "webp" : "jpg";
+      next = `lessons/${id}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("program-thumbnails")
+        .upload(next, thumb, { contentType: thumb.type });
+      if (error) redirect(`/admin/programs/${programId}?error=cover`);
+    }
+    await supabase.from("lessons").update({ thumbnail_path: next }).eq("id", id);
+    if (cur?.thumbnail_path)
+      await supabase.storage.from("program-thumbnails").remove([cur.thumbnail_path]);
   }
   await audit(
     supabase,
@@ -239,8 +266,14 @@ export async function duplicateLesson(
 }
 
 export async function deleteLesson(programId: string, lessonId: string): Promise<void> {
-  const { supabase, user } = await requireStaff(CONTENT);
+  const { supabase, user, db } = await requireStaff(CONTENT);
+  const { data: gone } = await supabase
+    .from("lessons")
+    .select("video_key")
+    .eq("id", lessonId)
+    .maybeSingle();
   await supabase.from("lessons").delete().eq("id", lessonId);
+  await releaseVideo(db, gone?.video_key);
   await audit(supabase, user.id, "lesson.delete", lessonId);
   redirect(`/admin/programs/${programId}?saved=1`);
 }
@@ -259,7 +292,7 @@ export async function publishProgram(id: string, formData: FormData): Promise<vo
     .eq("program_id", id);
   const { data: lessons } = await supabase
     .from("lessons")
-    .select("title,section_id,stream_uid,instructions,published")
+    .select("title,section_id,video_key,instructions,published")
     .in(
       "section_id",
       (sections ?? []).map((s: { id: string }) => s.id),
@@ -660,7 +693,6 @@ export async function importPrograms(formData: FormData): Promise<void> {
       const lessonRows = s.lessons.map((l, li) => ({
         section_id: sec.id,
         title: l.title,
-        stream_uid: l.streamUid,
         order_index: li + 1,
         published: true,
       }));
