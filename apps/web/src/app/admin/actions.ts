@@ -842,3 +842,54 @@ export async function setCommunityAudience(formData: FormData): Promise<void> {
   revalidatePath("/community");
   redirect("/admin/community?saved=1");
 }
+
+/** Photo posts wait here until a staff member approves them (switch it off in Community settings). */
+export async function approvePost(id: string): Promise<void> {
+  const { supabase, user } = await requireStaff(SUPPORT);
+  const { data } = await supabase
+    .from("community_posts")
+    .update({ approval_status: "approved" })
+    .eq("id", id)
+    .select("user_id")
+    .maybeSingle();
+  if (data?.user_id)
+    await notifyUser(data.user_id, {
+      kind: "community",
+      title: "Your post is now live",
+      body: "Thanks for sharing.",
+      link: `/community/${id}`,
+    });
+  await audit(supabase, user.id, "community.approve", id);
+  revalidatePath("/community");
+  redirect("/admin/community?saved=1");
+}
+
+export async function rejectPost(id: string): Promise<void> {
+  const { supabase, user } = await requireStaff(SUPPORT);
+  const { data } = await supabase
+    .from("community_posts")
+    .update({ approval_status: "rejected", status: "removed" })
+    .eq("id", id)
+    .select("user_id")
+    .maybeSingle();
+  if (data?.user_id)
+    await notifyUser(data.user_id, {
+      kind: "community",
+      title: "Your post was not approved",
+      body: "It did not follow the community guidelines. Please review them and try again.",
+      link: "/community/guidelines",
+    });
+  await audit(supabase, user.id, "community.reject", id);
+  revalidatePath("/community");
+  redirect("/admin/community?saved=1");
+}
+
+export async function setPhotoApproval(formData: FormData): Promise<void> {
+  const { supabase, user } = await requireStaff(OPS);
+  const value = str(formData, "approval") === "off" ? "off" : "on";
+  await supabase
+    .from("app_settings")
+    .upsert({ key: "community_photo_approval", value }, { onConflict: "key" });
+  await audit(supabase, user.id, "community.photo_approval", value);
+  redirect("/admin/community?saved=1");
+}

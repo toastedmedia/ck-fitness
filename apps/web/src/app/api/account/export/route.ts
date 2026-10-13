@@ -20,6 +20,7 @@ const TABLES = [
   "progress_photos",
   "community_posts",
   "community_comments",
+  "community_profiles",
   "memberships",
   "support_requests",
   "notifications",

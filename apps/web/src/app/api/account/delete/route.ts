@@ -50,6 +50,14 @@ export async function POST(request: NextRequest) {
     (p) => p.storage_path,
   );
   if (photoPaths.length) await admin.storage.from("progress-photos").remove(photoPaths);
+  // Community photos live in storage too (the database cascade does not remove files).
+  const { data: files } = await admin.storage
+    .from("community-media")
+    .list(user.id, { limit: 200 });
+  if (files?.length)
+    await admin.storage
+      .from("community-media")
+      .remove(files.map((f) => `${user.id}/${f.name}`));
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (!error) await track(null, "account_deleted");
   if (error)

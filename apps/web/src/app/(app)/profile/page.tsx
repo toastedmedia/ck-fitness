@@ -208,6 +208,12 @@ export default async function ProfilePage({
             on={prefs?.new_content ?? true}
           />
           <Toggle
+            name="community"
+            label="Community activity"
+            hint="Comments, replies and reactions on your posts."
+            on={prefs?.community ?? true}
+          />
+          <Toggle
             name="marketing"
             label="Offers and news"
             hint="Optional. You can turn this off any time."

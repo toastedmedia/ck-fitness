@@ -44,3 +44,27 @@ describe("timeAgo", () => {
     expect(timeAgo("2026-10-10T12:00:00Z", now)).toBe("2 d ago");
   });
 });
+
+import { canEdit, isReaction, reactionMilestone, summarizeReactions } from "./community";
+
+describe("reactions, editing and milestones", () => {
+  it("summarises the most used reactions first", () => {
+    expect(
+      summarizeReactions({ love: 5, like: 2, strong: 7, celebrate: 0 }).map((r) => r.key),
+    ).toEqual(["strong", "love", "like"]);
+    expect(summarizeReactions({}).length).toBe(0);
+    expect(summarizeReactions(null).length).toBe(0);
+  });
+  it("knows the five reactions", () => {
+    expect(isReaction("support")).toBe(true);
+    expect(isReaction("angry")).toBe(false);
+  });
+  it("allows editing only in the first fifteen minutes", () => {
+    const now = new Date("2026-10-12T12:00:00Z");
+    expect(canEdit("2026-10-12T11:50:00Z", now)).toBe(true);
+    expect(canEdit("2026-10-12T11:40:00Z", now)).toBe(false);
+  });
+  it("notifies at round numbers only", () => {
+    expect([1, 2, 5, 9, 10, 25].filter(reactionMilestone)).toEqual([1, 5, 10, 25]);
+  });
+});

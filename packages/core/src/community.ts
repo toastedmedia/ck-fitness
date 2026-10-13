@@ -75,3 +75,47 @@ export const MUTE_OPTIONS = [
   ["7", "Mute for 7 days"],
   ["30", "Mute for 30 days"],
 ] as const;
+
+/** Reactions, like Facebook but five calm ones. One per member per post; tapping the same one removes it. */
+export const REACTIONS = [
+  ["like", "👍", "Like"],
+  ["love", "❤️", "Love"],
+  ["strong", "💪", "Strong"],
+  ["celebrate", "🎉", "Celebrate"],
+  ["support", "🤗", "Support"],
+] as const;
+export type Reaction = (typeof REACTIONS)[number][0];
+export const isReaction = (v: unknown): v is Reaction => REACTIONS.some(([k]) => k === v);
+
+/** The top reactions on a post, most used first, for the little summary under it. */
+export function summarizeReactions(
+  counts: Record<string, number> | null | undefined,
+  max = 3,
+) {
+  return REACTIONS.map(([key, emoji, label]) => ({
+    key,
+    emoji,
+    label,
+    n: Number(counts?.[key] ?? 0),
+  }))
+    .filter((r) => r.n > 0)
+    .sort((a, b) => b.n - a.n)
+    .slice(0, max);
+}
+
+/** Authors can fix typos for a short while. */
+export const EDIT_WINDOW_MINUTES = 15;
+export const canEdit = (createdAt: string, now: Date = new Date()) =>
+  now.getTime() - new Date(createdAt).getTime() < EDIT_WINDOW_MINUTES * 60_000;
+
+export const MAX_IMAGES = 4;
+
+/** Notify the author at a few round numbers instead of for every single reaction. */
+export const reactionMilestone = (total: number) =>
+  [1, 5, 10, 25, 50, 100].includes(total);
+
+export const POST_FILTERS = [
+  ["all", "All"],
+  ...CATEGORIES,
+  ["announcement", "Announcements"],
+] as const;

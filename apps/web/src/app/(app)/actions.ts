@@ -395,6 +395,7 @@ export async function saveNotificationPrefs(formData: FormData): Promise<void> {
       water: on("water"),
       weekly_checkin: on("weekly_checkin"),
       new_content: on("new_content"),
+      community: on("community"),
       marketing: on("marketing"),
       email: on("email"),
       sms: on("sms"),

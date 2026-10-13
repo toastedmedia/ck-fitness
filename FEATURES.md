@@ -15,14 +15,14 @@ Nothing has been verified against live Stripe, Cloudflare or the CRM yet. Status
 - ✅ **Programs:** Discover, My Programs, Free, Member Library, Categories, filters, search; program detail, lesson player, PDF via signed link, complete, "I cannot do this today"
 - 🔌 Secure video (Cloudflare Stream signed links, resume, tracks furthest point and real watch time)
 - 🔌 Membership checkout, billing portal, cancel (Stripe direct)
-- ✅ **Community:** feed with categories, comments, likes, community guidelines (must accept to post), report, block, no links, daily limits, staff announcements
+- ✅ **Community (Facebook-style feed):** posts by type (Win, Question, Tip, Motivation) + CK Team announcements/pinned posts; **five reactions** (Like, Love, Strong, Celebrate, Support); comments with replies; edit within 15 min; **photo posts** (up to 4, private storage, staff approval on by default); search, filters, Newest/Top; **Members directory** and community cards (bio, can opt out); report, block, auto-hide after 3 reports; guidelines gate; daily limits; community notifications (toggle in Profile). ⏳ Video posts and groups not built
 - ✅ Notifications centre, support requests with staff replies, Profile (details, units, sharing choices, notification consent, data download, delete account)
 - ⏳ Apple Health and iPhone app (Phase 2), web push
 
 ## Admin portal (`/admin`)
 - ✅ Dashboard (members, activity, at-risk, help, billing problems), KPIs (9 launch KPIs + video cost guard), Billing (all subscriptions, revenue estimate, Stripe invoices once connected), Accountability (at-risk list)
 - ✅ **Client record (Admin -> Users -> a client):** Overview (editable name/email/phone, plan, Stripe link, invoices, counts-only activity, staff roles), Questionnaire (everything from onboarding), Check-ins (daily + weekly), Progress (weight, measurements, water, steps, workouts), **Programs** (what she can access, stage, per-lesson furthest point, time watched, plays, completion), **Activity** (full timeline of every action and every account change, filterable), Photos, private Notes. Health tabs follow her sharing choice; every view is audited
-- ✅ Users (search by name/email/phone, filters, contacts CSV), Programs (cover upload, inline Free/Member switch, editor, preview as Free/Member, publish checks, CSV spreadsheet import), Tags, Support (reply notifies member), Announcements, **Community moderation** (reports queue, hide/restore/remove, mute, ban, pin, audience switch), CRM sync (retry/run), Settings (price, goals, CK Score weights), Audit log
+- ✅ Users (search by name/email/phone, filters, contacts CSV), Programs (cover upload, inline Free/Member switch, editor, preview as Free/Member, publish checks, CSV spreadsheet import), Tags, Support (reply notifies member), Announcements, **Community moderation** (photo approvals queue, reports queue, hide/restore/remove, mute, ban, pin, audience switch, photo-approval switch), CRM sync (retry/run), Settings (price, goals, CK Score weights), Audit log
 - 🔌 Toasted Media CRM adapter with retry queue (needs the real API)
 
 ## Platform

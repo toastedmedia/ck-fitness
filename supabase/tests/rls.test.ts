@@ -1229,7 +1229,7 @@ describe("community", () => {
 });
 
 describe("migrations that are meant to be repeatable", () => {
-  it("can be pasted and run a second time without errors (0012 to 0014)", async () => {
+  it("can be pasted and run a second time without errors (0012 to 0015)", async () => {
     const { readFileSync } = await import("node:fs");
     const { join } = await import("node:path");
     const fresh = await freshDb();
@@ -1243,5 +1243,276 @@ describe("migrations that are meant to be repeatable", () => {
     const n = (await fresh.query("select count(*)::int as n from public.community_posts"))
       .rows[0] as { n: number };
     expect(n.n).toBe(0);
+  });
+});
+
+describe("community feed: reactions, photos with approval, edits, replies, directory", () => {
+  const [A1, A2, A3] = ["60", "61", "62"].map(
+    (n) => `00000000-0000-0000-0000-0000000000${n}`,
+  );
+  const STAFF = "00000000-0000-0000-0000-000000000063";
+  beforeAll(async () => {
+    for (const u of [A1, A2, A3, STAFF]) await addUser(db, u);
+    await db.query("insert into public.staff_roles (user_id, role) values ($1,'owner')", [
+      STAFF,
+    ]);
+    await db.query(
+      "update public.profiles set onboarding_complete = true, community_accepted_at = now(), first_name = 'Mia', last_name = 'Singh' where user_id = any($1::uuid[])",
+      [[A1, A2, A3, STAFF]],
+    );
+  });
+  const mkPost = async (u: string, extra = "") =>
+    (
+      (
+        await asUser(db, u, () =>
+          db.query(
+            `insert into public.community_posts (user_id, body, category${extra ? ", has_images" : ""}) values ($1,'Hello there','win'${extra ? ", true" : ""}) returning id`,
+            [u],
+          ),
+        )
+      ).rows[0] as { id: string }
+    ).id;
+  const canSee = async (u: string, id: string) =>
+    (
+      await asUser(
+        db,
+        u,
+        async () =>
+          (await db.query("select id from public.community_posts where id = $1", [id]))
+            .rows,
+      )
+    ).length === 1;
+
+  it("keeps one reaction per member and counts each type", async () => {
+    const id = await mkPost(A1);
+    await asUser(db, A2, () =>
+      db.query(
+        "insert into public.community_likes (post_id, user_id, reaction) values ($1,$2,'love')",
+        [id, A2],
+      ),
+    );
+    await asUser(db, A3, () =>
+      db.query(
+        "insert into public.community_likes (post_id, user_id, reaction) values ($1,$2,'strong')",
+        [id, A3],
+      ),
+    );
+    await asUser(db, A3, () =>
+      db.query(
+        "update public.community_likes set reaction = 'love' where post_id = $1 and user_id = $2",
+        [id, A3],
+      ),
+    );
+    const row = (
+      await db.query(
+        "select like_count, reaction_counts from public.community_posts where id = $1",
+        [id],
+      )
+    ).rows[0] as { like_count: number; reaction_counts: Record<string, number> };
+    expect(row.like_count).toBe(2);
+    expect(row.reaction_counts).toEqual({ love: 2 });
+    await expect(
+      asUser(db, A2, () =>
+        db.query(
+          "insert into public.community_likes (post_id, user_id, reaction) values ($1,$2,'like')",
+          [id, A2],
+        ),
+      ),
+    ).rejects.toThrow();
+  });
+  it("holds a photo post for approval until staff approve it, then shows it", async () => {
+    const id = await mkPost(A1, "img");
+    expect(
+      (
+        (
+          await db.query(
+            "select approval_status from public.community_posts where id = $1",
+            [id],
+          )
+        ).rows[0] as { approval_status: string }
+      ).approval_status,
+    ).toBe("pending");
+    await asUser(db, A1, () =>
+      db.query(
+        "insert into public.community_post_images (post_id, user_id, storage_path, position) values ($1,$2,$3,0)",
+        [id, A1, `${A1}/p1.jpg`],
+      ),
+    );
+    expect(await canSee(A2, id)).toBe(false);
+    expect(await canSee(A1, id)).toBe(true);
+    await asUser(db, STAFF, () =>
+      db.query(
+        "update public.community_posts set approval_status = 'approved' where id = $1",
+        [id],
+      ),
+    );
+    expect(await canSee(A2, id)).toBe(true);
+    expect(
+      (
+        await asUser(
+          db,
+          A2,
+          async () =>
+            (
+              await db.query(
+                "select id from public.community_post_images where post_id = $1",
+                [id],
+              )
+            ).rows,
+        )
+      ).length,
+    ).toBe(1);
+  });
+  it("cannot sneak photos past approval by adding them after posting", async () => {
+    const id = await mkPost(A2); // posted as text, approved
+    expect(await canSee(A3, id)).toBe(true);
+    await asUser(db, A2, () =>
+      db.query(
+        "insert into public.community_post_images (post_id, user_id, storage_path) values ($1,$2,$3)",
+        [id, A2, `${A2}/late.jpg`],
+      ),
+    );
+    expect(await canSee(A3, id)).toBe(false); // back to pending
+  });
+  it("limits a post to four photos and own-folder paths", async () => {
+    const id = await mkPost(A3);
+    for (let i = 0; i < 4; i++)
+      await asUser(db, A3, () =>
+        db.query(
+          "insert into public.community_post_images (post_id, user_id, storage_path, position) values ($1,$2,$3,$4)",
+          [id, A3, `${A3}/i${i}.jpg`, i],
+        ),
+      );
+    await expect(
+      asUser(db, A3, () =>
+        db.query(
+          "insert into public.community_post_images (post_id, user_id, storage_path) values ($1,$2,$3)",
+          [id, A3, `${A3}/i5.jpg`],
+        ),
+      ),
+    ).rejects.toThrow();
+    const id2 = await mkPost(A3);
+    await expect(
+      asUser(db, A3, () =>
+        db.query(
+          "insert into public.community_post_images (post_id, user_id, storage_path) values ($1,$2,$3)",
+          [id2, A3, `${A1}/x.jpg`],
+        ),
+      ),
+    ).rejects.toThrow();
+  });
+  it("shows staff posts without approval and marks them as staff", async () => {
+    const r = await asUser(db, STAFF, () =>
+      db.query(
+        "insert into public.community_posts (user_id, body, has_images) values ($1,'From the team', true) returning id, is_staff, approval_status",
+        [STAFF],
+      ),
+    );
+    expect(r.rows[0]).toMatchObject({ is_staff: true, approval_status: "approved" });
+  });
+  it("lets authors fix typos but never change status, approval, counts or pinning", async () => {
+    const id = await mkPost(A1);
+    await asUser(db, A1, () =>
+      db.query(
+        "update public.community_posts set body = 'Fixed typo', status = 'removed', pinned = true, approval_status = 'pending', like_count = 99 where id = $1",
+        [id],
+      ),
+    );
+    const row = (
+      await db.query(
+        "select body, status, pinned, approval_status, like_count, edited_at from public.community_posts where id = $1",
+        [id],
+      )
+    ).rows[0] as Record<string, unknown>;
+    expect(row).toMatchObject({
+      body: "Fixed typo",
+      status: "visible",
+      pinned: false,
+      approval_status: "approved",
+      like_count: 0,
+    });
+    expect(row.edited_at).not.toBeNull();
+  });
+  it("stops edits after fifteen minutes", async () => {
+    const id = await mkPost(A1);
+    await db.query(
+      "update public.community_posts set created_at = now() - interval '20 minutes' where id = $1",
+      [id],
+    );
+    await asUser(db, A1, () =>
+      db.query("update public.community_posts set body = 'too late' where id = $1", [id]),
+    );
+    expect(
+      (
+        (await db.query("select body from public.community_posts where id = $1", [id]))
+          .rows[0] as { body: string }
+      ).body,
+    ).toBe("Hello there");
+  });
+  it("supports one level of replies only", async () => {
+    const id = await mkPost(A1);
+    const c1 = (
+      (
+        await asUser(db, A2, () =>
+          db.query(
+            "insert into public.community_comments (post_id, user_id, body) values ($1,$2,'Top') returning id",
+            [id, A2],
+          ),
+        )
+      ).rows[0] as { id: string }
+    ).id;
+    const c2 = (
+      (
+        await asUser(db, A3, () =>
+          db.query(
+            "insert into public.community_comments (post_id, user_id, body, parent_id) values ($1,$2,'Reply',$3) returning id",
+            [id, A3, c1],
+          ),
+        )
+      ).rows[0] as { id: string }
+    ).id;
+    await expect(
+      asUser(db, A1, () =>
+        db.query(
+          "insert into public.community_comments (post_id, user_id, body, parent_id) values ($1,$2,'Too deep',$3)",
+          [id, A1, c2],
+        ),
+      ),
+    ).rejects.toThrow();
+  });
+  it("lists members in the directory unless they opt out, with names from their profile", async () => {
+    await asUser(db, A1, () =>
+      db.query(
+        "insert into public.community_profiles (user_id, bio) values ($1,'Love morning walks')",
+        [A1],
+      ),
+    );
+    await asUser(db, A2, () =>
+      db.query(
+        "insert into public.community_profiles (user_id, show_in_directory) values ($1,false)",
+        [A2],
+      ),
+    );
+    const seen = await asUser(
+      db,
+      A3,
+      async () =>
+        (await db.query("select user_id, display_name from public.community_profiles"))
+          .rows as { user_id: string; display_name: string }[],
+    );
+    expect(seen).toEqual([{ user_id: A1, display_name: "Mia S." }]);
+    await db.query("update public.profiles set last_name = 'Brown' where user_id = $1", [
+      A1,
+    ]);
+    expect(
+      (
+        (
+          await db.query(
+            "select display_name from public.community_profiles where user_id = $1",
+            [A1],
+          )
+        ).rows[0] as { display_name: string }
+      ).display_name,
+    ).toBe("Mia B.");
   });
 });
