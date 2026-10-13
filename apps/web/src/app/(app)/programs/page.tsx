@@ -6,11 +6,11 @@ import { getContext } from "@/lib/app";
 import { coverUrl } from "@/lib/programs";
 import { getViewer } from "@/lib/viewer";
 
-export const metadata: Metadata = { title: "Programs" };
+export const metadata: Metadata = { title: "Trainings" };
 
 const VIEWS = [
-  ["all", "All programs"],
-  ["mine", "My Programs"],
+  ["all", "All trainings"],
+  ["mine", "My Trainings"],
   ["free", "Free"],
   ["member", "Member Library"],
   ["categories", "Categories"],
@@ -142,7 +142,7 @@ export default async function ProgramsPage({
   let body: React.ReactNode;
   const list = (
     rows: Row[],
-    empty = "Nothing here yet. New programs are added regularly.",
+    empty = "Nothing here yet. New trainings are added regularly.",
   ) =>
     rows.length === 0 ? (
       <p className="text-xs text-muted">{empty}</p>
@@ -168,7 +168,7 @@ export default async function ProgramsPage({
   if (view === "mine")
     body = list(
       filtered.filter((p) => enrolled.has(p.id)),
-      "You have not started a program yet. Pick one from All programs.",
+      "You have not started a training yet. Pick one from All trainings.",
     );
   else if (view === "free")
     body = list(filtered.filter((p) => p.access_level === "free"));
@@ -188,7 +188,7 @@ export default async function ProgramsPage({
             </Link>
           ))}
         </div>
-        {list(filtered, "No programs in this category yet.")}
+        {list(filtered, "No trainings in this category yet.")}
       </>
     );
   } else {
@@ -199,7 +199,7 @@ export default async function ProgramsPage({
       <div className="flex flex-col gap-5">
         {row("Continue training", started)}
         {row(
-          "Free programs",
+          "Free trainings",
           rest.filter((p) => p.access_level === "free"),
         )}
         {row(
@@ -207,7 +207,7 @@ export default async function ProgramsPage({
           rest.filter((p) => p.access_level !== "free"),
         )}
         {filtered.length === 0 ? (
-          <p className="text-xs text-muted">No programs match these filters.</p>
+          <p className="text-xs text-muted">No trainings match these filters.</p>
         ) : null}
       </div>
     );
@@ -215,7 +215,7 @@ export default async function ProgramsPage({
 
   return (
     <>
-      <h1 className="sr-only">Programs</h1>
+      <h1 className="sr-only">Trainings</h1>
       <form method="get" role="search" className="flex gap-2">
         {Object.entries(sp)
           .filter(([k, v]) => k !== "q" && v)
@@ -226,8 +226,8 @@ export default async function ProgramsPage({
           type="search"
           name="q"
           defaultValue={sp.q ?? ""}
-          placeholder="Search programs"
-          aria-label="Search programs"
+          placeholder="Search trainings"
+          aria-label="Search trainings"
           className="min-h-11 flex-1 rounded-2xl border-2 border-line bg-surface px-3 text-sm"
         />
         <button className="min-h-11 rounded-button bg-brand px-4 text-xs font-bold text-on-brand">
@@ -235,7 +235,7 @@ export default async function ProgramsPage({
         </button>
       </form>
       <nav
-        aria-label="Program views"
+        aria-label="Training views"
         className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1"
       >
         {VIEWS.map(([v, label]) => (

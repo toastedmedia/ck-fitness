@@ -38,10 +38,11 @@ function useForm(action: Action) {
   return useActionState(action, initial);
 }
 
-export function SignupForm() {
+export function SignupForm({ refCode }: { refCode?: string }) {
   const [state, formAction] = useForm(signUp);
   return (
     <form action={formAction} className="mt-6 flex flex-col gap-4">
+      {refCode ? <input type="hidden" name="ref" value={refCode} /> : null}
       <Field label="First name" name="first_name" autoComplete="given-name" required />
       <Field label="Last name" name="last_name" autoComplete="family-name" required />
       <Field label="Email" name="email" type="email" autoComplete="email" required />

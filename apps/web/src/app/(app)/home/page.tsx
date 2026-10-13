@@ -40,6 +40,8 @@ import { ensurePlan, ensureWeekPlanned } from "@/lib/plan";
 import { getTodayWorkout } from "@/lib/programs";
 import { flags } from "@/lib/flags";
 import { isNativeApp } from "@/lib/native";
+import { createAdminSupabase } from "@/lib/supabase/admin";
+import { ReferralCard } from "@/components/home/ReferralCard";
 import { getViewer } from "@/lib/viewer";
 
 export const metadata: Metadata = { title: "Home" };
@@ -227,6 +229,37 @@ export default async function HomePage({
   const isMember = viewer.entitlement !== "free";
   const native = await isNativeApp();
 
+  // Invite card. Tolerates the referral columns not existing yet (card is simply hidden).
+  const [refRow, rewardRow] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("referral_code")
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("app_settings")
+      .select("value")
+      .eq("key", "referral_reward")
+      .maybeSingle(),
+  ]);
+  const refCode =
+    (refRow.data as { referral_code?: string } | null)?.referral_code ?? null;
+  const joined = refCode
+    ? ((
+        await createAdminSupabase()
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+          .eq("referred_by", user.id)
+      ).count ?? 0)
+    : 0;
+  const siteBase = (
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://app.chardikalafitness.com"
+  ).replace(/\/$/, "");
+  const rewardText =
+    !native && typeof rewardRow.data?.value === "string" && rewardRow.data.value.trim()
+      ? rewardRow.data.value.trim()
+      : null;
+
   return (
     <>
       <HomeHeader
@@ -307,6 +340,14 @@ export default async function HomePage({
 
       <NextMilestone text={milestone?.text ?? null} earned={null} />
 
+      {refCode ? (
+        <ReferralCard
+          link={`${siteBase}/signup?ref=${refCode}`}
+          joined={joined}
+          reward={rewardText}
+        />
+      ) : null}
+
       {!isMember && !native ? (
         <Card className="bg-page">
           <Cap>CK Membership</Cap>
@@ -314,7 +355,7 @@ export default async function HomePage({
             Unlock the complete CK experience
           </h3>
           <p className="mt-0.5 text-xs text-muted">
-            The full program library and member accountability.
+            The full training library and member accountability.
           </p>
           <Link
             href="/membership"

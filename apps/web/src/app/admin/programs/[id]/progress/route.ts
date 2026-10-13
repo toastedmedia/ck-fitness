@@ -47,7 +47,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   return new NextResponse(lines.join("\n"), {
     headers: {
       "content-type": "text/csv; charset=utf-8",
-      "content-disposition": `attachment; filename="program-progress.csv"`,
+      "content-disposition": `attachment; filename="training-progress.csv"`,
       "cache-control": "no-store",
     },
   });

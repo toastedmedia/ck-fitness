@@ -65,6 +65,9 @@ export async function signUp(_prev: FormState, formData: FormData): Promise<Form
         first_name: first,
         last_name: last,
         phone,
+        referral_code: /^[a-zA-Z0-9]{6,12}$/.test(String(formData.get("ref") ?? ""))
+          ? String(formData.get("ref")).toLowerCase()
+          : "",
       },
     },
   });

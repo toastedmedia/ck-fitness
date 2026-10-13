@@ -93,7 +93,7 @@ export function TodaysWorkout({
             </ActionButton>
           ) : (
             <Link href="/programs" className={gold}>
-              Choose a program
+              Choose a training
             </Link>
           )}
         </div>

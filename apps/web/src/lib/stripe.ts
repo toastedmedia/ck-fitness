@@ -79,7 +79,7 @@ export async function syncSubscription(subscriptionId: string, fallbackUserId?: 
       await notifyUser(userId, {
         kind: "billing",
         title: "Welcome to CK Membership",
-        body: "Your full program library is unlocked.",
+        body: "Your full training library is unlocked.",
         link: "/programs",
       });
     if (event === "billing_problem")

@@ -1565,4 +1565,38 @@ describe("community feed: reactions, photos with approval, edits, replies, direc
     ).rows[0] as { first_name: string; last_name: string; phone: string };
     expect(row).toEqual({ first_name: "Asha", last_name: "Brar", phone: "+16045550100" });
   });
+  it("links a friend to the member whose referral code they signed up with, and keeps codes private to the server", async () => {
+    const inviter = "00000000-0000-0000-0000-0000000000e1";
+    const friend = "00000000-0000-0000-0000-0000000000e2";
+    await db.query(
+      "insert into auth.users (id, email) values ($1,'inviter@example.com')",
+      [inviter],
+    );
+    const code = (
+      (
+        await db.query("select referral_code from public.profiles where user_id = $1", [
+          inviter,
+        ])
+      ).rows[0] as { referral_code: string }
+    ).referral_code;
+    expect(code).toHaveLength(10);
+    await db.query(
+      "insert into auth.users (id, email, raw_user_meta_data) values ($1,'friend@example.com',$2)",
+      [friend, JSON.stringify({ referral_code: code.toUpperCase() })],
+    );
+    const link = (
+      await db.query("select referred_by from public.profiles where user_id = $1", [
+        friend,
+      ])
+    ).rows[0] as { referred_by: string };
+    expect(link.referred_by).toBe(inviter);
+    await expect(
+      asUser(db, friend, () =>
+        db.query("update public.profiles set referred_by = $1 where user_id = $2", [
+          friend,
+          friend,
+        ]),
+      ),
+    ).rejects.toThrow();
+  });
 });

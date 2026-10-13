@@ -58,8 +58,8 @@ export default async function Preview({
         Preview as {viewer.entitlement === "free" ? "a Free member" : "a Member"}
       </H1>
       <Flash>
-        This is how the program appears to that kind of member. Drafts are shown here, but
-        members only see published programs.
+        This is how the training appears to that kind of member. Drafts are shown here,
+        but members only see published trainings.
       </Flash>
       <Panel>
         <h2 className="font-display text-xl text-brand">{p.title}</h2>
@@ -67,7 +67,7 @@ export default async function Preview({
         <p className="mt-2 whitespace-pre-line text-sm">{p.long_description}</p>
         <p className="mt-3 text-sm font-bold">
           {allowed
-            ? "Button: Start program"
+            ? "Button: Start training"
             : "Locked: this member sees the membership offer"}
         </p>
         {!allowed ? (

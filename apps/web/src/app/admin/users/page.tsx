@@ -172,9 +172,9 @@ export default async function AdminUsers({
               />
             </label>
             <label className="text-xs font-bold text-brand md:col-span-2">
-              Give access to a program (optional)
+              Give access to a training (optional)
               <select name="program_id" className={aInput}>
-                <option value="">No program, just create the account</option>
+                <option value="">No training, just create the account</option>
                 {programs.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.title}

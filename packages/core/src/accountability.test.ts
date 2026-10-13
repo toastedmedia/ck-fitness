@@ -226,7 +226,7 @@ describe("next milestone and supportive line", () => {
     weeklyCheckinDone: false,
     waterRemainingMl: 900,
   };
-  it("prefers the program, then the week, then accountability, then water", () => {
+  it("prefers the training, then the week, then accountability, then water", () => {
     expect(
       nextMilestone({ ...base, program: { sectionTitle: "Week 2", remaining: 2 } })?.text,
     ).toBe("Complete 2 more workouts to finish Week 2.");

@@ -24,7 +24,7 @@ export default function TermsPage() {
         <h2 className={h}>Safety first</h2>
         <p className="mt-2">
           CK Fitness gives general fitness guidance. It is not medical advice. Check with
-          a doctor or physiotherapist before starting a program, especially if you are
+          a doctor or physiotherapist before starting a training, especially if you are
           pregnant or postpartum, have an injury, a health condition, or have not
           exercised in a while. Stop if you feel sharp pain, dizziness or unwell. Exercise
           carries a risk of injury and you take part at your own risk.
@@ -47,7 +47,7 @@ export default function TermsPage() {
 
         <h2 className={h}>Our content</h2>
         <p className="mt-2">
-          Programs, videos and guides belong to CK Fitness. They are for your personal
+          Trainings, videos and guides belong to CK Fitness. They are for your personal
           use. Do not copy, share, resell or record them.
         </p>
 

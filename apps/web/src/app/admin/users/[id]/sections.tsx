@@ -139,8 +139,8 @@ export async function ProgramsTab({
                 : "Free"}
           </Status>{" "}
           {entitlement === "free"
-            ? "Free programs open, member programs locked."
-            : "All member programs open."}
+            ? "Free trainings open, member trainings locked."
+            : "All member trainings open."}
         </p>
         {!shared ? (
           <p className="mt-2 text-xs text-muted">
@@ -292,7 +292,7 @@ const KINDS = [
   ["workout", "Workouts"],
   ["tracking", "Water, steps, weight"],
   ["checkin", "Check-ins"],
-  ["learning", "Programs and video"],
+  ["learning", "Trainings and video"],
   ["account", "Account changes"],
   ["visit", "App visits"],
   ["support", "Support"],
@@ -590,13 +590,13 @@ export async function ActivityTab({
     items.push({
       at: e.started_at,
       kind: "learning",
-      text: `Started program "${e.programs?.title}"`,
+      text: `Started training "${e.programs?.title}"`,
     });
     if (e.completed_at)
       items.push({
         at: e.completed_at,
         kind: "learning",
-        text: `Finished program "${e.programs?.title}"`,
+        text: `Finished training "${e.programs?.title}"`,
       });
   }
   for (const m of (miles.data ?? []) as { milestone_type: string; achieved_at: string }[])
@@ -641,7 +641,7 @@ export async function ActivityTab({
     });
   const EVENT: Record<string, string> = {
     dashboard_viewed: "Opened the app",
-    program_viewed: "Viewed a program",
+    program_viewed: "Viewed a training",
     lesson_started: "Opened a lesson",
     paywall_viewed: "Saw the membership offer",
     checkout_started: "Started checkout",
@@ -748,20 +748,20 @@ export async function GiveAccess({
     .order("sort_order");
   const list = (data ?? []) as { id: string; title: string; access_level: string }[];
   return (
-    <Panel title="Give access to a program">
+    <Panel title="Give access to a training">
       <p className="text-sm text-muted">
-        Use this when {firstName} has paid you directly. For a paid program it gives them
-        CK Membership (all member programs, same as a payment) and adds the program to My
-        Programs. Take it away later under Overview, Assign manually.
+        Use this when {firstName} has paid you directly. For a paid training it gives them
+        CK Membership (all member trainings, same as a payment) and adds the training to
+        My Trainings. Take it away later under Overview, Assign manually.
       </p>
       <form
         action={giveAccessToUser.bind(null, userId)}
         className="mt-3 flex flex-wrap items-end gap-2"
       >
         <label className="min-w-60 flex-1 text-xs font-bold text-brand">
-          Program
+          Training
           <select name="program_id" required className={aInput}>
-            <option value="">Choose a program</option>
+            <option value="">Choose a training</option>
             {list.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.title} ({p.access_level === "free" ? "free" : "paid"})

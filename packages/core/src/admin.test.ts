@@ -28,7 +28,7 @@ const ready = {
 };
 
 describe("validateForPublish", () => {
-  it("passes a complete program", () => expect(validateForPublish(ready)).toEqual([]));
+  it("passes a complete training", () => expect(validateForPublish(ready)).toEqual([]));
   it("lists every missing piece in plain English", () => {
     const problems = validateForPublish({
       program: { ...ready.program, short_description: "", level: null },

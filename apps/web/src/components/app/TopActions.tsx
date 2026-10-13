@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { AccountMenu } from "./AccountMenu";
 
 const TITLES: Record<string, string> = {
-  "/programs": "Programs",
+  "/programs": "Trainings",
   "/progress": "Progress",
   "/accountability": "My Week",
   "/community": "Community",

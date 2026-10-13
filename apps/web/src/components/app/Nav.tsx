@@ -7,7 +7,7 @@ const ITEMS = [
   { href: "/home", label: "Home", icon: "M3 11l9-8 9 8M5 10v10h14V10" },
   {
     href: "/programs",
-    label: "Programs",
+    label: "Trainings",
     icon: "M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2zM4 19V5",
   },
   { href: "/progress", label: "Progress", icon: "M4 20V10M10 20V4M16 20v-7M22 20H2" },

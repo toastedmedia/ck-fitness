@@ -16,7 +16,7 @@ const NAV = [
   },
   {
     href: "/admin/programs",
-    label: "Programs",
+    label: "Trainings",
     roles: ["owner", "admin", "content_manager", "coach"],
   },
   { href: "/admin/users", label: "Users", roles: ["owner", "admin", "support", "coach"] },

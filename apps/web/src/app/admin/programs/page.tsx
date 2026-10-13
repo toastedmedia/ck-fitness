@@ -5,7 +5,7 @@ import { ABtn, Flash, H1, Panel, Status, Table, aInput, td } from "@/components/
 import { CONTENT, requireStaff } from "@/lib/admin";
 import { createProgram, updateProgramAccess } from "../actions";
 
-export const metadata: Metadata = { title: "Programs" };
+export const metadata: Metadata = { title: "Trainings" };
 
 export default async function AdminPrograms({
   searchParams,
@@ -43,10 +43,10 @@ export default async function AdminPrograms({
           </Link>
         }
       >
-        Programs and content
+        Trainings and content
       </H1>
-      {sp.error ? <Flash bad>Please enter a program title.</Flash> : null}
-      <Panel title="New program">
+      {sp.error ? <Flash bad>Please enter a training title.</Flash> : null}
+      <Panel title="New training">
         <form action={createProgram} className="flex flex-wrap items-end gap-2">
           <label className="min-w-60 flex-1 text-xs font-bold text-brand">
             Title
@@ -62,7 +62,7 @@ export default async function AdminPrograms({
         </form>
       </Panel>
       <Panel>
-        <Table head={["Program", "Access", "Duration", "Status", ""]}>
+        <Table head={["Training", "Access", "Duration", "Status", ""]}>
           {rows.map((p) => (
             <tr key={p.id}>
               <td className={td}>
@@ -133,7 +133,7 @@ export default async function AdminPrograms({
         </Table>
         {rows.length === 0 ? (
           <p className="py-3 text-sm text-muted">
-            No programs yet. Create the first one above.
+            No trainings yet. Create the first one above.
           </p>
         ) : null}
       </Panel>

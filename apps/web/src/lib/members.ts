@@ -64,7 +64,7 @@ export async function grantAccess(
     .select("id,access_level")
     .eq("id", programId)
     .maybeSingle();
-  if (!program) throw new Error("Program not found.");
+  if (!program) throw new Error("Training not found.");
 
   let membership: "granted" | "already" | "not_needed" = "not_needed";
   if (program.access_level !== "free") {

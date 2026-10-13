@@ -29,7 +29,7 @@ const TABS = [
   ["questionnaire", "Questionnaire"],
   ["checkins", "Check-ins"],
   ["progress", "Progress"],
-  ["programs", "Programs"],
+  ["programs", "Trainings"],
   ["activity", "Activity"],
   ["photos", "Photos"],
   ["notes", "Notes"],
@@ -62,6 +62,26 @@ export default async function AdminClient({
     .eq("user_id", id)
     .maybeSingle();
   if (!p) notFound();
+
+  const referredCount = p.referral_code
+    ? ((
+        await db
+          .from("profiles")
+          .select("*", { count: "exact", head: true })
+          .eq("referred_by", id)
+      ).count ?? 0)
+    : 0;
+  let referrer = "";
+  if (p.referred_by) {
+    const { data: r } = await db
+      .from("profiles")
+      .select("first_name,last_name,email")
+      .eq("user_id", p.referred_by)
+      .maybeSingle();
+    referrer = r
+      ? [r.first_name, r.last_name].filter(Boolean).join(" ") || (r.email ?? "")
+      : "";
+  }
 
   const canSeeRecords = roles.some(
     (r) => r === "owner" || r === "admin" || r === "coach",
@@ -359,8 +379,18 @@ export default async function AdminClient({
                 )}
               </dd>
             </div>
+            {p.referral_code ? (
+              <div className="md:col-span-2">
+                <dt className="text-xs text-muted">Referrals</dt>
+                <dd>
+                  {referredCount} {referredCount === 1 ? "friend has" : "friends have"}{" "}
+                  joined with their link
+                  {referrer ? `. Joined through ${referrer}` : ""}.
+                </dd>
+              </div>
+            ) : null}
             <div className="md:col-span-2">
-              <dt className="text-xs text-muted">Programs</dt>
+              <dt className="text-xs text-muted">Trainings</dt>
               <dd>
                 {(
                   (enr ?? []) as unknown as {

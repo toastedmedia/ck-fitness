@@ -29,8 +29,8 @@ export default function PrivacyPage() {
             or postpartum status, check-in answers, water and steps.
           </li>
           <li>
-            How you use the app: programs started, lessons completed, last time you opened
-            the app.
+            How you use the app: trainings started, lessons completed, last time you
+            opened the app.
           </li>
           <li>
             Payment status. Card payments are handled by Stripe. We never see or store

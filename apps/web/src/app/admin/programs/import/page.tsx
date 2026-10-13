@@ -5,7 +5,7 @@ import { ABtn, Flash, H1, Panel, aInput } from "@/components/admin/ui";
 import { CONTENT, requireStaff } from "@/lib/admin";
 import { importPrograms } from "../../actions";
 
-export const metadata: Metadata = { title: "Import programs" };
+export const metadata: Metadata = { title: "Import trainings" };
 
 export default async function ImportPrograms({
   searchParams,
@@ -21,11 +21,11 @@ export default async function ImportPrograms({
       <H1
         right={
           <Link href="/admin/programs" className="text-sm font-bold text-brand underline">
-            Back to programs
+            Back to trainings
           </Link>
         }
       >
-        Import programs
+        Import trainings
       </H1>
       {sp.done ? (
         <Flash>
@@ -42,11 +42,11 @@ export default async function ImportPrograms({
           </ul>
         </Panel>
       ) : null}
-      <Panel title="Upload your program spreadsheet">
+      <Panel title="Upload your training spreadsheet">
         <ol className="mb-3 list-decimal space-y-1 pl-5 text-sm text-muted">
           <li>Download the template, fill in one row per lesson, and save it as CSV.</li>
           <li>
-            Upload it here. Programs are created as <b>drafts</b>, never published.
+            Upload it here. Trainings are created as <b>drafts</b>, never published.
           </li>
           <li>Rows marked Outdated or Duplicate, or not for Phase 1, are skipped.</li>
           <li>

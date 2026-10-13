@@ -557,7 +557,7 @@ export async function publishProgram(id: string, formData: FormData): Promise<vo
     const rows = ((prefs ?? []) as { user_id: string }[]).map((u) => ({
       user_id: u.user_id,
       kind: "content",
-      title: `New program: ${p.title}`,
+      title: `New training: ${p.title}`,
       body: p.short_description,
       link: `/programs/${p.slug}`,
       dedupe_key: `program:${id}`,
@@ -763,6 +763,7 @@ export async function saveSettings(formData: FormData): Promise<void> {
         : 29.99,
     ),
     support_email: JSON.stringify(str(formData, "support_email", 120)),
+    referral_reward: JSON.stringify(str(formData, "referral_reward", 160)),
     privacy_url: JSON.stringify(str(formData, "privacy_url", 200)),
     terms_url: JSON.stringify(str(formData, "terms_url", 200)),
     daily_goals: JSON.stringify({

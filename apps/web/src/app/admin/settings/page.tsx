@@ -28,6 +28,23 @@ export default async function AdminSettings({
       {sp.saved ? <Flash>Saved. Changes apply straight away.</Flash> : null}
       {sp.error ? <Flash bad>That did not save. Please try again.</Flash> : null}
       <form action={saveSettings} className="flex flex-col gap-4">
+        <Panel title="Referral reward">
+          <label className={lab}>
+            Message shown on the Home screen (the reward you offer for inviting a friend)
+            <input
+              name="referral_reward"
+              defaultValue={text("referral_reward")}
+              maxLength={160}
+              className={aInput}
+              placeholder="Invite a friend. When they join, you both get a free week of coaching."
+            />
+          </label>
+          <p className="mt-2 text-xs text-muted">
+            Leave it blank to show a simple invite message with no reward. CK gives
+            rewards by hand: open Users to see who a member has referred. The reward
+            message is not shown inside the iPhone and Android apps.
+          </p>
+        </Panel>
         <Panel title="Membership and support">
           <div className="grid gap-3 md:grid-cols-2">
             <label className={lab}>

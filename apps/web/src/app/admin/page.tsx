@@ -68,8 +68,8 @@ export default async function AdminDashboard() {
         <Tile value={paying} label="Active members" />
         <Tile value={active.count ?? 0} label="Active in 7 days" />
         <Tile value={risk.count ?? 0} label="At risk (7+ days quiet)" />
-        <Tile value={starts.count ?? 0} label="Program starts (7 days)" />
-        <Tile value={completes.count ?? 0} label="Program completions (7 days)" />
+        <Tile value={starts.count ?? 0} label="Training starts (7 days)" />
+        <Tile value={completes.count ?? 0} label="Training completions (7 days)" />
         <Tile value={help.count ?? 0} label="Open help requests" />
         {showMoney ? (
           <Tile

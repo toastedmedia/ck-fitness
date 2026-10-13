@@ -205,7 +205,7 @@ export default async function ProfilePage({
           />
           <Toggle
             name="new_content"
-            label="New programs and content"
+            label="New trainings and content"
             on={prefs?.new_content ?? true}
           />
           <Toggle

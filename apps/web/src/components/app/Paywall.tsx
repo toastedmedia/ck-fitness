@@ -32,10 +32,10 @@ export async function Paywall({
       </h2>
       <ul className="mt-2 flex flex-col gap-1 text-xs">
         {[
-          "Full program library",
+          "Full training library",
           "Structured paths with weekly guidance",
           "Member accountability and weekly summary",
-          "Early access to new programs",
+          "Early access to new trainings",
         ].map((b) => (
           <li key={b} className="flex gap-2">
             <span aria-hidden="true" className="text-success">

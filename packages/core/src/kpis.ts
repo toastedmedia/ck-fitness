@@ -49,9 +49,9 @@ export function computeKpis(i: KpiInputs): Kpi[] {
     },
     {
       key: "paid_start",
-      label: "Paid program start rate",
+      label: "Paid training start rate",
       value: pct(i.paidWithProgram, i.paidMembers),
-      detail: `${i.paidWithProgram} of ${i.paidMembers} paid members started a program`,
+      detail: `${i.paidWithProgram} of ${i.paidMembers} paid members started a training`,
     },
     {
       key: "adherence",

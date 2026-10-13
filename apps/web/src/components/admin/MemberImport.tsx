@@ -139,13 +139,13 @@ export function MemberImport({
       {parsed && total > 0 ? (
         <>
           <label className="text-xs font-bold text-brand">
-            Give everyone access to a program (optional)
+            Give everyone access to a training (optional)
             <select
               value={programId}
               onChange={(e) => setProgramId(e.target.value)}
               className="mt-1 min-h-10 w-full rounded-xl border-2 border-line bg-surface px-3 text-sm font-normal"
             >
-              <option value="">No program, just create their accounts</option>
+              <option value="">No training, just create their accounts</option>
               {programs.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.title}

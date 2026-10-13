@@ -308,7 +308,7 @@ export const MILESTONE_COPY: Record<MilestoneType, { title: string; body: string
     body: "Every planned session, done.",
   },
   first_program_module: {
-    title: "First program step finished",
+    title: "First training step finished",
     body: "You are on your way.",
   },
 };

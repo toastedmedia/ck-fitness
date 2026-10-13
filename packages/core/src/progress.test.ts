@@ -41,7 +41,7 @@ describe("summarizeProgress", () => {
     expect(a?.lastAccessed).toBe("2026-10-04T00:00:00Z");
     expect(s.averagePercent).toBe(Math.round((50 + 0 + 50) / 3));
   });
-  it("handles a program with no lessons or members", () => {
+  it("handles a training with no lessons or members", () => {
     expect(summarizeProgress([], [], 0)).toMatchObject({
       enrolled: 0,
       averagePercent: 0,

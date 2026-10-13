@@ -29,7 +29,7 @@ import {
   updateSection,
 } from "../../actions";
 
-export const metadata: Metadata = { title: "Edit program" };
+export const metadata: Metadata = { title: "Edit training" };
 
 const ACCESS = [
   ["free", "Free"],
@@ -176,7 +176,7 @@ export default async function EditProgram({
       ) : null}
       {sp.granted ? (
         <Flash>
-          {sp.who} now has this program in My Programs.
+          {sp.who} now has this training in My Trainings.
           {sp.granted === "granted"
             ? " They were given CK Membership, as if they had paid."
             : sp.granted === "already"
@@ -201,7 +201,7 @@ export default async function EditProgram({
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
         <aside
           className={`rounded-card border border-line bg-surface p-2 ${view === "details" || view === "settings" || view === "progress" || view === "access" ? "" : "order-2 lg:order-none"}`}
-          aria-label="Program outline"
+          aria-label="Training outline"
         >
           <div className="px-2 pb-1 pt-2 text-sm font-extrabold text-brand">
             {p.title}
@@ -639,7 +639,7 @@ export default async function EditProgram({
                       formAction={applyLearningToAll.bind(null, id)}
                       className="min-h-10 rounded-xl border-2 border-line px-4 text-sm font-bold text-brand"
                     >
-                      Apply these switches to all programs
+                      Apply these switches to all trainings
                     </button>
                   </div>
                 ) : null}
@@ -648,12 +648,12 @@ export default async function EditProgram({
           ) : null}
 
           {view === "access" ? (
-            <Panel title="Add a member to this program">
+            <Panel title="Add a member to this training">
               <p className="text-sm text-muted">
                 Use this when someone has paid you directly. Enter the email they signed
-                up with. For a paid program this also gives them CK Membership, the same
-                as a payment, and puts the program under My Programs so they can start. To
-                take access away, open the person under Users and use Assign manually.
+                up with. For a paid training this also gives them CK Membership, the same
+                as a payment, and puts the training under My Trainings so they can start.
+                To take access away, open the person under Users and use Assign manually.
               </p>
               {canEdit && roles.some((r) => r === "owner" || r === "admin") ? (
                 <form
@@ -702,7 +702,7 @@ export default async function EditProgram({
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <Tile value={progress.enrolled} label="Members enrolled" />
                 <Tile value={progress.started} label="Started learning" />
-                <Tile value={progress.completed} label="Completed the program" />
+                <Tile value={progress.completed} label="Completed the training" />
                 <Tile value={`${progress.averagePercent}%`} label="Average progress" />
               </div>
               <Panel title={`Members (${filtered.length})`}>
@@ -771,7 +771,7 @@ export default async function EditProgram({
                   <p className="py-3 text-sm text-muted">
                     {progress.enrolled
                       ? "No members match that search."
-                      : "No one has started this program yet."}
+                      : "No one has started this training yet."}
                   </p>
                 ) : null}
                 {filtered.length > PAGE ? (
@@ -1053,7 +1053,7 @@ function LessonForm({
           defaultValue={String(v("access_override"))}
           className={aInput}
         >
-          <option value="">Same as the program</option>
+          <option value="">Same as the training</option>
           {ACCESS.map(([val, l]) => (
             <option key={val} value={val}>
               {l}

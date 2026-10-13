@@ -161,7 +161,7 @@ export default async function SummaryPage({
         <Card>
           <Cap>Member extras</Cap>
           <p className="mt-1 text-xs">
-            Program: <b>{program?.title ?? "No active program"}</b>. Program sessions
+            Training: <b>{program?.title ?? "No active training"}</b>. Training sessions
             completed: {prog.completed} of {prog.planned} planned.
           </p>
           <p className="mt-2 text-xs text-muted">Next best step</p>
@@ -177,7 +177,7 @@ export default async function SummaryPage({
               href="/programs"
               className="mt-1 inline-flex min-h-11 items-center rounded-button bg-accent px-4 text-xs font-bold text-on-accent"
             >
-              Choose a program
+              Choose a training
             </Link>
           )}
         </Card>

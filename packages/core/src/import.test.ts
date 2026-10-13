@@ -19,7 +19,7 @@ describe("parseCsv", () => {
 });
 
 describe("parseProgramImport", () => {
-  it("groups lessons into sections and programs, and keeps only current Phase 1 rows", () => {
+  it("groups lessons into sections and trainings, and keeps only current Phase 1 rows", () => {
     const csv = [
       HEADER,
       "Core,Current,free,Core & Pelvic Floor,Beginner,Home,5 days,Week 1,Day 1,d1.mp4,abc123,Yes,Yes,Yes,Yes",

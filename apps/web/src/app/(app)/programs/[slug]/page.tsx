@@ -10,7 +10,7 @@ import { track } from "@/lib/events";
 import { getViewer } from "@/lib/viewer";
 import { startProgram } from "../actions";
 
-export const metadata: Metadata = { title: "Program" };
+export const metadata: Metadata = { title: "Training" };
 
 export default async function ProgramPage({
   params,
@@ -96,7 +96,7 @@ export default async function ProgramPage({
         href="/programs"
         className="inline-flex min-h-10 items-center text-xs font-bold text-brand"
       >
-        ← Programs
+        ← Trainings
       </Link>
       {cover ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -128,7 +128,7 @@ export default async function ProgramPage({
       {sp.error === "locked" ? (
         <Flash tone="error">That content is for members.</Flash>
       ) : null}
-      {sp.done ? <Flash>Program complete. Well done.</Flash> : null}
+      {sp.done ? <Flash>Training complete. Well done.</Flash> : null}
       {program.long_description ? (
         <Card>
           <Cap>What you will do</Cap>
@@ -186,15 +186,15 @@ export default async function ProgramPage({
             {enr
               ? enr.status === "completed"
                 ? "Do it again"
-                : "Continue program"
-              : "Start program"}
+                : "Continue training"
+              : "Start training"}
           </Button>
         </form>
       ) : level === "coach_only" ? (
         <Card className="bg-page">
           <Cap>Coaching</Cap>
           <p className="mt-1 text-xs">
-            This program is part of one-to-one coaching with CK.
+            This training is part of one-to-one coaching with CK.
           </p>
           <Link
             href={`/accountability/help?topic=coaching&program=${program.slug}`}
