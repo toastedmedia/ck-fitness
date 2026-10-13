@@ -25,8 +25,8 @@ export function ReferralCard({
   async function share() {
     try {
       await navigator.share({
-        title: "CK Fitness",
-        text: "Train with me on CK Fitness.",
+        title: "Chardikala Fitness",
+        text: "Train with me on the Chardikala Fitness App.",
         url: link,
       });
     } catch {

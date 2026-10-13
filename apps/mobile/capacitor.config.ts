@@ -7,7 +7,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
  */
 const config: CapacitorConfig = {
   appId: "com.chardikalafitness.app",
-  appName: "CK Fitness",
+  appName: "Chardikala Fitness",
   webDir: "www",
   server: {
     url: "https://app.chardikalafitness.com",

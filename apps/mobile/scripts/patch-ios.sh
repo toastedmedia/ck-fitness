@@ -6,7 +6,8 @@ PB=/usr/libexec/PlistBuddy
 set_str() { "$PB" -c "Set :$1 $2" "$PLIST" 2>/dev/null || "$PB" -c "Add :$1 string $2" "$PLIST"; }
 set_bool() { "$PB" -c "Set :$1 $2" "$PLIST" 2>/dev/null || "$PB" -c "Add :$1 bool $2" "$PLIST"; }
 
-set_str CFBundleDisplayName "CK Fitness"
+# iPhone home-screen labels cut off after about 11 characters, so the icon says "Chardikala".
+set_str CFBundleDisplayName "Chardikala"
 set_str NSPhotoLibraryUsageDescription "Choose photos for your progress photos and community posts. They stay private unless you share them."
 set_str NSCameraUsageDescription "Take a photo for your progress photos or a community post."
 set_bool ITSAppUsesNonExemptEncryption false

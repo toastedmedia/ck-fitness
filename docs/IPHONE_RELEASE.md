@@ -1,14 +1,13 @@
 # iPhone app: release steps and App Store copy
 
-Bundle id `com.chardikalafitness.app` · name **CK Fitness** · iPhone only · builds run in Codemagic (no Mac needed).
+Bundle id `com.chardikalafitness.app` · name **Chardikala Fitness** (home-screen label "Chardikala") · iPhone only · builds run in Codemagic (no Mac needed).
 Rules the app follows: see `docs/APP_STORES.md`. In short: free app, no prices or buy buttons inside it.
 
 ## Owner steps, in order
 
 1. **Apple Developer** (developer.apple.com, Account, Certificates, Identifiers): add an **App ID**, type App, explicit bundle id
-   `com.chardikalafitness.app`, description "CK Fitness". Tick **Push Notifications** now (needed later; avoids redoing it).
-2. **App Store Connect** (appstoreconnect.apple.com, Apps, +, New App): platform iOS, name "CK Fitness" (if taken, "CK Fitness by
-   Chardikala"), primary language English (Canada), bundle id from step 1, SKU `ckfitness-ios`, full access.
+   `com.chardikalafitness.app`, description "Chardikala Fitness". Tick **Push Notifications** now (needed later; avoids redoing it).
+2. **App Store Connect** (appstoreconnect.apple.com, Apps, +, New App): platform iOS, name "Chardikala Fitness" (30 characters max), primary language English (Canada), bundle id from step 1, SKU `ckfitness-ios`, full access.
 3. **API key for Codemagic**: App Store Connect, Users and Access, Integrations, App Store Connect API, Team Keys, +. Name `codemagic`,
    access **App Manager**. Download the `.p8` file (only once). Note the **Key ID** and the **Issuer ID** at the top of the page.
 4. **Codemagic** (codemagic.io): sign up with GitHub, add the `toastedmedia/ck-fitness` repo. Teams, Integrations, App Store Connect:
@@ -29,7 +28,7 @@ Rules the app follows: see `docs/APP_STORES.md`. In short: free app, no prices o
 
 ## App Store page (copy and paste)
 
-**Name:** CK Fitness
+**Name:** Chardikala Fitness
 **Subtitle (30 characters):** Home workouts for women
 **Category:** Health & Fitness (secondary: Lifestyle)
 **Promotional text:** Training, progress and accountability from your CK coaches, all in one place. Free to join.
@@ -40,7 +39,7 @@ Rules the app follows: see `docs/APP_STORES.md`. In short: free app, no prices o
 **Copyright:** 2026 Chardikala Fitness & Performance
 
 **Description:**
-CK Fitness is the training app from Chardikala Fitness & Performance. Create a free account and start with guided home
+Chardikala Fitness is the training app from Chardikala Fitness & Performance. Create a free account and start with guided home
 workouts built by your coaches, then track your progress and stay accountable week after week.
 
 What you can do
@@ -57,7 +56,7 @@ Not medical advice. Check with your doctor before starting a new exercise progra
 
 ## Review notes (paste into "Notes" for App Review)
 
-CK Fitness is a free fitness app. Sign in with the demo account below to see every screen, including member-only trainings.
+Chardikala Fitness is a free fitness app. Sign in with the demo account below to see every screen, including member-only trainings.
 Demo account: appreview@chardikalafitness.com Password: (enter it in App Store Connect only, never in this repo)
 Membership is not sold inside the app and the app contains no purchases. Some trainings are shown only to members of CK.
 User-generated content: the Community has Report and Block on every post and member, auto-hiding after repeated reports,
