@@ -243,6 +243,73 @@ export async function duplicateSection(
   redirect(`/admin/programs/${programId}?week=${copy.id}&saved=1`);
 }
 
+/** Instructor profile and the learning-experience switches for one program. */
+export async function updateProgramSettings(
+  programId: string,
+  formData: FormData,
+): Promise<void> {
+  const { supabase, user } = await requireStaff(CONTENT);
+  const patch: Record<string, unknown> = {
+    instructor_name: str(formData, "instructor_name", 120) || null,
+    instructor_title: str(formData, "instructor_title", 160) || null,
+    instructor_bio: str(formData, "instructor_bio", 1000) || null,
+    autoplay_next: formData.get("autoplay_next") === "on",
+    autoplay_first: formData.get("autoplay_first") === "on",
+    auto_complete: formData.get("auto_complete") === "on",
+  };
+  const photo = formData.get("instructor_photo");
+  const wipe = formData.get("remove_instructor_photo") === "on";
+  const back = `/admin/programs/${programId}?view=settings`;
+  const { data: cur } = await supabase
+    .from("programs")
+    .select("instructor_photo_path")
+    .eq("id", programId)
+    .maybeSingle();
+  if (photo instanceof File && photo.size > 0) {
+    if (
+      !["image/jpeg", "image/png", "image/webp"].includes(photo.type) ||
+      photo.size > 2_097_152
+    )
+      redirect(`${back}&error=cover`);
+    const ext =
+      photo.type === "image/png" ? "png" : photo.type === "image/webp" ? "webp" : "jpg";
+    const path = `programs/${programId}/instructor-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage
+      .from("program-thumbnails")
+      .upload(path, photo, { contentType: photo.type });
+    if (error) redirect(`${back}&error=cover`);
+    patch.instructor_photo_path = path;
+  } else if (wipe) patch.instructor_photo_path = null;
+  const { error } = await supabase.from("programs").update(patch).eq("id", programId);
+  if (error) redirect(`${back}&error=save`);
+  if ("instructor_photo_path" in patch && cur?.instructor_photo_path)
+    await supabase.storage.from("program-thumbnails").remove([cur.instructor_photo_path]);
+  await audit(supabase, user.id, "program.settings", programId);
+  revalidatePath("/programs");
+  redirect(`${back}&saved=1`);
+}
+
+/** Copies the three learning-experience switches to every program. */
+export async function applyLearningToAll(
+  programId: string,
+  formData: FormData,
+): Promise<void> {
+  const { supabase, user } = await requireStaff(CONTENT);
+  const { error } = await supabase
+    .from("programs")
+    .update({
+      autoplay_next: formData.get("autoplay_next") === "on",
+      autoplay_first: formData.get("autoplay_first") === "on",
+      auto_complete: formData.get("auto_complete") === "on",
+    })
+    .not("id", "is", null);
+  await audit(supabase, user.id, "program.settings_all", programId);
+  revalidatePath("/programs");
+  redirect(
+    `/admin/programs/${programId}?view=settings&${error ? "error=save" : "saved=1"}`,
+  );
+}
+
 export async function addSection(programId: string, formData: FormData): Promise<void> {
   const { supabase, user } = await requireStaff(CONTENT);
   const title = str(formData, "title", 120);

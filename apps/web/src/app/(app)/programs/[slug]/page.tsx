@@ -5,7 +5,7 @@ import { canAccess, type AccessLevel } from "@ck/core";
 import { Paywall } from "@/components/app/Paywall";
 import { Button, Card, Cap, Flash, Pill } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
-import { coverUrl, getProgramOutline } from "@/lib/programs";
+import { coverUrl, fetchProgramBySlug, getProgramOutline } from "@/lib/programs";
 import { track } from "@/lib/events";
 import { getViewer } from "@/lib/viewer";
 import { startProgram } from "../actions";
@@ -25,13 +25,26 @@ export default async function ProgramPage({
   const { supabase, user } = ctx;
   const { viewer } = await getViewer();
 
-  const { data: program } = await supabase
-    .from("programs")
-    .select(
-      "id,slug,title,short_description,long_description,cover_path,access_level,level,duration_label",
-    )
-    .eq("slug", slug)
-    .maybeSingle();
+  const program = await fetchProgramBySlug<{
+    id: string;
+    slug: string;
+    title: string;
+    short_description: string;
+    long_description: string;
+    cover_path: string | null;
+    access_level: string;
+    level: string | null;
+    duration_label: string | null;
+    instructor_name?: string | null;
+    instructor_title?: string | null;
+    instructor_bio?: string | null;
+    instructor_photo_path?: string | null;
+  }>(
+    supabase,
+    slug,
+    "id,slug,title,short_description,long_description,cover_path,access_level,level,duration_label",
+    "instructor_name,instructor_title,instructor_bio,instructor_photo_path",
+  );
   if (!program) notFound();
   const level = program.access_level as AccessLevel;
   const allowed = canAccess(viewer, level);
@@ -120,6 +133,35 @@ export default async function ProgramPage({
         <Card>
           <Cap>What you will do</Cap>
           <p className="mt-1 whitespace-pre-line text-xs">{program.long_description}</p>
+        </Card>
+      ) : null}
+
+      {program.instructor_name ? (
+        <Card>
+          <Cap>Your instructor</Cap>
+          <div className="mt-2 flex items-start gap-3">
+            {program.instructor_photo_path ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={coverUrl(program.instructor_photo_path) ?? ""}
+                alt=""
+                className="size-16 shrink-0 rounded-full object-cover"
+              />
+            ) : null}
+            <div className="min-w-0">
+              <b className="block text-[13px] text-brand">{program.instructor_name}</b>
+              {program.instructor_title ? (
+                <span className="block text-[11px] font-bold text-accent-strong">
+                  {program.instructor_title}
+                </span>
+              ) : null}
+              {program.instructor_bio ? (
+                <p className="mt-1 whitespace-pre-line text-xs text-muted">
+                  {program.instructor_bio}
+                </p>
+              ) : null}
+            </div>
+          </div>
         </Card>
       ) : null}
 

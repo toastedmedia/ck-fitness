@@ -160,3 +160,23 @@ export function coverUrl(path: string | null): string | null {
     ? `${base}/storage/v1/object/public/program-thumbnails/${path}`
     : null;
 }
+
+/**
+ * Loads a program by slug. The newest database columns are requested first; if a deploy lands a
+ * moment before its migration, fall back to the long-standing columns instead of showing "not found".
+ */
+export async function fetchProgramBySlug<T>(
+  supabase: AppContext["supabase"],
+  slug: string,
+  base: string,
+  extra: string,
+): Promise<T | null> {
+  const full = await supabase
+    .from("programs")
+    .select(`${base},${extra}`)
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!full.error) return (full.data ?? null) as T | null;
+  const old = await supabase.from("programs").select(base).eq("slug", slug).maybeSingle();
+  return (old.data ?? null) as T | null;
+}

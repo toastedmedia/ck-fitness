@@ -1370,3 +1370,13 @@ create policy "push: remove own" on public.push_subscriptions for delete using (
 -- never a playback link. Each lesson can also have its own thumbnail (public-read bucket path).
 alter table public.lessons add column if not exists video_key text;
 alter table public.lessons add column if not exists thumbnail_path text;
+
+-- ===== 20261025000018_program_settings.sql =====
+-- Program settings: instructor profile and learning-experience switches.
+alter table public.programs add column if not exists instructor_name text;
+alter table public.programs add column if not exists instructor_title text;
+alter table public.programs add column if not exists instructor_bio text;
+alter table public.programs add column if not exists instructor_photo_path text;
+alter table public.programs add column if not exists autoplay_next boolean not null default true;
+alter table public.programs add column if not exists autoplay_first boolean not null default false;
+alter table public.programs add column if not exists auto_complete boolean not null default true;

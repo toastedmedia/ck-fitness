@@ -1,4 +1,4 @@
--- CK Fitness: checks that every database change (0001 to 0017) is applied. Read-only, safe to run any time.
+-- CK Fitness: checks that every database change (0001 to 0018) is applied. Read-only, safe to run any time.
 with need(mig, kind, tbl, col) as (values
   ('0001','table','profiles',null),('0001','table','staff_roles',null),('0001','table','app_settings',null),('0001','table','admin_audit_log',null),
   ('0002','table','onboarding_profiles',null),('0002','table','notification_preferences',null),
@@ -14,7 +14,8 @@ with need(mig, kind, tbl, col) as (values
   ('0014','table','community_posts',null),('0014','table','community_comments',null),('0014','table','community_likes',null),('0014','table','community_reports',null),('0014','table','community_blocks',null),
   ('0015','table','community_post_images',null),('0015','table','community_profiles',null),('0015','column','community_posts','approval_status'),('0015','column','community_posts','reaction_counts'),('0015','column','community_posts','has_images'),('0015','column','community_comments','parent_id'),('0015','column','community_likes','reaction'),('0015','column','notification_preferences','community'),
   ('0016','table','push_subscriptions',null),
-  ('0017','column','lessons','video_key'),('0017','column','lessons','thumbnail_path')
+  ('0017','column','lessons','video_key'),('0017','column','lessons','thumbnail_path'),
+  ('0018','column','programs','instructor_name'),('0018','column','programs','instructor_bio'),('0018','column','programs','autoplay_next'),('0018','column','programs','auto_complete')
 ), found as (
   select n.*, case n.kind
     when 'table' then exists (select 1 from information_schema.tables t where t.table_schema='public' and t.table_name=n.tbl)

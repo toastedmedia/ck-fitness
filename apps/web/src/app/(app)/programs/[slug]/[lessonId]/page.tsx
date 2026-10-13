@@ -7,7 +7,7 @@ import { ActionButton } from "@/components/app/ActionButton";
 import { Button, Cap, Card, Pill } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
 import { track } from "@/lib/events";
-import { coverUrl, getProgramOutline } from "@/lib/programs";
+import { coverUrl, fetchProgramBySlug, getProgramOutline } from "@/lib/programs";
 import { recoverWorkout } from "../../../actions";
 import { completeLesson } from "../../actions";
 
@@ -15,18 +15,23 @@ export const metadata: Metadata = { title: "Lesson" };
 
 export default async function LessonPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string; lessonId: string }>;
+  searchParams: Promise<{ autoplay?: string }>;
 }) {
   const { slug, lessonId } = await params;
+  const sp = await searchParams;
   const ctx = await getContext();
   const { supabase, user, today } = ctx;
 
-  const { data: program } = await supabase
-    .from("programs")
-    .select("id,title,slug")
-    .eq("slug", slug)
-    .maybeSingle();
+  const program = await fetchProgramBySlug<{
+    id: string;
+    title: string;
+    slug: string;
+    autoplay_next?: boolean;
+    autoplay_first?: boolean;
+  }>(supabase, slug, "id,title,slug", "autoplay_next,autoplay_first");
   if (!program) notFound();
   const { flat } = await getProgramOutline(ctx, program.id);
   const idx = flat.findIndex((l) => l.id === lessonId);
@@ -97,6 +102,12 @@ export default async function LessonPage({
         lessonId={lesson.id}
         startSeconds={prog?.playback_seconds ?? 0}
         hasVideo={Boolean(lesson.video_key)}
+        autoStart={sp.autoplay === "1" || (Boolean(program.autoplay_first) && idx === 0)}
+        nextHref={
+          Boolean(program.autoplay_next) && next
+            ? `/programs/${slug}/${next.id}?autoplay=1`
+            : undefined
+        }
         poster={coverUrl(lesson.thumbnail_path)}
       />
       <div>

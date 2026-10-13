@@ -22,6 +22,7 @@ Nothing has been verified against live Stripe, Cloudflare or the CRM yet. Status
 - 🔌 Web push notifications (built; switches on when the three VAPID variables are added in Vercel; per-device button in Profile)
 
 ## Admin portal (`/admin`)
+- ✅ Program settings (instructor profile shown to members, autoplay next/first lesson, auto-complete) and per-program member progress dashboard with CSV
 - ✅ Program builder: outline tree + editor, clone lesson/week, move up/down, per-lesson Save / Save and publish, status pills
 - ✅ Dashboard (members, activity, at-risk, help, billing problems), KPIs (9 launch KPIs, 30-day trend charts for sign-ups, workouts, community posts and comments, video cost guard), Billing (all subscriptions, revenue estimate, Stripe invoices once connected), Accountability (at-risk list)
 - ✅ **Client record (Admin -> Users -> a client):** Overview (editable name/email/phone, plan, Stripe link, invoices, counts-only activity, staff roles), Questionnaire (everything from onboarding), Check-ins (daily + weekly), Progress (weight, measurements, water, steps, workouts), **Programs** (what she can access, stage, per-lesson furthest point, time watched, plays, completion), **Activity** (full timeline of every action and every account change, filterable), Photos, private Notes. Health tabs follow her sharing choice; every view is audited

@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 /**
@@ -12,12 +13,19 @@ export function VideoPlayer({
   startSeconds,
   hasVideo,
   poster,
+  autoStart = false,
+  nextHref,
 }: {
   lessonId: string;
   startSeconds: number;
   hasVideo: boolean;
   poster?: string | null;
+  /** Start playing as soon as the page opens (the program's "auto-play" switches). */
+  autoStart?: boolean;
+  /** When set, move to this lesson once the video ends (program switch "auto-play next lesson"). */
+  nextHref?: string;
 }) {
+  const router = useRouter();
   const [src, setSrc] = useState<string>();
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
@@ -37,6 +45,11 @@ export function VideoPlayer({
       return setError(body.error ?? "We could not start the video. Please try again.");
     setSrc(body.src);
   }
+
+  useEffect(() => {
+    if (autoStart && hasVideo) void play();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const el = video.current;
@@ -76,15 +89,27 @@ export function VideoPlayer({
     el.addEventListener("loadedmetadata", onMeta);
     el.addEventListener("timeupdate", onTime);
     el.addEventListener("pause", send);
-    el.addEventListener("ended", send);
+    const onEnded = () => {
+      send();
+      // The server only completes the lesson when the program has auto-complete switched on.
+      void fetch("/api/lesson-complete", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ lessonId }),
+        keepalive: true,
+      }).finally(() => {
+        if (nextHref) router.push(nextHref);
+      });
+    };
+    el.addEventListener("ended", onEnded);
     return () => {
       send();
       el.removeEventListener("loadedmetadata", onMeta);
       el.removeEventListener("timeupdate", onTime);
       el.removeEventListener("pause", send);
-      el.removeEventListener("ended", send);
+      el.removeEventListener("ended", onEnded);
     };
-  }, [src, lessonId, startSeconds]);
+  }, [src, lessonId, startSeconds, nextHref, router]);
 
   if (src) {
     return (

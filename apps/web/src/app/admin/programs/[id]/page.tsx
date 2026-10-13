@@ -2,14 +2,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ABtn, Flash, H1, Panel, Status, aInput } from "@/components/admin/ui";
+import { ABtn, Flash, H1, Panel, Status, Tile, aInput } from "@/components/admin/ui";
 import { ImageInput } from "@/components/admin/ImageInput";
 import { LessonPreview } from "@/components/admin/LessonPreview";
 import { VideoUploader } from "@/components/admin/VideoUploader";
 import { CONTENT, requireStaff } from "@/lib/admin";
+import { loadProgramProgress } from "@/lib/program-progress";
 import { coverUrl } from "@/lib/programs";
 import {
   addSection,
+  applyLearningToAll,
   createLesson,
   deleteLesson,
   deleteSection,
@@ -21,6 +23,7 @@ import {
   saveLesson,
   unpublishProgram,
   updateProgram,
+  updateProgramSettings,
   updateSection,
 } from "../../actions";
 
@@ -44,7 +47,7 @@ export default async function EditProgram({
 }) {
   const { id } = await params;
   const sp = await searchParams;
-  const { supabase, roles } = await requireStaff([...CONTENT, "coach"]);
+  const { supabase, roles, db } = await requireStaff([...CONTENT, "coach"]);
   const canEdit = roles.some((r) => (CONTENT as string[]).includes(r));
   const { data: p } = await supabase
     .from("programs")
@@ -102,7 +105,32 @@ export default async function EditProgram({
   const selWeek = selLesson
     ? (secs.find((x) => x.id === selLesson.section_id) ?? null)
     : (secs.find((x) => x.id === sp.week) ?? null);
-  const view = selLesson ? "lesson" : selWeek ? "week" : "details";
+  const view = selLesson
+    ? "lesson"
+    : selWeek
+      ? "week"
+      : sp.view === "settings"
+        ? "settings"
+        : sp.view === "progress"
+          ? "progress"
+          : "details";
+  const progress = view === "progress" ? await loadProgramProgress(db, id) : null;
+  const q = (sp.q ?? "").trim().toLowerCase();
+  const filtered = (progress?.members ?? []).filter(
+    (m) => !q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q),
+  );
+  const PAGE = 25;
+  const pageNo = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
+  const pageRows = filtered.slice((pageNo - 1) * PAGE, pageNo * PAGE);
+  const fmtDay = (iso: string | null) =>
+    iso
+      ? new Intl.DateTimeFormat("en-CA", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          timeZone: "America/Vancouver",
+        }).format(new Date(iso))
+      : "-";
   const lessonsOf = (sid: string) => all.filter((l) => l.section_id === sid);
   const row = (active: boolean) =>
     `relative flex items-center gap-1 rounded-xl hover:bg-page ${active ? "bg-page" : ""}`;
@@ -155,16 +183,28 @@ export default async function EditProgram({
 
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:items-start">
         <aside
-          className={`rounded-card border border-line bg-surface p-2 ${view === "details" ? "" : "order-2 lg:order-none"}`}
+          className={`rounded-card border border-line bg-surface p-2 ${view === "details" || view === "settings" || view === "progress" ? "" : "order-2 lg:order-none"}`}
           aria-label="Program outline"
         >
-          <Link
-            href={`/admin/programs/${id}`}
-            className={`${row(view === "details")} min-h-11 px-2 text-sm font-extrabold text-brand`}
-          >
-            <span className="flex-1 truncate">{p.title}</span>
-            <span className="text-[11px] font-bold text-muted">Details and publish</span>
-          </Link>
+          <div className="px-2 pb-1 pt-2 text-sm font-extrabold text-brand">
+            {p.title}
+          </div>
+          {(
+            [
+              ["details", "Details and publish", ""],
+              ["settings", "Instructor and settings", "?view=settings"],
+              ["progress", "Member progress", "?view=progress"],
+            ] as const
+          ).map(([key, label, qs]) => (
+            <Link
+              key={key}
+              href={`/admin/programs/${id}${qs}`}
+              className={`${row(view === key)} min-h-10 px-2 text-sm font-bold ${view === key ? "text-accent-strong" : "text-brand"}`}
+            >
+              {label}
+            </Link>
+          ))}
+          <div className="mx-2 my-2 border-t border-line" />
           {secs.map((s, si) => (
             <details key={s.id} open className="relative mt-1">
               <summary
@@ -456,6 +496,219 @@ export default async function EditProgram({
                     </div>
                   ) : null}
                 </form>
+              </Panel>
+            </>
+          ) : null}
+
+          {view === "settings" ? (
+            <Panel title="Instructor and learning experience">
+              <form
+                action={updateProgramSettings.bind(null, id)}
+                className="grid gap-3 md:grid-cols-2"
+                encType="multipart/form-data"
+              >
+                <label className={lab}>
+                  Instructor name
+                  <input
+                    name="instructor_name"
+                    defaultValue={p.instructor_name ?? ""}
+                    className={aInput}
+                    placeholder="Chanveer Kaur"
+                  />
+                </label>
+                <label className={lab}>
+                  Instructor title
+                  <input
+                    name="instructor_title"
+                    defaultValue={p.instructor_title ?? ""}
+                    className={aInput}
+                    placeholder="Women's Fitness Coach"
+                  />
+                </label>
+                <label className={`${lab} md:col-span-2`}>
+                  Bio
+                  <textarea
+                    name="instructor_bio"
+                    defaultValue={p.instructor_bio ?? ""}
+                    rows={4}
+                    maxLength={1000}
+                    className={`${aInput} py-2`}
+                  />
+                </label>
+                <div className={`${lab} md:col-span-2`}>
+                  Headshot (square works best)
+                  {p.instructor_photo_path ? (
+                    <img
+                      src={coverUrl(p.instructor_photo_path) ?? ""}
+                      alt=""
+                      className="my-2 size-24 rounded-full object-cover"
+                    />
+                  ) : null}
+                  <ImageInput name="instructor_photo" />
+                  {p.instructor_photo_path ? (
+                    <label className="mt-1 flex items-center gap-2 text-xs font-normal">
+                      <input
+                        type="checkbox"
+                        name="remove_instructor_photo"
+                        className="size-4 accent-brand"
+                      />
+                      Remove the headshot
+                    </label>
+                  ) : null}
+                </div>
+                <fieldset className="flex flex-col gap-2 md:col-span-2">
+                  <legend className={lab}>Learning experience</legend>
+                  {(
+                    [
+                      [
+                        "autoplay_next",
+                        "Automatically play the next lesson",
+                        "When a video ends, the next lesson opens and starts.",
+                      ],
+                      [
+                        "autoplay_first",
+                        "Automatically play the first lesson",
+                        "The first lesson starts as soon as a member opens it.",
+                      ],
+                      [
+                        "auto_complete",
+                        "Auto-complete lessons",
+                        "A lesson is marked done when its video finishes. Off means members tap Mark complete.",
+                      ],
+                    ] as const
+                  ).map(([name, label, hint]) => (
+                    <label
+                      key={name}
+                      className="flex min-h-11 items-start gap-3 rounded-xl border border-line p-3 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        name={name}
+                        defaultChecked={Boolean(p[name])}
+                        className="mt-0.5 size-5 accent-brand"
+                      />
+                      <span>
+                        <b className="block text-brand">{label}</b>
+                        <span className="text-xs text-muted">{hint}</span>
+                      </span>
+                    </label>
+                  ))}
+                </fieldset>
+                {canEdit ? (
+                  <div className="flex flex-wrap gap-2 md:col-span-2">
+                    <ABtn variant="primary">Save settings</ABtn>
+                    <button
+                      formAction={applyLearningToAll.bind(null, id)}
+                      className="min-h-10 rounded-xl border-2 border-line px-4 text-sm font-bold text-brand"
+                    >
+                      Apply these switches to all programs
+                    </button>
+                  </div>
+                ) : null}
+              </form>
+            </Panel>
+          ) : null}
+
+          {view === "progress" && progress ? (
+            <>
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <Tile value={progress.enrolled} label="Members enrolled" />
+                <Tile value={progress.started} label="Started learning" />
+                <Tile value={progress.completed} label="Completed the program" />
+                <Tile value={`${progress.averagePercent}%`} label="Average progress" />
+              </div>
+              <Panel title={`Members (${filtered.length})`}>
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <form className="flex flex-1 gap-2">
+                    <input type="hidden" name="view" value="progress" />
+                    <input
+                      name="q"
+                      defaultValue={sp.q ?? ""}
+                      placeholder="Search name or email"
+                      className={aInput}
+                      aria-label="Search members"
+                    />
+                    <ABtn variant="ghost">Search</ABtn>
+                  </form>
+                  <a
+                    href={`/admin/programs/${id}/progress`}
+                    className="inline-flex min-h-10 items-center rounded-xl border-2 border-line px-4 text-sm font-bold text-brand"
+                  >
+                    Download CSV
+                  </a>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[560px] text-left text-sm">
+                    <thead>
+                      <tr className="text-xs text-muted">
+                        <th className="py-2 pr-2">Member</th>
+                        <th className="py-2 pr-2">Progress</th>
+                        <th className="py-2 pr-2">Enrolled</th>
+                        <th className="py-2 pr-2">Last accessed</th>
+                        <th className="py-2">Sessions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pageRows.map((m) => (
+                        <tr key={m.userId} className="border-t border-line">
+                          <td className="py-2 pr-2">
+                            <Link
+                              href={`/admin/users/${m.userId}`}
+                              className="font-bold text-brand hover:underline"
+                            >
+                              {m.name}
+                            </Link>
+                            <span className="block text-xs text-muted">{m.email}</span>
+                          </td>
+                          <td className="py-2 pr-2">
+                            <div className="h-2 w-24 overflow-hidden rounded-full bg-line">
+                              <div
+                                className="h-full bg-success"
+                                style={{ width: `${m.percent}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-muted">
+                              {m.completedLessons}/{m.totalLessons} · {m.percent}%
+                            </span>
+                          </td>
+                          <td className="py-2 pr-2">{fmtDay(m.enrolledAt)}</td>
+                          <td className="py-2 pr-2">{fmtDay(m.lastAccessed)}</td>
+                          <td className="py-2">{m.sessions}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {pageRows.length === 0 ? (
+                  <p className="py-3 text-sm text-muted">
+                    {progress.enrolled
+                      ? "No members match that search."
+                      : "No one has started this program yet."}
+                  </p>
+                ) : null}
+                {filtered.length > PAGE ? (
+                  <div className="mt-3 flex items-center gap-3 text-sm">
+                    {pageNo > 1 ? (
+                      <Link
+                        href={`/admin/programs/${id}?view=progress&q=${encodeURIComponent(sp.q ?? "")}&page=${pageNo - 1}`}
+                        className="font-bold text-brand underline"
+                      >
+                        Previous
+                      </Link>
+                    ) : null}
+                    <span className="text-muted">
+                      Page {pageNo} of {Math.ceil(filtered.length / PAGE)}
+                    </span>
+                    {pageNo * PAGE < filtered.length ? (
+                      <Link
+                        href={`/admin/programs/${id}?view=progress&q=${encodeURIComponent(sp.q ?? "")}&page=${pageNo + 1}`}
+                        className="font-bold text-brand underline"
+                      >
+                        Next
+                      </Link>
+                    ) : null}
+                  </div>
+                ) : null}
               </Panel>
             </>
           ) : null}
