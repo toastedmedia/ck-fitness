@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { Nav } from "@/components/app/Nav";
+import { TopActions } from "@/components/app/TopActions";
 import { getContext } from "@/lib/app";
 import { track } from "@/lib/events";
 
@@ -20,6 +21,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     await track(user.id, "dashboard_viewed");
   }
 
+  const { count: unread } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .is("read_at", null);
+
   return (
     <div className="min-h-dvh pb-24 md:pb-8 md:pl-56">
       <Nav />
@@ -27,6 +34,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         id="main"
         className="mx-auto flex max-w-xl flex-col gap-3 px-4 pt-6 md:max-w-2xl md:pt-10"
       >
+        <TopActions
+          initial={(profile.first_name?.[0] ?? "?").toUpperCase()}
+          unread={unread ?? 0}
+        />
         {children}
       </main>
     </div>

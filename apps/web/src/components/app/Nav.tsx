@@ -17,9 +17,9 @@ const ITEMS = [
     icon: "M12 3a9 9 0 100 18 9 9 0 000-18zM8 12.5l3 3 5-6",
   },
   {
-    href: "/profile",
-    label: "Profile",
-    icon: "M12 4a4 4 0 100 8 4 4 0 000-8zM4 21c1-4 4-6 8-6s7 2 8 6",
+    href: "/community",
+    label: "Community",
+    icon: "M9 4a3 3 0 100 6 3 3 0 000-6zM3 20c.5-3.5 3-5 6-5s5.5 1.5 6 5M17 6a2.4 2.4 0 110 4.8M16 14.2c2.6 0 4.5 1.3 5 4.3",
   },
 ] as const;
 

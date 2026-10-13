@@ -4,6 +4,7 @@ Legend: ✅ built and tested in code · 🔌 built, needs an outside account/key
 Nothing has been verified against live Stripe, Cloudflare or the CRM yet. Status of accounts and decisions is in `CLAUDE.md`.
 
 ## Members (mobile-first web app / PWA)
+- ✅ **Navigation:** bottom bar = Home, Programs, Progress, Accountability, **Community**. Top right of every page = notifications bell + round avatar menu (Profile, Membership, Help and support, **Log out**)
 - ✅ Welcome, sign up (18+ and terms recorded), log in (returns to the page you were heading for), forgot/reset password, log out
 - 🔌 Email confirmation and reset emails (needs Resend; branded templates ready)
 - ✅ 5-step onboarding with resume, optional phone, lb/in or kg/cm, safety guidance, coach-sharing agreement (on by default)

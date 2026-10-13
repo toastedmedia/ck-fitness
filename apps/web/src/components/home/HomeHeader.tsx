@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AccountMenu } from "@/components/app/AccountMenu";
 
 /** Date, greeting, one supportive line, notifications and the profile shortcut. Kept compact. */
 export function HomeHeader({
@@ -46,13 +47,7 @@ export function HomeHeader({
             <span className="absolute right-2 top-2 size-2.5 rounded-full border-2 border-surface bg-accent" />
           ) : null}
         </Link>
-        <Link
-          href="/profile"
-          aria-label="Profile"
-          className="grid size-11 place-items-center rounded-full bg-brand text-sm font-bold text-on-brand"
-        >
-          {initial}
-        </Link>
+        <AccountMenu initial={initial} />
       </div>
     </header>
   );
