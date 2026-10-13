@@ -34,6 +34,7 @@ Database changes only ever go in a new file in `supabase/migrations`; apply to s
 Vercel -> Deployments -> promote the previous deployment. Migrations are forward-only: fix forward with a new migration.
 
 ## Setting up the database without any command line
+
 Open Supabase -> SQL Editor -> New query, paste the whole of `supabase/all-migrations.sql`, and run it once on the new project.
 It is the nine migrations joined in order. (Regenerate it after adding a migration:
 `for f in supabase/migrations/*.sql; do echo "-- ===== $f ====="; cat "$f"; done`.) For staging only, then paste `supabase/seed.sql` for sample programs.

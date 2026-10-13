@@ -1,0 +1,7 @@
+{
+  "name": "@ck/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": { "e2e": "playwright test" },
+  "devDependencies": { "@playwright/test": "^1.49.0", "@types/node": "^20", "typescript": "^5" }
+}

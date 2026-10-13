@@ -4,7 +4,8 @@
   "workspaces": [
     "apps/*",
     "packages/*",
-    "supabase/tests"
+    "supabase/tests",
+    "e2e"
   ],
   "engines": {
     "node": ">=20"

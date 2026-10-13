@@ -1,0 +1,21 @@
+name: CI
+
+# Runs on GitHub's servers for every push and pull request, so quality never depends on one laptop.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # format, lint, types, logic tests, database (RLS) tests, production build
+      - run: npm run check

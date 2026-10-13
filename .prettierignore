@@ -3,3 +3,4 @@ node_modules
 package-lock.json
 *.pdf
 docs/design/home-refined.html
+e2e/playwright-report
