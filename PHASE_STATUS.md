@@ -86,6 +86,12 @@ Home reorganised into small components (`apps/web/src/components/home`): Header,
 - **Accountability tab** now includes hydration and step consistency (14 days), daily check-in history, "what's getting in the way", and a "Message my coach" card.
 - Privacy Policy draft and `docs/STAFF_ACCESS_POLICY.md` updated to match. **Owners should review this consent wording with a lawyer before launch.**
 
+## Fixes after first real use (2026-10-12)
+- Existing members who finished onboarding before the sharing agreement existed are asked once on Home ("Share your progress with your coach?"); migration **0012** records their decision. Staff Overview now also shows counts-only activity (workouts, check-ins, water/step days, last weigh-in) even when records are not shared.
+- **Progress photos are switched ON** (`progressPhotos: true`): Progress -> Open photos, and a prompt on the weekly summary. Privacy Policy draft mentions photos. Staff see photos only if the member separately shares them.
+- Login returns members to the page they were heading for (for example /admin).
+- Profile loading falls back safely if a deploy lands before its database change.
+
 ## Environment note
 This Mac's disk is 98% full, so macOS moves project files (including `node_modules`) to iCloud and builds hang while files re-download. Recommended: free disk space and move the repo out of `~/Documents` (for example `~/Developer/ckfitness`), which is iCloud-synced.
 

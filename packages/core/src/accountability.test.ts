@@ -386,3 +386,21 @@ describe("stripe mapping", () => {
     ).toEqual(["membership_expired"]);
   });
 });
+
+describe("sharing choice prompt", () => {
+  const base = {
+    firstName: "P",
+    today: "2026-10-07",
+    weigh: { daysSince: 1, show: false, dueIn: 6 },
+    weighEveryDays: 7,
+    checkinDoneThisWeek: true,
+    daysInactive: 0,
+  };
+  it("asks an existing member once, after payment problems", () => {
+    const items = attentionItems({ ...base, sharingPending: true, paymentProblem: true });
+    expect(items.map((i) => i.kind)).toEqual(["payment", "sharing_choice"]);
+    expect(items[1].cta.href).toBe("/profile#sharing");
+  });
+  it("stays quiet once she has decided", () =>
+    expect(attentionItems({ ...base, sharingPending: false })).toEqual([]));
+});

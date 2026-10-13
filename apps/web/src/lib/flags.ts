@@ -7,5 +7,5 @@ export const flags = {
   apple_health_enabled: false,
   /** While Apple Health is not ready, show a small "Coming in Phase 2" card. Set false to hide it entirely. */
   show_apple_health_preview: true,
-  progressPhotos: false,
+  progressPhotos: true,
 } as const;

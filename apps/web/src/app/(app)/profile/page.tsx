@@ -141,7 +141,7 @@ export default async function ProfilePage({
         </form>
       </Card>
 
-      <Card>
+      <Card id="sharing" className="scroll-mt-4">
         <Cap>Sharing with your coach</Cap>
         <form action={setSharing} className="mt-2 flex flex-col gap-1">
           <label className="flex min-h-12 items-start gap-3 text-xs">

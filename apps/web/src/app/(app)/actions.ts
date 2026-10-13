@@ -443,6 +443,7 @@ export async function setSharing(formData: FormData): Promise<void> {
     .update({
       coach_access_at: records ? (profile?.coach_access_at ?? now) : null,
       photo_coach_access_at: photos ? (profile?.photo_coach_access_at ?? now) : null,
+      sharing_decided_at: profile?.sharing_decided_at ?? now,
     })
     .eq("user_id", user.id);
   await track(user.id, records ? "sharing_on" : "sharing_off", { photos });

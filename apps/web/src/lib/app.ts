@@ -16,25 +16,30 @@ export interface Profile {
   phone: string | null;
   coach_access_at: string | null;
   photo_coach_access_at: string | null;
+  sharing_decided_at: string | null;
 }
 
 /** Everything most signed-in pages need, fetched once per request. */
 export const getContext = cache(async () => {
   const { supabase, user } = await requireUser();
-  const [{ data: profile }, { data: settings }] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select(
-        "first_name,last_name,onboarding_complete,timezone,hide_bmi,created_at,last_active_at,units,photo_consent_at,phone,coach_access_at,photo_coach_access_at",
-      )
-      .eq("user_id", user.id)
-      .maybeSingle(),
+  const FULL =
+    "first_name,last_name,onboarding_complete,timezone,hide_bmi,created_at,last_active_at,units,photo_consent_at,phone,coach_access_at,photo_coach_access_at,sharing_decided_at";
+  // Columns that arrive with the newest database changes. If a deploy goes out a moment before
+  // its database change is applied, fall back to the long-standing columns instead of breaking.
+  const BASE =
+    "first_name,last_name,onboarding_complete,timezone,hide_bmi,created_at,last_active_at,units";
+  const [first, { data: settings }] = await Promise.all([
+    supabase.from("profiles").select(FULL).eq("user_id", user.id).maybeSingle(),
     supabase
       .from("app_settings")
       .select("key,value")
       .eq("key", "daily_goals")
       .maybeSingle(),
   ]);
+  const profile = first.error
+    ? (await supabase.from("profiles").select(BASE).eq("user_id", user.id).maybeSingle())
+        .data
+    : first.data;
   const p = (profile ?? null) as Profile | null;
   const tz = p?.timezone ?? DEFAULT_TZ;
   const goals: DailyGoals = mergeGoals(settings?.value);

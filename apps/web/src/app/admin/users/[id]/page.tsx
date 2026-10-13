@@ -147,6 +147,46 @@ export default async function AdminClient({
         .eq("user_id", id)
         .maybeSingle(),
     ]);
+    // Counts only (no health values), so staff can see engagement even when records are not shared.
+    const since14 = new Date(Date.now() - 14 * 86_400_000).toISOString().slice(0, 10);
+    const [wk, wc, hl, dc, lw] = await Promise.all([
+      db
+        .from("scheduled_actions")
+        .select("status")
+        .eq("user_id", id)
+        .eq("action_type", "workout")
+        .gte("scheduled_for", since14),
+      db
+        .from("weekly_checkins")
+        .select("week_start")
+        .eq("user_id", id)
+        .order("week_start", { ascending: false })
+        .limit(8),
+      db
+        .from("habit_logs")
+        .select("log_date,habit_type")
+        .eq("user_id", id)
+        .gte("log_date", since14),
+      db
+        .from("daily_checkins")
+        .select("check_date")
+        .eq("user_id", id)
+        .gte("check_date", since14),
+      db
+        .from("weigh_ins")
+        .select("log_date")
+        .eq("user_id", id)
+        .order("log_date", { ascending: false })
+        .limit(1),
+    ]);
+    const workoutRows = (wk.data ?? []) as { status: string }[];
+    const habitRows = (hl.data ?? []) as { log_date: string; habit_type: string }[];
+    const waterDays = new Set(
+      habitRows.filter((h) => h.habit_type === "water_ml").map((h) => h.log_date),
+    ).size;
+    const stepDays = new Set(
+      habitRows.filter((h) => h.habit_type === "steps").map((h) => h.log_date),
+    ).size;
     const res = resolveMembership(m);
     const theirRoles = ((staff ?? []) as { role: string }[]).map((r) => r.role);
     const invoices =
@@ -289,6 +329,47 @@ export default async function AdminClient({
               </dd>
             </div>
           </dl>
+        </Panel>
+        <Panel title="Activity (last 14 days)">
+          <dl className="grid gap-x-6 gap-y-2 text-sm md:grid-cols-3">
+            <div>
+              <dt className="text-xs text-muted">Workouts completed</dt>
+              <dd>
+                {workoutRows.filter((w) => w.status === "completed").length} of{" "}
+                {
+                  workoutRows.filter(
+                    (w) => w.status === "completed" || w.status === "planned",
+                  ).length
+                }{" "}
+                planned
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted">Weekly check-ins done</dt>
+              <dd>{(wc.data ?? []).length} (last 8 weeks)</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted">Daily check-ins</dt>
+              <dd>{(dc.data ?? []).length}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted">Days with water logged</dt>
+              <dd>{waterDays}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted">Days with steps logged</dt>
+              <dd>{stepDays}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-muted">Last weigh-in</dt>
+              <dd>{lw.data?.[0]?.log_date ?? "-"}</dd>
+            </div>
+          </dl>
+          <p className="mt-2 text-xs text-muted">
+            {shared
+              ? "She shares her records, so the details are under Questionnaire, Check-ins and Progress."
+              : "These are counts only. The answers and numbers stay private until she chooses to share them with her coach."}
+          </p>
         </Panel>
         <Panel title="Membership and billing">
           <p className="text-sm">

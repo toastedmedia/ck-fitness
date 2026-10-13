@@ -36,6 +36,11 @@ export default function PrivacyPage() {
             Payment status. Card payments are handled by Stripe. We never see or store
             your card number.
           </li>
+          <li>
+            Progress photos, only if you choose to upload them. They are stored privately
+            and shown only to you unless you separately choose to share them with your
+            coach.
+          </li>
           <li>Messages you send to our support team.</li>
         </ul>
 

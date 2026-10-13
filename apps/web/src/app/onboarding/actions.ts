@@ -60,6 +60,7 @@ export async function saveOnboardingStep(
     const done = await save("profiles", {
       onboarding_complete: true,
       coach_access_at: new Date().toISOString(),
+      sharing_decided_at: new Date().toISOString(),
     });
     if (!done) {
       await queueCrm(id, "onboarding_completed", {

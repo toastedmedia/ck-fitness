@@ -5,6 +5,7 @@ import { Cap, Card, Flash, Pill } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
 import { ensurePlan, plannedDays } from "@/lib/plan";
 import { getTodayWorkout } from "@/lib/programs";
+import { flags } from "@/lib/flags";
 import { getViewer } from "@/lib/viewer";
 
 export const metadata: Metadata = { title: "Weekly summary" };
@@ -142,6 +143,20 @@ export default async function SummaryPage({
           </Link>
         </p>
       </Card>
+      {flags.progressPhotos ? (
+        <Card>
+          <Cap>Weekly photos</Cap>
+          <p className="mt-1 text-xs text-muted">
+            Optional. Front, side, back and arms raised, once a week. Private to you.
+          </p>
+          <Link
+            href="/progress/photos"
+            className="mt-2 inline-flex min-h-11 items-center rounded-button border-2 border-line px-4 text-xs font-bold text-brand"
+          >
+            Add this week&apos;s photos
+          </Link>
+        </Card>
+      ) : null}
       {isMember ? (
         <Card>
           <Cap>Member extras</Cap>

@@ -98,7 +98,8 @@ export type AttentionKind =
   | "program_ending"
   | "unfinished_onboarding"
   | "trainer_message"
-  | "followup";
+  | "followup"
+  | "sharing_choice";
 
 /**
  * One row in the Needs Attention card. Any alert type (workout missed, payment issue, trainer
@@ -140,6 +141,8 @@ export function attentionItems(args: {
   /** A session is planned for today, not done, and her usual time has passed. */
   stillTrainToday?: boolean;
   paymentProblem?: boolean;
+  /** Existing member who has not yet chosen whether to share her records with her coach. */
+  sharingPending?: boolean;
   startWorkoutHref?: string | null;
 }): AttentionItem[] {
   const out: AttentionItem[] = [];
@@ -151,6 +154,16 @@ export function attentionItems(args: {
       title: "Update your payment method",
       detail: "We could not take your last payment.",
       cta: { label: "Fix", href: "/membership" },
+    });
+  }
+  if (args.sharingPending) {
+    out.push({
+      id: "sharing_choice",
+      kind: "sharing_choice",
+      severity: "info",
+      title: "Share your progress with your coach?",
+      detail: "Your coach can only see your answers and check-ins if you agree.",
+      cta: { label: "Choose", href: "/profile#sharing" },
     });
   }
   if (args.missedWorkout) {
