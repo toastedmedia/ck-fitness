@@ -34,8 +34,8 @@ export default async function NotificationsPage() {
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-[19px] text-brand">Notifications</h1>
+      <div className="flex items-center justify-end">
+        <h1 className="sr-only">Notifications</h1>
         {unread > 0 ? (
           <form action={markAllRead}>
             <Button variant="ghost" className="min-h-10">

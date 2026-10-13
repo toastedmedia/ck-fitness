@@ -215,7 +215,7 @@ export default async function ProgramsPage({
 
   return (
     <>
-      <h1 className="font-display text-[19px] text-brand">Programs</h1>
+      <h1 className="sr-only">Programs</h1>
       <form method="get" role="search" className="flex gap-2">
         {Object.entries(sp)
           .filter(([k, v]) => k !== "q" && v)

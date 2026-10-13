@@ -112,8 +112,8 @@ export default async function CommunityPage({
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-[19px] text-brand">Community</h1>
+      <div className="flex items-center">
+        <h1 className="sr-only">Community</h1>
         <nav aria-label="Community sections" className="flex gap-3 text-xs font-bold">
           <span aria-current="page" className="text-brand underline underline-offset-4">
             Feed

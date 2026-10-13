@@ -106,7 +106,7 @@ export default async function ProgressPage({
 
   return (
     <>
-      <h1 className="font-display text-[19px] text-brand">Progress</h1>
+      <h1 className="sr-only">Progress</h1>
       {sp.saved ? <Flash>Saved. Nice work.</Flash> : null}
       {sp.error ? <Flash tone="error">Enter at least one measurement.</Flash> : null}
 

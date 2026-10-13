@@ -41,7 +41,7 @@ export default async function CheckinPage({
 
   return (
     <>
-      <h1 className="font-display text-[19px] text-brand">Weekly check-in</h1>
+      <h1 className="sr-only">Weekly check-in</h1>
       <p className="text-xs text-muted">
         You planned {prog.planned} and completed {prog.completed} this week. Every bit
         counts.

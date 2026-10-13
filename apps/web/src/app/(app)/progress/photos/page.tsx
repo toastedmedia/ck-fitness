@@ -52,7 +52,7 @@ export default async function PhotosPage({
       >
         ← Progress
       </Link>
-      <h1 className="font-display text-[19px] text-brand">Progress photos</h1>
+      <h1 className="sr-only">Progress photos</h1>
       {sp.deleted ? <Flash>All your photos were deleted.</Flash> : null}
 
       {!consented ? (

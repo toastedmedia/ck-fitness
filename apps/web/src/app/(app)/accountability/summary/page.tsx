@@ -84,7 +84,7 @@ export default async function SummaryPage({
 
   return (
     <>
-      <h1 className="font-display text-[19px] text-brand">Your week</h1>
+      <h1 className="sr-only">Your week</h1>
       {sp.saved ? <Flash>Check-in saved. Here is your week.</Flash> : null}
       <Card>
         <Cap>Workouts</Cap>

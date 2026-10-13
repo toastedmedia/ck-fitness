@@ -32,7 +32,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <Nav />
       <main
         id="main"
-        className="mx-auto flex max-w-xl flex-col gap-3 px-4 pt-6 md:max-w-2xl md:pt-10 [&>h1:nth-child(2)]:pointer-events-none [&>h1:nth-child(2)]:-mt-[2.7rem]"
+        className="mx-auto flex max-w-xl flex-col gap-3 px-4 pt-6 md:max-w-2xl md:pt-10"
       >
         <TopActions
           initial={(profile.first_name?.[0] ?? "?").toUpperCase()}

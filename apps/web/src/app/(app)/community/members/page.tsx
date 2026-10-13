@@ -48,8 +48,8 @@ export default async function MembersPage({
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-[19px] text-brand">Members</h1>
+      <div className="flex items-center">
+        <h1 className="sr-only">Members</h1>
         <nav aria-label="Community sections" className="flex gap-3 text-xs font-bold">
           <Link href="/community" className="text-muted">
             Feed

@@ -61,7 +61,7 @@ export default async function ProfilePage({
 
   return (
     <>
-      <h1 className="font-display text-[19px] text-brand">Profile</h1>
+      <h1 className="sr-only">Profile</h1>
       {sp.saved ? <Flash>Saved.</Flash> : null}
       {sp.error === "confirm" ? (
         <Flash tone="error">Type DELETE exactly to confirm.</Flash>

@@ -42,7 +42,7 @@ export default function GuidelinesPage() {
       >
         ← Community
       </Link>
-      <h1 className="font-display text-[19px] text-brand">Community guidelines</h1>
+      <h1 className="sr-only">Community guidelines</h1>
       <Card>
         <ul className="flex flex-col gap-3">
           {items.map(([t, b]) => (

@@ -34,7 +34,7 @@ export default async function HelpPage({
 
   return (
     <>
-      <h1 className="font-display text-[19px] text-brand">Talk to a real person</h1>
+      <h1 className="sr-only">Talk to a real person</h1>
       <p className="text-xs text-muted">
         Tell us what you need and someone from CK will get back to you.
       </p>

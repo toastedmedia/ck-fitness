@@ -40,7 +40,7 @@ export default async function MembershipPage({
 
   return (
     <>
-      <h1 className="font-display text-[19px] text-brand">Membership</h1>
+      <h1 className="sr-only">Membership</h1>
       {sp.status === "success" ? (
         <Flash>
           Thank you. Your membership is being activated. Refresh in a moment if it does

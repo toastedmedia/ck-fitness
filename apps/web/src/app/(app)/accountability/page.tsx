@@ -82,7 +82,7 @@ export default async function AccountabilityPage({
 
   return (
     <>
-      <h1 className="font-display text-[19px] text-brand">My Week</h1>
+      <h1 className="sr-only">My Week</h1>
       {sp.saved ? <Flash>Saved.</Flash> : null}
       {sp.error === "days" ? (
         <Flash tone="error">Pick at least one training day.</Flash>
