@@ -39,6 +39,7 @@ import { activeDays } from "@/lib/milestones";
 import { ensurePlan, ensureWeekPlanned } from "@/lib/plan";
 import { getTodayWorkout } from "@/lib/programs";
 import { flags } from "@/lib/flags";
+import { isNativeApp } from "@/lib/native";
 import { getViewer } from "@/lib/viewer";
 
 export const metadata: Metadata = { title: "Home" };
@@ -224,6 +225,7 @@ export default async function HomePage({
     timeZone: tz,
   }).format(new Date());
   const isMember = viewer.entitlement !== "free";
+  const native = await isNativeApp();
 
   return (
     <>
@@ -303,7 +305,7 @@ export default async function HomePage({
 
       <NextMilestone text={milestone?.text ?? null} earned={earned} />
 
-      {!isMember ? (
+      {!isMember && !native ? (
         <Card className="bg-page">
           <Cap>CK Membership</Cap>
           <h3 className="mt-1 text-[13px] font-bold text-brand">

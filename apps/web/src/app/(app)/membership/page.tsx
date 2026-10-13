@@ -3,6 +3,7 @@ import { Paywall } from "@/components/app/Paywall";
 import { Button, Card, Cap, Flash, Pill } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
 import { track } from "@/lib/events";
+import { isNativeApp } from "@/lib/native";
 import { getViewer } from "@/lib/viewer";
 
 export const metadata: Metadata = { title: "Membership" };
@@ -23,6 +24,7 @@ export default async function MembershipPage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const sp = await searchParams;
+  const native = await isNativeApp();
   const { supabase, tz } = await getContext();
   const { membership } = await getViewer();
   const { data: price } = await supabase
@@ -71,7 +73,7 @@ export default async function MembershipPage({
                   ? `Renews on ${fmt(endsAt, tz)}.`
                   : "No renewal date. Managed by CK."}
           </p>
-          {!premium || endsAt ? (
+          {!native && (!premium || endsAt) ? (
             <form action="/api/stripe/portal" method="post" className="mt-3">
               <Button variant="primary" className="w-full">
                 {state === "grace" ? "Update payment method" : "Manage billing or cancel"}
@@ -88,14 +90,18 @@ export default async function MembershipPage({
             </Flash>
           ) : null}
           <Paywall price={priceText} showCta={false} />
-          <form action="/api/stripe/checkout" method="post">
-            <Button variant="gold" className="min-h-12 w-full">
-              Continue to secure checkout
-            </Button>
-          </form>
-          <p className="text-center text-[10.5px] text-muted">
-            Payment is handled by Stripe. We never see or store your card details.
-          </p>
+          {native ? null : (
+            <>
+              <form action="/api/stripe/checkout" method="post">
+                <Button variant="gold" className="min-h-12 w-full">
+                  Continue to secure checkout
+                </Button>
+              </form>
+              <p className="text-center text-[10.5px] text-muted">
+                Payment is handled by Stripe. We never see or store your card details.
+              </p>
+            </>
+          )}
         </>
       )}
     </>

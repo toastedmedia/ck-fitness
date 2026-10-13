@@ -1,8 +1,29 @@
 import Link from "next/link";
 import { Cap, Card } from "@/components/app/ui";
+import { isNativeApp } from "@/lib/native";
 
 /** Only benefits that exist today are listed. Billing terms are never hidden. */
-export function Paywall({ price, showCta = true }: { price: string; showCta?: boolean }) {
+export async function Paywall({
+  price,
+  showCta = true,
+}: {
+  price: string;
+  showCta?: boolean;
+}) {
+  if (await isNativeApp()) {
+    return (
+      <Card className="bg-page">
+        <Cap>CK Membership</Cap>
+        <h2 className="mt-1 text-[15px] font-bold text-brand">
+          This one is for CK members
+        </h2>
+        <p className="mt-1 text-xs">
+          If you are already a member, make sure you are signed in with your member email.
+          Questions? Contact support from Profile.
+        </p>
+      </Card>
+    );
+  }
   return (
     <Card className="bg-page">
       <Cap>CK Membership</Cap>
