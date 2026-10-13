@@ -3,7 +3,7 @@
 > **Rule from the owners (12 Oct 2026):** the CK Fitness folder has exactly TWO living files for project state: this file (`CLAUDE.md` = memory) and `FEATURES.md` (= features). When asked to "update memory and features", edit only these two. Do not create extra status, changelog or notes files. (`docs/` holds how-to guides such as setup and deploy; do not add status notes there.)
 
 **Owners:** Kv & Chanveer. **Business:** CK Fitness / Chardikala Fitness & Performance. **CRM name:** Toasted Media CRM (never use another CRM vendor name in user-facing copy or docs).
-**Specs (PDFs in repo root):** Build-Out Guide v1.0 and Master Planning Plan v1.1. **Today:** 2026-10-12.
+**Specs (PDFs in repo root):** Build-Out Guide v1.0 and Master Planning Plan v1.1. **Today:** 2026-10-13.
 
 ## Where everything lives (nothing runs on the laptop; the laptop is being sold)
 | Piece | Where |
@@ -47,6 +47,7 @@ Commands (Node 20+): `npm run check`. **Environment:** the owner's Mac was 98% f
 2. Fix whatever live testing finds. 3. Web push (optional). 4. Production Supabase + Stripe live + beta 20-50 users.
 
 ## Change log (newest first)
+- **2026-10-13:** Onboarding, Profile sharing and photo-consent saves now retry without `sharing_decided_at` if migration 0012 is not applied yet, so signups never fail before the pending SQL (0012 to 0015) is run.
 - **2026-10-12 (community upgrade):** Facebook-style feed: five reactions (change/remove), replies (one level), edit within 15 minutes, CK Team badge + pinned announcements, photo posts (up to 4, shrunk on the phone, private storage) held for staff approval (switch in Admin -> Community), search/filter/sort, Members directory with community cards (bio, opt-out) and member pages, community notifications (comments, replies, reaction milestones; toggle in Profile), admin approvals queue. Videos and groups deliberately NOT built yet (owner asked for photos first; videos cost Cloudflare minutes, groups need a design).
 - **2026-10-12 (later):** Bottom nav now Home / Programs / Progress / Accountability / Community; Profile moved to the top-right avatar menu with Log out.
 - **2026-10-12:** Sharing on by default + prompt for existing members; staff Overview counts; admin client tabs Programs (access, stage, per-video watch: furthest point, time watched, plays) and Activity (full timeline of every action and account change, with a database change log); video watch tracking; **Community** (feed, comments, likes, report/block, moderation queue, announcements, mute/ban, audience switch); photos on with share-by-default; login returns to requested page; CI + live smoke tests; terms acceptance stored; cleanup cron; CSV program import; branded email templates; lb/in units; program search; accessibility contrast fixes; origin checks; admin Billing page, contacts CSV, client records with consent, notes; Accountability tab insights; Home refinement (Needs Attention, CK Score, My Commitment, daily check-in).
