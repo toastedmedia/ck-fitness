@@ -1515,4 +1515,37 @@ describe("community feed: reactions, photos with approval, edits, replies, direc
       ).display_name,
     ).toBe("Mia B.");
   });
+  it("keeps push devices private to their owner and removes them with the account", async () => {
+    await asUser(db, A1, () =>
+      db.query(
+        "insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values ($1,'https://push.example/a','k','a')",
+        [A1],
+      ),
+    );
+    const other = await asUser(
+      db,
+      A2,
+      async () =>
+        (await db.query("select id from public.push_subscriptions")).rows.length,
+    );
+    expect(other).toBe(0);
+    await expect(
+      asUser(db, A2, () =>
+        db.query(
+          "insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values ($1,'https://push.example/b','k','a')",
+          [A1],
+        ),
+      ),
+    ).rejects.toThrow();
+    await asUser(db, A2, () =>
+      db.query("delete from public.push_subscriptions where user_id = $1", [A1]),
+    );
+    const mine = await asUser(
+      db,
+      A1,
+      async () =>
+        (await db.query("select id from public.push_subscriptions")).rows.length,
+    );
+    expect(mine).toBe(1);
+  });
 });

@@ -1,4 +1,5 @@
 import "server-only";
+import { sendPush } from "@/lib/push";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 
 /**
@@ -57,4 +58,5 @@ export async function notifyUser(
       link: n.link ?? null,
     });
   if (error) console.error("notifyUser failed", error.message);
+  else await sendPush(userId, n);
 }

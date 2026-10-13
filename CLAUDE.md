@@ -21,10 +21,10 @@ Done: GitHub, domain (chardikalafitness.com), Supabase org + staging, Vercel (en
 
 ## State
 Phase 1 is code-complete. Not launch-ready until the pending accounts are connected, real flows are tested on staging (`docs/QA_CHECKLIST.md`), content is loaded, legal text is lawyer-approved, and a 20-50 person beta is done. Phase 2 (native iOS) not started.
-Automated checks (all passing): `npm run check` = format, lint, types, 94 core tests, 9 web tests, 70 database tests (every migration runs in an in-memory Postgres/PGlite and row-level security is verified), production build.
+Automated checks (all passing): `npm run check` = format, lint, types, 98 core tests, 9 web tests, 71 database tests (every migration runs in an in-memory Postgres/PGlite and row-level security is verified), production build.
 
 ## Database changes the owners must paste into Supabase SQL Editor
-Migrations live in `supabase/migrations` (0001 to 0015). `supabase/all-migrations.sql` = all of them for a brand-new project. **Staging has 0001 to 0011 for sure; run 0012 to 0015 (all idempotent, safe to repeat; one combined file is sent to the owners).** New migrations are always sent to the owners as a file; app code falls back safely if a deploy lands before its migration.
+Migrations live in `supabase/migrations` (0001 to 0016). `supabase/all-migrations.sql` = all of them for a brand-new project. **Staging has 0001 to 0011 for sure; run 0012 to 0016 (all idempotent, safe to repeat; one combined file is sent to the owners).** New migrations are always sent to the owners as a file; app code falls back safely if a deploy lands before its migration.
 
 ## Key decisions (with dates)
 - Brand = navy/gold from the Chardikala website (not the spec's green). One restyle file: `packages/design-tokens/src/theme.css`.
@@ -43,10 +43,11 @@ Follow the guide phase by phase; entitlement checks on server AND database; paid
 Commands (Node 20+): `npm run check`. **Environment:** the owner's Mac was 98% full and iCloud evicted `node_modules` so builds hung; builds were verified in a copy outside iCloud (`/private/tmp/ck-verify`). Move the repo out of `~/Documents` or work from GitHub/Codespaces.
 
 ## Pending / next
-1. Owners: run SQL 0012-0015 (one combined file), finish accounts above, then walk `docs/QA_CHECKLIST.md` on staging (sign up, onboarding, Home, check-ins, photos, community, admin client tabs).
+1. Owners: run SQL 0012-0016 (0012-0015 combined file, plus 0016 push file), finish accounts above, then walk `docs/QA_CHECKLIST.md` on staging (sign up, onboarding, Home, check-ins, photos, community, admin client tabs).
 2. Fix whatever live testing finds. 3. Web push (optional). 4. Production Supabase + Stripe live + beta 20-50 users.
 
 ## Change log (newest first)
+- **2026-10-13 (web push):** Push notifications: `public/sw.js` service worker, `/api/push` (save/forget a device), `lib/push.ts` (`sendPush`, called from `notifyUser`, honours the Push preference, removes dead devices), Profile button "Turn on for this device". Migration 0016 `push_subscriptions` (own-device RLS). Needs Vercel vars `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (`npx web-push generate-vapid-keys`); without them the button is hidden and sending is skipped. iPhone needs the app added to the Home Screen.
 - **2026-10-13 (charts):** Admin -> KPIs now has 30-day trend charts (sign-ups, workouts completed, community posts, comments) with change against the previous 30 days. Pure `dailySeries`/`seriesTotals` in `packages/core/src/trends.ts` (tested); `BarChart` component is accessible (text summary, per-bar tooltips).
 - **2026-10-13:** Onboarding, Profile sharing and photo-consent saves now retry without `sharing_decided_at` if migration 0012 is not applied yet, so signups never fail before the pending SQL (0012 to 0015) is run.
 - **2026-10-12 (community upgrade):** Facebook-style feed: five reactions (change/remove), replies (one level), edit within 15 minutes, CK Team badge + pinned announcements, photo posts (up to 4, shrunk on the phone, private storage) held for staff approval (switch in Admin -> Community), search/filter/sort, Members directory with community cards (bio, opt-out) and member pages, community notifications (comments, replies, reaction milestones; toggle in Profile), admin approvals queue. Videos and groups deliberately NOT built yet (owner asked for photos first; videos cost Cloudflare minutes, groups need a design).

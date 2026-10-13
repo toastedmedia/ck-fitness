@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PushButton } from "@/components/app/PushButton";
 import { Button, Cap, Card, Flash } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
 import {
@@ -228,6 +229,9 @@ export default async function ProfilePage({
             on={prefs?.sms ?? false}
           />
           <Toggle name="push" label="Push notifications" on={prefs?.push ?? false} />
+          {process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ? (
+            <PushButton publicKey={process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY} />
+          ) : null}
           <div className="mt-2 grid grid-cols-2 gap-2">
             <label className="text-xs font-bold text-brand">
               Quiet from

@@ -10,6 +10,7 @@
    Customise the confirm-email and reset-password templates to plain, friendly English.
 5. Vercel: import `toastedmedia/ck-fitness`, **Root Directory = `apps/web`**, framework Next.js. Add env vars from `apps/web/.env.example`.
    Node version 20. `vercel.json` already defines the three cron jobs. Set `CRON_SECRET` to a long random string.
+   Optional web push: run `npx web-push generate-vapid-keys`, then set `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (for example `mailto:support@chardikalafitness.com`). Without them, push is hidden and skipped.
 6. Stripe: follow `docs/PAYMENTS.md` (test mode first). Point the webhook at `<url>/api/stripe/webhook`.
 7. Cloudflare Stream: follow `docs/STORAGE.md`.
 8. Create the QA accounts: `node scripts/create-test-users.mjs --staging` (see script header), then run `docs/QA_CHECKLIST.md`.

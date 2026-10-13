@@ -17,7 +17,8 @@ Nothing has been verified against live Stripe, Cloudflare or the CRM yet. Status
 - 🔌 Membership checkout, billing portal, cancel (Stripe direct)
 - ✅ **Community (Facebook-style feed):** posts by type (Win, Question, Tip, Motivation) + CK Team announcements/pinned posts; **five reactions** (Like, Love, Strong, Celebrate, Support); comments with replies; edit within 15 min; **photo posts** (up to 4, private storage, staff approval on by default); search, filters, Newest/Top; **Members directory** and community cards (bio, can opt out); report, block, auto-hide after 3 reports; guidelines gate; daily limits; community notifications (toggle in Profile). ⏳ Video posts and groups not built
 - ✅ Notifications centre, support requests with staff replies, Profile (details, units, sharing choices, notification consent, data download, delete account)
-- ⏳ Apple Health and iPhone app (Phase 2), web push
+- ⏳ Apple Health and iPhone app (Phase 2)
+- 🔌 Web push notifications (built; switches on when the three VAPID variables are added in Vercel; per-device button in Profile)
 
 ## Admin portal (`/admin`)
 - ✅ Dashboard (members, activity, at-risk, help, billing problems), KPIs (9 launch KPIs, 30-day trend charts for sign-ups, workouts, community posts and comments, video cost guard), Billing (all subscriptions, revenue estimate, Stripe invoices once connected), Accountability (at-risk list)
