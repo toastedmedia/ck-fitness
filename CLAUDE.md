@@ -24,6 +24,7 @@ Phase 1 is code-complete. Not launch-ready until the pending accounts are connec
 Automated checks (all passing): `npm run check` = format, lint, types, 98 core tests, 9 web tests, 71 database tests (every migration runs in an in-memory Postgres/PGlite and row-level security is verified), production build.
 
 ## Database changes the owners must paste into Supabase SQL Editor
+**Verify what is applied:** run `supabase/check-migrations.sql` (read-only; one APPLIED/MISSING row per migration 0001-0017; add a row to it with every new migration). Owners ran 0012-0017 on staging on 2026-10-13.
 Migrations live in `supabase/migrations` (0001 to 0017). `supabase/all-migrations.sql` = all of them for a brand-new project. **Staging has 0001 to 0011 for sure; run 0012 to 0017 (all idempotent, safe to repeat; one combined file is sent to the owners).** New migrations are always sent to the owners as a file; app code falls back safely if a deploy lands before its migration.
 
 ## Key decisions (with dates)
