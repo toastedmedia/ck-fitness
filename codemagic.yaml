@@ -70,7 +70,7 @@ workflows:
       - name: Build IPA
         script: |
           xcode-project build-ipa \
-            --project apps/mobile/ios/App/App.xcodeproj \
+            --workspace apps/mobile/ios/App/App.xcworkspace \
             --scheme App
     artifacts:
       - build/ios/ipa/*.ipa
