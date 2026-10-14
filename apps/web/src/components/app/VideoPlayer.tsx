@@ -111,6 +111,16 @@ export function VideoPlayer({
     };
   }, [src, lessonId, startSeconds, nextHref, router]);
 
+  // No video for this lesson: show just the picture (no text on top), or nothing at all.
+  if (!hasVideo) {
+    return poster ? (
+      <img
+        src={poster}
+        alt=""
+        className="aspect-video w-full rounded-card object-cover"
+      />
+    ) : null;
+  }
   if (src) {
     return (
       <div className="aspect-video overflow-hidden rounded-card bg-brand">

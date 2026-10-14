@@ -1240,3 +1240,52 @@ export async function giveProgramAccess(
   await audit(supabase, user.id, "member.grant_access", prof.user_id, { programId });
   redirect(`${back}&granted=${r.membership}&who=${encodeURIComponent(email)}`);
 }
+
+/** Saves a drag-and-drop reorder: the order of weeks, the lessons in each, and lessons moved between weeks. */
+export async function reorderOutline(
+  programId: string,
+  order: { id: string; lessons: string[] }[],
+): Promise<{ ok: boolean }> {
+  const { supabase, user } = await requireStaff(CONTENT);
+  const { data: secs } = await supabase
+    .from("program_sections")
+    .select("id")
+    .eq("program_id", programId);
+  const sectionIds = new Set((secs ?? []).map((s: { id: string }) => s.id));
+  if (order.length !== sectionIds.size || order.some((s) => !sectionIds.has(s.id)))
+    return { ok: false };
+  const { data: ls } = sectionIds.size
+    ? await supabase
+        .from("lessons")
+        .select("id")
+        .in("section_id", [...sectionIds])
+    : { data: [] as { id: string }[] };
+  const lessonIds = new Set((ls ?? []).map((l: { id: string }) => l.id));
+  const given = order.flatMap((s) => s.lessons);
+  if (
+    given.length !== lessonIds.size ||
+    given.some((l) => !lessonIds.has(l)) ||
+    new Set(given).size !== given.length
+  )
+    return { ok: false };
+  const results = await Promise.all([
+    ...order.map((s, i) =>
+      supabase
+        .from("program_sections")
+        .update({ order_index: i + 1 })
+        .eq("id", s.id),
+    ),
+    ...order.flatMap((s) =>
+      s.lessons.map((lid, j) =>
+        supabase
+          .from("lessons")
+          .update({ section_id: s.id, order_index: j + 1 })
+          .eq("id", lid),
+      ),
+    ),
+  ]);
+  if (results.some((r) => r.error)) return { ok: false };
+  await audit(supabase, user.id, "program.reorder", programId);
+  revalidatePath("/programs");
+  return { ok: true };
+}

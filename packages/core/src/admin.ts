@@ -29,8 +29,6 @@ export function validateForPublish({
   if (!program.short_description.trim())
     problems.push("Add a one-line benefit (short description).");
   if (!program.level) problems.push("Choose a level.");
-  if (!program.duration_label?.trim())
-    problems.push("Add a duration, such as 5 days or 12 weeks.");
   if (sections.length === 0) problems.push("Add at least one week or phase.");
   const live = lessons.filter((l) => l.published);
   if (live.length === 0) problems.push("Add at least one published lesson.");

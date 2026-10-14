@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ABtn, Flash, H1, Panel, Status, Tile, aInput } from "@/components/admin/ui";
 import { FilePick } from "@/components/admin/FilePick";
 import { ImageInput } from "@/components/admin/ImageInput";
+import { OutlineDnd } from "@/components/admin/OutlineDnd";
 import { ImagePreview } from "@/components/admin/ImagePreview";
 import { LessonPreview } from "@/components/admin/LessonPreview";
 import { VideoUploader } from "@/components/admin/VideoUploader";
@@ -203,151 +204,187 @@ export default async function EditProgram({
           className={`rounded-card border border-line bg-surface p-2 ${view === "details" || view === "settings" || view === "progress" || view === "access" ? "" : "order-2 lg:order-none"}`}
           aria-label="Training outline"
         >
-          <div className="px-2 pb-1 pt-2 text-sm font-extrabold text-brand">
-            {p.title}
-          </div>
-          {(
-            [
-              ["details", "Details and publish", ""],
-              ["settings", "Instructor and settings", "?view=settings"],
-              ["progress", "Member progress", "?view=progress"],
-              ["access", "Add members", "?view=access"],
-            ] as const
-          ).map(([key, label, qs]) => (
-            <Link
-              key={key}
-              href={`/admin/programs/${id}${qs}`}
-              className={`${row(view === key)} min-h-10 px-2 text-sm font-bold ${view === key ? "text-accent-strong" : "text-brand"}`}
-            >
-              {label}
-            </Link>
-          ))}
-          <div className="mx-2 my-2 border-t border-line" />
-          {secs.map((s, si) => (
-            <details key={s.id} open className="relative mt-1">
-              <summary
-                className={`flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-xl px-2 pr-12 text-sm font-bold text-brand hover:bg-page [&::-webkit-details-marker]:hidden ${view === "week" && selWeek?.id === s.id ? "bg-page" : ""}`}
+          <OutlineDnd programId={id} enabled={canEdit}>
+            <div className="px-2 pb-1 pt-2 text-sm font-extrabold text-brand">
+              {p.title}
+            </div>
+            {(
+              [
+                ["details", "Details and publish", ""],
+                ["settings", "Instructor and settings", "?view=settings"],
+                ["progress", "Member progress", "?view=progress"],
+                ["access", "Add members", "?view=access"],
+              ] as const
+            ).map(([key, label, qs]) => (
+              <Link
+                key={key}
+                href={`/admin/programs/${id}${qs}`}
+                className={`${row(view === key)} min-h-10 px-2 text-sm font-bold ${view === key ? "text-accent-strong" : "text-brand"}`}
               >
-                <span aria-hidden="true" className="text-muted">
-                  ▾
-                </span>
-                <span className="min-w-0 flex-1 truncate">{s.title}</span>
-                {s.published ? null : <Status tone="warn">Hidden</Status>}
-                <span className="rounded-full bg-page px-2 text-[11px] text-muted">
-                  {lessonsOf(s.id).length}
-                </span>
-              </summary>
-              {canEdit ? (
-                <div className="absolute right-1 top-1">
-                  <Menu label={`Actions for ${s.title}`}>
-                    <Link href={`/admin/programs/${id}?week=${s.id}`} className={mi}>
-                      Edit week
-                    </Link>
-                    <form action={duplicateSection.bind(null, id, s.id)}>
-                      <button className={mi}>Clone week</button>
-                    </form>
-                    {si > 0 ? (
-                      <form action={moveSection.bind(null, id, s.id, "up")}>
-                        <button className={mi}>Move up</button>
-                      </form>
-                    ) : null}
-                    {si < secs.length - 1 ? (
-                      <form action={moveSection.bind(null, id, s.id, "down")}>
-                        <button className={mi}>Move down</button>
-                      </form>
-                    ) : null}
-                    <Link
-                      href={`/admin/programs/${id}?week=${s.id}&confirm=delete`}
-                      className={`${mi} text-danger`}
+                {label}
+              </Link>
+            ))}
+            <div className="mx-2 my-2 border-t border-line" />
+            {secs.map((s, si) => (
+              <details
+                key={s.id}
+                open
+                className="relative mt-1"
+                data-section={s.id}
+                draggable={canEdit}
+              >
+                <summary
+                  className={`flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-xl px-2 pr-12 text-sm font-bold text-brand hover:bg-page [&::-webkit-details-marker]:hidden ${view === "week" && selWeek?.id === s.id ? "bg-page" : ""}`}
+                >
+                  {canEdit ? (
+                    <span
+                      aria-hidden="true"
+                      className="cursor-grab select-none text-muted"
                     >
-                      Delete
-                    </Link>
-                  </Menu>
-                </div>
-              ) : null}
-              <div className="ml-3 flex flex-col gap-px border-l-2 border-line pl-2">
-                {lessonsOf(s.id).map((l, li, arr) => (
-                  <div key={String(l.id)} className={row(selLesson?.id === l.id)}>
-                    <Link
-                      href={`/admin/programs/${id}?lesson=${l.id}`}
-                      className={`min-h-10 min-w-0 flex-1 truncate px-2 py-2.5 text-sm ${selLesson?.id === l.id ? "font-bold text-accent-strong" : "text-brand"}`}
-                      title={String(l.title)}
-                    >
-                      {String(l.title)}
-                    </Link>
-                    <Status tone={l.published ? "ok" : "warn"}>
-                      {l.published ? "Published" : "Draft"}
-                    </Status>
-                    {canEdit ? (
-                      <Menu label={`Actions for ${l.title}`}>
-                        <Link
-                          href={`/admin/programs/${id}?lesson=${l.id}`}
-                          className={mi}
-                        >
-                          Edit
-                        </Link>
-                        <form action={duplicateLesson.bind(null, id, String(l.id))}>
-                          <button className={mi}>Clone</button>
-                        </form>
-                        {li > 0 ? (
-                          <form
-                            action={moveLesson.bind(null, id, s.id, String(l.id), "up")}
-                          >
-                            <button className={mi}>Move up</button>
-                          </form>
-                        ) : null}
-                        {li < arr.length - 1 ? (
-                          <form
-                            action={moveLesson.bind(null, id, s.id, String(l.id), "down")}
-                          >
-                            <button className={mi}>Move down</button>
-                          </form>
-                        ) : null}
-                        <Link
-                          href={`/admin/programs/${id}?lesson=${l.id}&confirm=delete`}
-                          className={`${mi} text-danger`}
-                        >
-                          Delete
-                        </Link>
-                      </Menu>
-                    ) : null}
-                  </div>
-                ))}
+                      ⋮⋮
+                    </span>
+                  ) : null}
+                  <span aria-hidden="true" className="text-muted">
+                    ▾
+                  </span>
+                  <span className="min-w-0 flex-1 truncate">{s.title}</span>
+                  {s.published ? null : <Status tone="warn">Hidden</Status>}
+                  <span className="rounded-full bg-page px-2 text-[11px] text-muted">
+                    {lessonsOf(s.id).length}
+                  </span>
+                </summary>
                 {canEdit ? (
-                  <form action={createLesson.bind(null, id, s.id)}>
-                    <button className="my-1 min-h-10 w-full rounded-xl border border-dashed border-line px-3 text-left text-sm font-bold text-accent-strong hover:bg-page">
-                      + Add lesson
-                    </button>
-                  </form>
+                  <div className="absolute right-1 top-1">
+                    <Menu label={`Actions for ${s.title}`}>
+                      <Link href={`/admin/programs/${id}?week=${s.id}`} className={mi}>
+                        Edit week
+                      </Link>
+                      <form action={duplicateSection.bind(null, id, s.id)}>
+                        <button className={mi}>Clone week</button>
+                      </form>
+                      {si > 0 ? (
+                        <form action={moveSection.bind(null, id, s.id, "up")}>
+                          <button className={mi}>Move up</button>
+                        </form>
+                      ) : null}
+                      {si < secs.length - 1 ? (
+                        <form action={moveSection.bind(null, id, s.id, "down")}>
+                          <button className={mi}>Move down</button>
+                        </form>
+                      ) : null}
+                      <Link
+                        href={`/admin/programs/${id}?week=${s.id}&confirm=delete`}
+                        className={`${mi} text-danger`}
+                      >
+                        Delete
+                      </Link>
+                    </Menu>
+                  </div>
                 ) : null}
-              </div>
-            </details>
-          ))}
-          {canEdit ? (
-            <details className="mt-2 rounded-xl border border-dashed border-line p-2">
-              <summary className="min-h-10 cursor-pointer list-none text-sm font-bold text-accent-strong [&::-webkit-details-marker]:hidden">
-                + Add week, phase or module
-              </summary>
-              <form
-                action={addSection.bind(null, id)}
-                className="mt-2 flex flex-col gap-2"
-              >
-                <input
-                  name="title"
-                  required
-                  className={aInput}
-                  placeholder="Week 1"
-                  aria-label="Title"
-                />
-                <select name="section_type" className={aInput} aria-label="Type">
-                  <option value="week">Week</option>
-                  <option value="phase">Phase</option>
-                  <option value="module">Module</option>
-                </select>
-                <ABtn variant="primary">Add</ABtn>
-              </form>
-            </details>
-          ) : null}
+                <div className="ml-3 flex flex-col gap-px border-l-2 border-line pl-2">
+                  {lessonsOf(s.id).map((l, li, arr) => (
+                    <div
+                      key={String(l.id)}
+                      className={row(selLesson?.id === l.id)}
+                      data-lesson={String(l.id)}
+                      draggable={canEdit}
+                    >
+                      {canEdit ? (
+                        <span
+                          aria-hidden="true"
+                          className="cursor-grab select-none pl-1 text-muted"
+                        >
+                          ⋮⋮
+                        </span>
+                      ) : null}
+                      <Link
+                        href={`/admin/programs/${id}?lesson=${l.id}`}
+                        className={`min-h-10 min-w-0 flex-1 truncate px-2 py-2.5 text-sm ${selLesson?.id === l.id ? "font-bold text-accent-strong" : "text-brand"}`}
+                        title={String(l.title)}
+                        draggable={false}
+                      >
+                        {String(l.title)}
+                      </Link>
+                      <Status tone={l.published ? "ok" : "warn"}>
+                        {l.published ? "Published" : "Draft"}
+                      </Status>
+                      {canEdit ? (
+                        <Menu label={`Actions for ${l.title}`}>
+                          <Link
+                            href={`/admin/programs/${id}?lesson=${l.id}`}
+                            className={mi}
+                          >
+                            Edit
+                          </Link>
+                          <form action={duplicateLesson.bind(null, id, String(l.id))}>
+                            <button className={mi}>Clone</button>
+                          </form>
+                          {li > 0 ? (
+                            <form
+                              action={moveLesson.bind(null, id, s.id, String(l.id), "up")}
+                            >
+                              <button className={mi}>Move up</button>
+                            </form>
+                          ) : null}
+                          {li < arr.length - 1 ? (
+                            <form
+                              action={moveLesson.bind(
+                                null,
+                                id,
+                                s.id,
+                                String(l.id),
+                                "down",
+                              )}
+                            >
+                              <button className={mi}>Move down</button>
+                            </form>
+                          ) : null}
+                          <Link
+                            href={`/admin/programs/${id}?lesson=${l.id}&confirm=delete`}
+                            className={`${mi} text-danger`}
+                          >
+                            Delete
+                          </Link>
+                        </Menu>
+                      ) : null}
+                    </div>
+                  ))}
+                  {canEdit ? (
+                    <form action={createLesson.bind(null, id, s.id)}>
+                      <button className="my-1 min-h-10 w-full rounded-xl border border-dashed border-line px-3 text-left text-sm font-bold text-accent-strong hover:bg-page">
+                        + Add lesson
+                      </button>
+                    </form>
+                  ) : null}
+                </div>
+              </details>
+            ))}
+            {canEdit ? (
+              <details className="mt-2 rounded-xl border border-dashed border-line p-2">
+                <summary className="min-h-10 cursor-pointer list-none text-sm font-bold text-accent-strong [&::-webkit-details-marker]:hidden">
+                  + Add week, phase or module
+                </summary>
+                <form
+                  action={addSection.bind(null, id)}
+                  className="mt-2 flex flex-col gap-2"
+                >
+                  <input
+                    name="title"
+                    required
+                    className={aInput}
+                    placeholder="Week 1"
+                    aria-label="Title"
+                  />
+                  <select name="section_type" className={aInput} aria-label="Type">
+                    <option value="week">Week</option>
+                    <option value="phase">Phase</option>
+                    <option value="module">Module</option>
+                  </select>
+                  <ABtn variant="primary">Add</ABtn>
+                </form>
+              </details>
+            ) : null}
+          </OutlineDnd>
         </aside>
 
         <section className="flex min-w-0 flex-col gap-4">
