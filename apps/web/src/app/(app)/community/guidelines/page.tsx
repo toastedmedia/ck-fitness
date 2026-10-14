@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card } from "@/components/app/ui";
 import { flags } from "@/lib/flags";
@@ -36,12 +35,6 @@ export default function GuidelinesPage() {
   ];
   return (
     <>
-      <Link
-        href="/community"
-        className="inline-flex min-h-10 items-center text-xs font-bold text-brand"
-      >
-        ← Community
-      </Link>
       <h1 className="sr-only">Community guidelines</h1>
       <Card>
         <ul className="flex flex-col gap-3">

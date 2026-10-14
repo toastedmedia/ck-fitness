@@ -170,12 +170,6 @@ export default async function PostPage({
 
   return (
     <>
-      <Link
-        href="/community"
-        className="inline-flex min-h-10 items-center text-xs font-bold text-brand"
-      >
-        ← Community
-      </Link>
       {sp.error ? <Flash tone="error">{sp.error}</Flash> : null}
       {sp.reported ? (
         <Flash>

@@ -57,12 +57,6 @@ export default async function LessonPage({
       .maybeSingle();
     return (
       <>
-        <Link
-          href={`/programs/${slug}`}
-          className="inline-flex min-h-10 items-center text-xs font-bold text-brand"
-        >
-          ← {program.title}
-        </Link>
         <h1 className="font-display text-[19px] text-brand">{flat[idx].title}</h1>
         <Paywall
           price={String(price?.value ?? "$31.49 CAD / month (includes GST)").replace(
@@ -95,12 +89,6 @@ export default async function LessonPage({
 
   return (
     <>
-      <Link
-        href={`/programs/${slug}`}
-        className="inline-flex min-h-10 items-center text-xs font-bold text-brand"
-      >
-        ← {program.title}
-      </Link>
       <VideoPlayer
         lessonId={lesson.id}
         startSeconds={prog?.playback_seconds ?? 0}

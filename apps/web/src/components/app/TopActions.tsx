@@ -20,20 +20,47 @@ const TITLES: Record<string, string> = {
   "/community/guidelines": "Community guidelines",
 };
 
+type Back = { href: string; label: string } | null;
+
+/** The "back" link for detail pages, shown in the header so there is no empty row above the content. */
+function backFor(path: string): Back {
+  if (path === "/progress/photos") return { href: "/progress", label: "Progress" };
+  if (path === "/community/guidelines") return { href: "/community", label: "Community" };
+  if (/^\/community\/members\/[^/]+$/.test(path))
+    return { href: "/community/members", label: "Members" };
+  const post = path.match(/^\/community\/([^/]+)$/);
+  if (post && !["members", "guidelines"].includes(post[1]))
+    return { href: "/community", label: "Community" };
+  if (/^\/programs\/[^/]+$/.test(path)) return { href: "/programs", label: "Trainings" };
+  const lesson = path.match(/^\/programs\/([^/]+)\/[^/]+$/);
+  if (lesson) return { href: `/programs/${lesson[1]}`, label: "Back to training" };
+  return null;
+}
+
 /** Notifications and the account menu, top right of every signed-in page (Home has its own header). */
 export function TopActions({ initial, unread }: { initial: string; unread: number }) {
   const path = usePathname();
   if (path === "/home") return null;
   const title = TITLES[path];
+  const back = backFor(path);
   return (
     <div className="flex items-center justify-between gap-2">
-      {/* The page itself keeps a hidden heading for screen readers; this is the visible title. */}
-      <p
-        aria-hidden="true"
-        className="min-w-0 truncate font-display text-[19px] text-brand"
-      >
-        {title ?? ""}
-      </p>
+      <div className="min-w-0">
+        {back ? (
+          <Link
+            href={back.href}
+            className="inline-flex min-h-10 items-center text-xs font-bold text-brand"
+          >
+            ← {back.label}
+          </Link>
+        ) : null}
+        {/* The page itself keeps a hidden heading for screen readers; this is the visible title. */}
+        {title ? (
+          <p aria-hidden="true" className="truncate font-display text-[19px] text-brand">
+            {title}
+          </p>
+        ) : null}
+      </div>
       <div className="flex shrink-0 items-center gap-2">
         <Link
           href="/notifications"

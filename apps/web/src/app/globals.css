@@ -110,3 +110,10 @@ html[data-native] nav[aria-label="Main"] {
   bottom: env(safe-area-inset-bottom);
   padding-bottom: 0;
 }
+
+/* On touch screens a link that is focused by navigating to a page should not get a heavy box around it. */
+@media (hover: none) and (pointer: coarse) {
+  a:focus-visible {
+    outline: none;
+  }
+}

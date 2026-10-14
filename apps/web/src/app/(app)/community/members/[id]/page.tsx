@@ -43,12 +43,6 @@ export default async function MemberCard({
 
   return (
     <>
-      <Link
-        href="/community/members"
-        className="inline-flex min-h-10 items-center text-xs font-bold text-brand"
-      >
-        ← Members
-      </Link>
       <Card>
         <div className="flex items-center gap-3">
           <Avatar name={m.display_name} />

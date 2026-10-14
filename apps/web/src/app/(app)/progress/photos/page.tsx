@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { POSES } from "@ck/core";
 import { PhotoUploader } from "@/components/app/PhotoUploader";
@@ -46,12 +45,6 @@ export default async function PhotosPage({
 
   return (
     <>
-      <Link
-        href="/progress"
-        className="inline-flex min-h-10 items-center text-xs font-bold text-brand"
-      >
-        ← Progress
-      </Link>
       <h1 className="sr-only">Progress photos</h1>
       {sp.deleted ? <Flash>All your photos were deleted.</Flash> : null}
 

@@ -92,12 +92,6 @@ export default async function ProgramPage({
 
   return (
     <>
-      <Link
-        href="/programs"
-        className="inline-flex min-h-10 items-center text-xs font-bold text-brand"
-      >
-        ← Trainings
-      </Link>
       {cover ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
