@@ -77,4 +77,5 @@ workflows:
     publishing:
       app_store_connect:
         auth: integration
-        submit_to_testflight: true
+        # Internal testers (your own App Store Connect users) can install without Apple beta review.
+        submit_to_testflight: false
