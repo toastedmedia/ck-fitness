@@ -13,7 +13,7 @@ export interface FormState {
 
 const MIN_PASSWORD = 8;
 /** Bump this whenever the Terms or Privacy Policy change in a way members must re-accept. */
-const TERMS_VERSION = "2026-10-draft";
+const TERMS_VERSION = "2026-10-14";
 const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
 async function siteUrl(): Promise<string> {
