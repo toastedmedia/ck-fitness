@@ -445,7 +445,7 @@ export async function updateProfileName(formData: FormData): Promise<void> {
     .trim()
     .slice(0, 30);
   if (!first || !last) redirect("/profile?error=name");
-  if (phone && !/^\+?[0-9 ()-]{7,20}$/.test(phone)) redirect("/profile?error=phone");
+  if (!/^\+?[0-9 ()-]{7,20}$/.test(phone)) redirect("/profile?error=phone");
   await supabase
     .from("profiles")
     .update({ first_name: first, last_name: last, phone: phone || null })

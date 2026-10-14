@@ -18,6 +18,7 @@ const about = {
   gender: "female",
   heightCm: 168,
   weightKg: 67.2,
+  phone: "604-555-0123",
 };
 
 describe("age and BMI", () => {
@@ -100,14 +101,14 @@ describe("phone and coach sharing", () => {
     heightCm: 168,
     weightKg: 67,
   };
-  it("accepts a normal phone number or none at all", () => {
+  it("accepts a normal phone number and requires one", () => {
     const ok = validateAbout(
       { ...base, phone: "+1 (604) 555-0123" },
       new Date("2026-10-10T12:00:00Z"),
     );
     expect(ok.ok && ok.value.phone).toBe("+1 (604) 555-0123");
     const none = validateAbout(base, new Date("2026-10-10T12:00:00Z"));
-    expect(none.ok && none.value.phone).toBe("");
+    expect(!none.ok && none.errors.phone).toBeDefined();
   });
   it("rejects nonsense phone numbers", () => {
     const bad = validateAbout(

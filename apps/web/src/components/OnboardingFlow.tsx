@@ -184,14 +184,14 @@ export function OnboardingFlow({ initial }: { initial: Data }) {
             autoComplete="bday"
           />
           <Field
-            label="Phone number (optional)"
+            label="Phone number"
             type="tel"
             inputMode="tel"
             value={str("phone")}
             onChange={(e) => set("phone", e.target.value)}
             error={errors.phone}
             autoComplete="tel"
-            hint="Only used if you ask us to contact you, or if you choose text reminders."
+            hint="So your coach can reach you."
           />
           <ChipGroup
             label="Gender"

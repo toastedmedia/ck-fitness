@@ -121,8 +121,7 @@ export function validateAbout(
   if (!(heightCm >= 120 && heightCm <= 230))
     errors.heightCm = "Enter your height in centimetres (120 to 230).";
   const phone = text(raw.phone, 30);
-  if (phone && !/^\+?[0-9 ()-]{7,20}$/.test(phone))
-    errors.phone = "Enter a valid phone number, or leave it blank.";
+  if (!/^\+?[0-9 ()-]{7,20}$/.test(phone)) errors.phone = "Enter a valid phone number.";
   if (!(weightKg >= 35 && weightKg <= 300))
     errors.weightKg = "Enter your weight in kilograms (35 to 300).";
   if (Object.keys(errors).length) return { ok: false, errors };

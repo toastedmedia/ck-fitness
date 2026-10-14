@@ -78,7 +78,7 @@ export default async function ProfilePage({
         </Flash>
       ) : null}
       {sp.error === "phone" ? (
-        <Flash tone="error">Enter a valid phone number, or leave it blank.</Flash>
+        <Flash tone="error">Enter a valid phone number.</Flash>
       ) : null}
       {sp.error === "name" ? (
         <Flash tone="error">Please enter your first and last name.</Flash>
@@ -106,10 +106,11 @@ export default async function ProfilePage({
             />
           </label>
           <label className="text-xs font-bold text-brand">
-            Phone (optional)
+            Phone number
             <input
               name="phone"
               type="tel"
+              required
               defaultValue={profile?.phone ?? ""}
               autoComplete="tel"
               className={input}

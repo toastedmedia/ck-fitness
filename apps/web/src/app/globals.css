@@ -117,3 +117,31 @@ html[data-native] nav[aria-label="Main"] {
     outline: none;
   }
 }
+
+/* Phone layout polish: labels that sit above a field are a little larger so they stay in proportion with the
+   16px text inside the field, and date/time fields fill their box like the other fields. */
+@media (hover: none) and (pointer: coarse) {
+  label:has(> input:not([type="checkbox"]):not([type="radio"]):not([type="file"])),
+  label:has(> select),
+  label:has(> textarea) {
+    font-size: 14px;
+  }
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"] {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 2.75rem;
+    box-sizing: border-box;
+    text-align: left;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input[type="date"]::-webkit-date-and-time-value,
+  input[type="time"]::-webkit-date-and-time-value {
+    text-align: left;
+    min-height: 1.5em;
+  }
+}
