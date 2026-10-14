@@ -24,7 +24,7 @@ export default async function SupportPage() {
       <main id="main" className="mx-auto max-w-xl px-4 pt-12">
         <h1 className="font-display text-3xl text-brand">Support</h1>
         <p className="mt-4 text-muted">
-          Need help? A real person at CK Fitness will get back to you.
+          Need help? A real person at Chardikala Fitness will get back to you.
         </p>
         {email ? (
           <p className="mt-4">

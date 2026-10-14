@@ -11,7 +11,7 @@ export function AdminNav({ items }: { items: { href: string; label: string }[] }
       className="flex gap-1 overflow-x-auto bg-brand p-2 md:fixed md:inset-y-0 md:left-0 md:w-60 md:flex-col md:overflow-visible md:p-4"
     >
       <p className="hidden px-3 pb-4 pt-2 font-display text-xl text-on-brand md:block">
-        CK Fitness
+        Chardikala Fitness
         <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-accent">
           Admin
         </span>

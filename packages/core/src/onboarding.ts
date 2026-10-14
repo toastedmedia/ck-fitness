@@ -114,7 +114,7 @@ export function validateAbout(
   if (!lastName) errors.lastName = "Please enter your last name.";
   if (!validDate(birthDate)) errors.birthDate = "Please enter your date of birth.";
   else if (ageFromBirthDate(birthDate, now) < MIN_AGE)
-    errors.birthDate = "CK Fitness is for adults aged 18 and over.";
+    errors.birthDate = "Chardikala Fitness is for adults aged 18 and over.";
   else if (ageFromBirthDate(birthDate, now) > 110)
     errors.birthDate = "Please check your date of birth.";
   if (!isOneOf(GENDER, raw.gender)) errors.gender = "Please choose an option.";

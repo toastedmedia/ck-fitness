@@ -10,14 +10,14 @@ export default function PrivacyPage() {
     <>
       <main id="main" className="mx-auto max-w-2xl px-4 pt-10">
         <p className="rounded-card bg-surface p-3 text-xs font-semibold text-accent-strong">
-          Draft for review. Not final until approved by CK Fitness and checked by a
-          lawyer.
+          Draft for review. Not final until approved by Chardikala Fitness and checked by
+          a lawyer.
         </p>
         <h1 className="mt-4 font-display text-3xl text-brand">Privacy Policy</h1>
         <p className="mt-2 text-muted">
-          Last updated: [date]. Who we are: [legal business name], operating as CK Fitness
-          / Chardikala Fitness &amp; Performance, [address], British Columbia, Canada.
-          Contact: [support email].
+          Last updated: [date]. Who we are: [legal business name], operating as Chardikala
+          Fitness / Chardikala Fitness &amp; Performance, [address], British Columbia,
+          Canada. Contact: [support email].
         </p>
 
         <h2 className={h}>What we collect</h2>
@@ -94,7 +94,7 @@ export default function PrivacyPage() {
         </p>
 
         <h2 className={h}>Age</h2>
-        <p className="mt-2">CK Fitness is for adults aged 18 and over.</p>
+        <p className="mt-2">Chardikala Fitness is for adults aged 18 and over.</p>
 
         <h2 className={h}>Questions or complaints</h2>
         <p className="mt-2">

@@ -372,8 +372,8 @@ export function OnboardingFlow({ initial }: { initial: Data }) {
               onChange={(e) => set("acknowledged", e.target.checked)}
             />
             <span>
-              I understand CK Fitness gives general fitness guidance, not medical advice,
-              and I will check with a health professional if I have concerns.
+              I understand Chardikala Fitness gives general fitness guidance, not medical
+              advice, and I will check with a health professional if I have concerns.
             </span>
           </label>
           {errors.acknowledged ? (

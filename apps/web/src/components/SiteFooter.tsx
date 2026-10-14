@@ -22,7 +22,7 @@ export function SiteFooter({ dark = false }: { dark?: boolean }) {
           </Link>
         ))}
       </nav>
-      <p>&copy; CK Fitness / Chardikala Fitness &amp; Performance</p>
+      <p>&copy; Chardikala Fitness & Performance</p>
     </footer>
   );
 }

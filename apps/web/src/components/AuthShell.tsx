@@ -15,7 +15,7 @@ export function AuthShell({
     <>
       <main id="main" className="mx-auto max-w-md px-4 pt-10">
         <Link href="/" className="text-sm font-semibold text-accent-strong">
-          CK Fitness
+          Chardikala Fitness
         </Link>
         <h1 className="mt-2 font-display text-3xl text-brand">{title}</h1>
         {intro ? <p className="mt-2 text-muted">{intro}</p> : null}

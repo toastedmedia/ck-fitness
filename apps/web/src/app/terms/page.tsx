@@ -10,8 +10,8 @@ export default function TermsPage() {
     <>
       <main id="main" className="mx-auto max-w-2xl px-4 pt-10">
         <p className="rounded-card bg-surface p-3 text-xs font-semibold text-accent-strong">
-          Draft for review. Not final until approved by CK Fitness and checked by a
-          lawyer.
+          Draft for review. Not final until approved by Chardikala Fitness and checked by
+          a lawyer.
         </p>
         <h1 className="mt-4 font-display text-3xl text-brand">
           Terms of Use and Safety Notice
@@ -23,9 +23,9 @@ export default function TermsPage() {
 
         <h2 className={h}>Safety first</h2>
         <p className="mt-2">
-          CK Fitness gives general fitness guidance. It is not medical advice. Check with
-          a doctor or physiotherapist before starting a training, especially if you are
-          pregnant or postpartum, have an injury, a health condition, or have not
+          Chardikala Fitness gives general fitness guidance. It is not medical advice.
+          Check with a doctor or physiotherapist before starting a training, especially if
+          you are pregnant or postpartum, have an injury, a health condition, or have not
           exercised in a while. Stop if you feel sharp pain, dizziness or unwell. Exercise
           carries a risk of injury and you take part at your own risk.
         </p>
@@ -48,8 +48,8 @@ export default function TermsPage() {
 
         <h2 className={h}>Our content</h2>
         <p className="mt-2">
-          Trainings, videos and guides belong to CK Fitness. They are for your personal
-          use. Do not copy, share, resell or record them.
+          Trainings, videos and guides belong to Chardikala Fitness. They are for your
+          personal use. Do not copy, share, resell or record them.
         </p>
 
         <h2 className={h}>Acceptable use</h2>
@@ -66,9 +66,9 @@ export default function TermsPage() {
 
         <h2 className={h}>Liability</h2>
         <p className="mt-2">
-          To the extent allowed by law, CK Fitness is not liable for injuries or losses
-          that result from using the app. [Lawyer to complete.] These terms are governed
-          by the laws of British Columbia, Canada.
+          To the extent allowed by law, Chardikala Fitness is not liable for injuries or
+          losses that result from using the app. [Lawyer to complete.] These terms are
+          governed by the laws of British Columbia, Canada.
         </p>
 
         <h2 className={h}>Contact</h2>

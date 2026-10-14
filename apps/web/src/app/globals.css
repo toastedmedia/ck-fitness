@@ -68,3 +68,13 @@ button:disabled,
 [aria-disabled="true"] {
   cursor: not-allowed;
 }
+
+/* iPhone zooms the whole page when a text field smaller than 16px gets focus (and then will not zoom back).
+   Keeping fields at 16px on touch screens stops that. */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}

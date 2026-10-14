@@ -28,7 +28,7 @@ export async function Paywall({
     <Card className="bg-page">
       <Cap>CK Membership</Cap>
       <h2 className="mt-1 text-[15px] font-bold text-brand">
-        Unlock the complete CK Fitness experience
+        Unlock the complete Chardikala Fitness experience
       </h2>
       <ul className="mt-2 flex flex-col gap-1 text-xs">
         {[

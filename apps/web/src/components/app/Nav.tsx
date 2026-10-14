@@ -32,7 +32,7 @@ export function Nav() {
       className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:inset-y-0 md:left-0 md:right-auto md:w-56 md:grid-cols-1 md:content-start md:gap-1 md:border-r md:border-t-0 md:p-4"
     >
       <p className="hidden px-3 pb-4 pt-2 font-display text-xl text-brand md:block">
-        CK Fitness
+        Chardikala Fitness
       </p>
       {ITEMS.map((item) => {
         const on = path === item.href || path.startsWith(`${item.href}/`);

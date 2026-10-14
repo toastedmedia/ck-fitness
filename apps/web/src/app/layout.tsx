@@ -5,8 +5,9 @@ import "./globals.css";
 const jakarta = Plus_Jakarta_Sans({ variable: "--font-jakarta", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: { default: "CK Fitness", template: "%s | CK Fitness" },
-  description: "Training, progress and accountability, built for you by CK Fitness.",
+  title: { default: "Chardikala Fitness", template: "%s | Chardikala Fitness" },
+  description:
+    "Training, progress and accountability, built for you by Chardikala Fitness.",
   manifest: "/manifest.webmanifest",
 };
 

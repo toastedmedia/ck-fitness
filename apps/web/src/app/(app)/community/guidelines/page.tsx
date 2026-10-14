@@ -54,8 +54,8 @@ export default function GuidelinesPage() {
         </ul>
       </Card>
       <p className="text-[10.5px] text-muted">
-        CK Fitness community content is for general encouragement and is not medical
-        advice.
+        Chardikala Fitness community content is for general encouragement and is not
+        medical advice.
       </p>
     </>
   );
