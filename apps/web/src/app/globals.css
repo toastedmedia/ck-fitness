@@ -78,3 +78,35 @@ button:disabled,
     font-size: 16px;
   }
 }
+
+/* Inside the iPhone/Android app: the status bar strip and home-indicator strip stay solid navy and
+   never scroll away, content starts below the clock, and the tab bar sits above the bottom strip. */
+html[data-native] {
+  overscroll-behavior: none;
+}
+html[data-native] body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+html[data-native]::before,
+html[data-native]::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  background: var(--brand);
+  pointer-events: none;
+}
+html[data-native]::before {
+  top: 0;
+  height: env(safe-area-inset-top);
+}
+html[data-native]::after {
+  bottom: 0;
+  height: env(safe-area-inset-bottom);
+}
+html[data-native] nav[aria-label="Main"] {
+  bottom: env(safe-area-inset-bottom);
+  padding-bottom: 0;
+}

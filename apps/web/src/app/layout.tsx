@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { NativeShell } from "@/components/NativeShell";
 
 const jakarta = Plus_Jakarta_Sans({ variable: "--font-jakarta", subsets: ["latin"] });
 
@@ -15,6 +16,8 @@ export const viewport: Viewport = {
   themeColor: "#1b1b36",
   width: "device-width",
   initialScale: 1,
+  // Lets the page use the whole screen; the safe-area padding then keeps content clear of notches.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -29,6 +32,7 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
+        <NativeShell />
         {children}
       </body>
     </html>

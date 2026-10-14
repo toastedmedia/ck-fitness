@@ -18,7 +18,9 @@ const config: CapacitorConfig = {
   },
   ios: {
     appendUserAgent: "CKFitnessApp",
-    contentInset: "always",
+    // The page fills the whole screen; the web app keeps its own fixed navy strips behind the clock
+    // and the home indicator (see globals.css, html[data-native]).
+    contentInset: "never",
     backgroundColor: "#1b1b36",
     limitsNavigationsToAppBoundDomains: false,
   },
