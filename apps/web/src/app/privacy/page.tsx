@@ -30,8 +30,9 @@ export default function PrivacyPage() {
             you opened the app, and which device you turn notifications on for.
           </li>
           <li>
-            Payment status. Card payments are handled by Stripe. We never see or store
-            your card number.
+            Membership status. Membership payments are handled by Stripe, outside the app.
+            The app does not collect payment details, and we never see or store your card
+            number.
           </li>
           <li>
             Progress photos, only if you choose to upload them. They are stored privately
@@ -73,10 +74,10 @@ export default function PrivacyPage() {
         <p className="mt-2">
           Service providers that help us run the app, under contract: Supabase (database
           and sign-in), Vercel (hosting), Cloudflare (video and file storage), Stripe
-          (payments on our website), Resend (account emails) and Toasted Media CRM
-          (follow-up messages you have agreed to). Some of these may store data outside
-          Canada, including in the United States. We may also share information if the law
-          requires it.
+          (membership payments, outside the app), Resend (account emails) and Toasted
+          Media CRM (follow-up messages you have agreed to). Some of these may store data
+          outside Canada, including in the United States. We may also share information if
+          the law requires it.
         </p>
 
         <h2 className={h}>Your choices</h2>
