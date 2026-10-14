@@ -3,7 +3,7 @@
 > **Rule from the owners (12 Oct 2026):** the CK Fitness folder has exactly TWO living files for project state: this file (`CLAUDE.md` = memory) and `FEATURES.md` (= features). When asked to "update memory and features", edit only these two. Do not create extra status, changelog or notes files. (`docs/` holds how-to guides such as setup and deploy; do not add status notes there.)
 
 **Owners:** Kv & Chanveer. **Business:** CK Fitness / Chardikala Fitness & Performance. **CRM name:** Toasted Media CRM (never use another CRM vendor name in user-facing copy or docs).
-**Specs (PDFs in repo root):** Build-Out Guide v1.0 and Master Planning Plan v1.1. **Today:** 2026-10-13.
+**Specs (PDFs in repo root):** Build-Out Guide v1.0 and Master Planning Plan v1.1. **Today:** 2026-10-14.
 
 ## Where everything lives (nothing runs on the laptop; the laptop is being sold)
 | Piece | Where |
@@ -15,17 +15,17 @@
 | Tests on GitHub | `.github/workflows/ci.yml` (every push), `smoke.yml` (daily live check with Playwright in `e2e/`) |
 | Secrets | Password manager + Vercel env vars only. Never in the repo |
 
-## Accounts (status 2026-10-12)
-Done: GitHub, domain (chardikalafitness.com), Supabase org + staging, Vercel (env: Supabase URL/anon/service role, `NEXT_PUBLIC_SITE_URL`, `CRON_SECRET`), owner role SQL run for chanveerkaur5310@gmail.com.
-**Pending (owners):** Resend + Supabase SMTP (then turn "Confirm email" back ON; templates in `docs/email-templates`), support inbox (support@chardikalafitness.com), Cloudflare **R2** video bucket (private bucket, API token, 4 Vercel vars, CORS; see `docs/STORAGE.md`), Stripe (CAD, product $29.99, webhook), Toasted Media CRM API token, Sentry, Google Analytics (optional), Supabase **production** project (Pro), Vercel cleanup (remove unused Supabase-integration vars; Node 22.x), Supabase redirect URLs (Site URL + `/auth/callback`). Apple Developer owned (Phase 2).
+## Accounts (status 2026-10-14)
+**Done:** GitHub, domain, Supabase org + staging, Vercel (Supabase, `CRON_SECRET`, site URL, R2 x4, Stripe live key/price/webhook secret), Cloudflare R2 bucket + API token (upload test passed), Stripe **live** with the price set to a flat **$31.49 CAD incl. 5% GST**, Apple Developer (paid), App ID `com.chardikalafitness.app` (Push on), App Store Connect app **Chardikala Fitness**, App Store Connect API key, Codemagic (certificate + App Store profile, first iPhone build uploaded and processed; owners are testing it in TestFlight).
+**Pending (owners):** SQL 0020 and 0021; Stripe dashboard settings (Smart Retries 1 week then cancel, failed-payment and expiring-card emails, customer portal; prompt for the Stripe chat was given) and a real $31.49 payment test then refund; Admin -> Settings: price text "$31.49 CAD / month (includes GST)" and the referral reward text; GST number + "includes GST" on Stripe invoices; Resend + Supabase SMTP + redirect URLs (then Confirm email ON; before inviting imported members); support inbox; CRM token; Sentry; production Supabase; Vercel cleanup (Node 22.x, unused Supabase vars); website landing page (prompt given); Google Play (D-U-N-S, organization account, Codemagic Android keystore + service account); EU trader status decision; App Store page (screenshots, privacy label, age rating, review account, final vector logo); lawyer review of Privacy/Terms/consent; live QA; 20-50 person beta.
 
 ## State
-Phase 1 is code-complete. Not launch-ready until the pending accounts are connected, real flows are tested on staging (`docs/QA_CHECKLIST.md`), content is loaded, legal text is lawyer-approved, and a 20-50 person beta is done. Phase 2 (native iOS) not started.
-Automated checks (all passing): `npm run check` = format, lint, types, 100 core tests, 8 web tests, 71 database tests (every migration runs in an in-memory Postgres/PGlite and row-level security is verified), production build.
+Phase 1 is code-complete and live on staging. The iPhone app (Capacitor shell, loads the live site) is built by Codemagic and installed from TestFlight; the owners are collecting a few last fixes. Website changes reach the app instantly (no rebuild); native changes (icon, name, permissions, push) need a new Codemagic build. Not launch-ready until the pending items below are done.
+Automated checks (all passing): `npm run check` = format, lint, types, 110 core tests, 8 web tests, 73 database tests, production build. Verify builds with the scratchpad `verify.sh` (builds in `/private/tmp/ck-verify`; iCloud makes in-place builds and sometimes `git commit` stall, retry in steps).
 
 ## Database changes the owners must paste into Supabase SQL Editor
 **Verify what is applied:** run `supabase/check-migrations.sql` (read-only; one APPLIED/MISSING row per migration 0001-0020; add a row to it with every new migration). Owners ran 0012-0017 on staging on 2026-10-13.
-Migrations live in `supabase/migrations` (0001 to 0020). `supabase/all-migrations.sql` = all of them for a brand-new project. **Staging has 0001 to 0011 for sure; run 0012 to 0017 (all idempotent, safe to repeat; one combined file is sent to the owners).** New migrations are always sent to the owners as a file; app code falls back safely if a deploy lands before its migration.
+Migrations live in `supabase/migrations` (0001 to 0021). `supabase/all-migrations.sql` = all of them for a brand-new project. **Staging has 0001 to 0019 applied (confirmed by the check query); 0020 (referrals) and 0021 (3-day grace) are pending.** All idempotent, safe to repeat. New migrations are always sent to the owners as pasteable SQL; app code falls back safely if a deploy lands before its migration.
 
 ## Key decisions (with dates)
 - **Video on Cloudflare R2, not Stream (13 Oct, owner decision; deviation from the guide):** Stream bills per minute watched; R2 bills storage only and has no viewing fees, no length or size limit. Admin uploads straight to R2 in slices; playback is a 6-hour signed link after an access check; plain HTML5 player (no adaptive quality, so encode MP4 H.264). Lesson thumbnails added. `stream_uid` column kept but unused.
@@ -46,8 +46,8 @@ Follow the guide phase by phase; entitlement checks on server AND database; paid
 Commands (Node 20+): `npm run check`. **Environment:** the owner's Mac was 98% full and iCloud evicted `node_modules` so builds hung; builds were verified in a copy outside iCloud (`/private/tmp/ck-verify`). Move the repo out of `~/Documents` or work from GitHub/Codespaces.
 
 ## Pending / next
-Owners (as of 13 Oct): run SQL 0018 (0001-0017 confirmed APPLIED on staging by `supabase/check-migrations.sql`); Stripe is in LIVE mode with env vars set (do one real $29.99 payment test, then refund); R2 token + 4 Vercel vars done, upload test passed; still to do: web push keys (optional), Resend + redirect URLs, support inbox, CRM token, Sentry, production Supabase, Vercel cleanup, landing page (prompt given), Apple/Google/Codemagic accounts (`docs/APP_STORES.md`), D-U-N-S for Google Play org account, lawyer review, live QA (`docs/QA_CHECKLIST.md`), 20-50 person beta.
-Next builds (me): native push (APNs/Firebase) for the store apps, logged-in Playwright tests once a test account exists, week description/image and drag-to-reorder in the builder (optional), then whatever live testing finds.
+Owners: see "Pending (owners)" under Accounts. Immediate order: run SQL 0020+0021 -> send the last 3-4 app fixes -> new iPhone build (new icon) -> TestFlight check -> App Store page + review account -> Submit for Review (Apple review about 1-3 days).
+Me: apply the owners' fixes; native push for the iPhone app (needs an Apple APNs key from the owners; do after the first approved build unless Apple raises guideline 4.2); logged-in Playwright tests once a test account exists; drag-to-reorder and week description in the builder (optional); Android build once Google Play is set up.
 
 ## Change log (newest first)
 - **2026-10-13 (new icon):** App icon is the Chardikala flame on white (from `apps/mobile/assets/logo-source.png`, 1250px, low resolution; ask the owners for a vector/high-res logo for the final store icon). Splash = full logo on white. iPhone icons are generated in the cloud build (`capacitor-assets`, white backgrounds); Android icons committed under `android/app/src/main/res`; web icons `apps/web/src/app/icon.png` and `apple-icon.png` replace the old CK text icons. Needs a new iPhone build to appear on the phone.

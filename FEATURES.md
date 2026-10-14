@@ -1,4 +1,4 @@
-# CK Fitness App: FEATURES (single features file, updated 2026-10-13 (the app calls them Trainings))
+# CK Fitness App: FEATURES (single features file, updated 2026-10-14; the app calls them Trainings))
 
 Legend: ✅ built and tested in code · 🔌 built, needs an outside account/keys to work live · 🚧 built, needs owner action · ⏳ not built.
 Nothing has been verified against live Stripe, Cloudflare or the CRM yet. Status of accounts and decisions is in `CLAUDE.md`.
@@ -17,7 +17,7 @@ Nothing has been verified against live Stripe, Cloudflare or the CRM yet. Status
 - 🔌 Membership checkout, billing portal, cancel (Stripe direct)
 - ✅ **Community (Facebook-style feed):** posts by type (Win, Question, Tip, Motivation) + CK Team announcements/pinned posts; **five reactions** (Like, Love, Strong, Celebrate, Support); comments with replies; edit within 15 min; **photo posts** (up to 4, private storage, staff approval on by default); search, filters, Newest/Top; **Members directory** and community cards (bio, can opt out); report, block, auto-hide after 3 reports; guidelines gate; daily limits; community notifications (toggle in Profile). ⏳ Video posts and groups not built
 - ✅ Notifications centre, support requests with staff replies, Profile (details, units, sharing choices, notification consent, data download, delete account)
-- 🔌 iPhone and Android app shell (Capacitor, built; needs store accounts + cloud build; hides prices and buy buttons inside the app; see docs/APP_STORES.md)
+- 🔌 **iPhone app** (Capacitor, name Chardikala Fitness): built in the cloud, on TestFlight, loads the live site so web changes appear instantly; fixed navy bars behind the clock and home indicator; no prices or buy buttons inside it. Android built but waiting on Google Play account. ⏳ App Store submission; native push
 - ⏳ Apple Health and native push (Phase 2)
 - 🔌 Web push notifications (built; switches on when the three VAPID variables are added in Vercel; per-device button in Profile)
 
@@ -39,5 +39,8 @@ Nothing has been verified against live Stripe, Cloudflare or the CRM yet. Status
 - ✅ GitHub Actions CI, daily live smoke tests, security headers, privacy-safe Sentry hooks (needs DSN), PWA icons, error/loading pages, accessibility scan fixes
 - ✅ Account deletion removes data, photos and cancels Stripe; data download
 
+- ✅ Header: page title or back link sits beside the bell and avatar on every client page; hand cursor on every control; phone text fields no longer auto-zoom
+- ✅ Price: $31.49 CAD per month including GST (Stripe price); failed renewals keep access 3 days, then lock until paid
+
 ## Still to do before launch (owners)
-Accounts above in `CLAUDE.md`, live QA, content (trainings, videos, covers, safety notes), lawyer-approved Privacy Policy and Terms, 20-50 person beta, production project.
+See `CLAUDE.md` Accounts and Pending: SQL 0020/0021, Stripe dashboard settings and live payment test, Resend, support inbox, CRM token, Sentry, production Supabase, landing page, App Store page and review, Google Play, lawyer-approved Privacy/Terms, live QA, 20-50 person beta.
