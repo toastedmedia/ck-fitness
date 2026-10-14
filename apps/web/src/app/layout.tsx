@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { NativeShell } from "@/components/NativeShell";
+import { NavProgress } from "@/components/NavProgress";
 
 const jakarta = Plus_Jakarta_Sans({ variable: "--font-jakarta", subsets: ["latin"] });
 
@@ -33,6 +34,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         <NativeShell />
+        <NavProgress />
         {children}
       </body>
     </html>

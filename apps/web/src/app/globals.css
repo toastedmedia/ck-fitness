@@ -145,3 +145,48 @@ html[data-native] nav[aria-label="Main"] {
     min-height: 1.5em;
   }
 }
+
+/* Page-loading line (see NavProgress): fills to 85% while loading, then completes and fades. */
+.ck-bar-run,
+.ck-bar-done {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 0 3px 3px 0;
+  box-shadow: 0 0 8px var(--accent);
+}
+.ck-bar-run {
+  width: 0;
+  animation: ck-bar-grow 2.6s cubic-bezier(0.1, 0.7, 0.2, 1) forwards;
+}
+.ck-bar-done {
+  width: 100%;
+  animation: ck-bar-finish 0.6s ease-out forwards;
+}
+@keyframes ck-bar-grow {
+  to {
+    width: 85%;
+  }
+}
+@keyframes ck-bar-finish {
+  0% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ck-bar-run {
+    animation-duration: 0.01s;
+    width: 60%;
+  }
+}
+
+/* Instant press feedback on anything tappable. */
+a[href]:active,
+button:not(:disabled):active {
+  opacity: 0.75;
+}
