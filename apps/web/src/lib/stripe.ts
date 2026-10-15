@@ -5,6 +5,7 @@ import {
   membershipFromSubscription,
   type MembershipRow,
 } from "@ck/core";
+import { sendMemberEmail } from "@/lib/email/send";
 import { notifyUser, queueCrm, track } from "@/lib/events";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 
@@ -84,6 +85,8 @@ export async function syncSubscription(subscriptionId: string, fallbackUserId?: 
         body: "Your full training library is unlocked.",
         link: "/programs",
       });
+    if (event === "membership_started")
+      await sendMemberEmail(userId, "membership_welcome");
     if (event === "billing_problem")
       await notifyUser(userId, {
         kind: "billing",
@@ -91,6 +94,7 @@ export async function syncSubscription(subscriptionId: string, fallbackUserId?: 
         body: "Please update your card to keep your access.",
         link: "/membership",
       });
+    if (event === "billing_problem") await sendMemberEmail(userId, "payment_problem");
     if (event === "membership_expired")
       await notifyUser(userId, {
         kind: "billing",
@@ -98,6 +102,7 @@ export async function syncSubscription(subscriptionId: string, fallbackUserId?: 
         body: "You can rejoin any time.",
         link: "/membership",
       });
+    if (event === "membership_expired") await sendMemberEmail(userId, "membership_ended");
   }
 }
 

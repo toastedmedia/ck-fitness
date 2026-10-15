@@ -1,5 +1,7 @@
 "use server";
 
+import { sendMemberEmail } from "@/lib/email/send";
+import { createAdminSupabase } from "@/lib/supabase/admin";
 import {
   needsSafetyGuidance,
   validateAbout,
@@ -76,6 +78,16 @@ export async function saveOnboardingStep(
         location: ob?.training_location,
       });
       await track(id, "onboarding_completed");
+      // One welcome email, the first time she finishes onboarding.
+      const { count } = await createAdminSupabase()
+        .from("analytics_events")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", id)
+        .eq("event_name", "email_welcome");
+      if (!count) {
+        await track(id, "email_welcome");
+        await sendMemberEmail(id, "welcome");
+      }
     }
     return done;
   };

@@ -14,3 +14,4 @@ export * from "./community";
 export * from "./trends";
 export * from "./progress";
 export * from "./members";
+export * from "./emails";

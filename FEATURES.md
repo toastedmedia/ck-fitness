@@ -39,6 +39,7 @@ Nothing has been verified against live Stripe, Cloudflare or the CRM yet. Status
 - ✅ GitHub Actions CI, daily live smoke tests, security headers, privacy-safe Sentry hooks (needs DSN), PWA icons, error/loading pages, accessibility scan fixes
 - ✅ Account deletion removes data, photos and cancels Stripe; data download
 
+- 🔌 **Emails from the app** (needs RESEND_API_KEY): welcome, weekly check-in reminder, we-miss-you nudge, membership started / payment problem / ended, support received / replied; one-click unsubscribe; Admin -> Emails preview and test send
 - ✅ Loading feedback: a thin gold line fills when a link or form is tapped; tappable things dim while pressed
 - ✅ Real Privacy Policy and Terms (no placeholders; billing section hidden inside the store app); phone number required at sign-up, onboarding and Profile
 - ✅ Admin: program builder drag and drop (reorder weeks and lessons, move a lesson to another week); a lesson with no video shows only its picture; a training no longer needs a duration to publish

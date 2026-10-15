@@ -3,17 +3,22 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  ALWAYS_SENT,
+  EMAIL_LABELS,
   audienceMatches,
   canManageRole,
   normalizePhone,
   parseProgramImport,
+  renderEmail,
   resolveMembership,
   validateForPublish,
   STAFF_ROLES,
   type AudienceKey,
+  type EmailKey,
 } from "@ck/core";
 import { CONTENT, OPS, SUPPORT, audit, requireStaff } from "@/lib/admin";
 import { processCrmQueue } from "@/lib/crm";
+import { sendMemberEmail, sendRaw } from "@/lib/email/send";
 import { notifyUser } from "@/lib/events";
 import { createMember, grantAccess } from "@/lib/members";
 import { releaseVideo } from "@/lib/r2";
@@ -669,6 +674,7 @@ export async function updateSupportRequest(
       body: reply.slice(0, 120),
       link: "/accountability/help",
     });
+  if (reply && row?.user_id) await sendMemberEmail(row.user_id, "support_replied");
   void db;
   redirect("/admin/support?saved=1");
 }
@@ -1288,4 +1294,37 @@ export async function reorderOutline(
   await audit(supabase, user.id, "program.reorder", programId);
   revalidatePath("/programs");
   return { ok: true };
+}
+
+/** Owner/admin: sends one sample email (with example data) to their own address so they can see the real thing. */
+export async function sendTestEmail(formData: FormData): Promise<void> {
+  const { user, db } = await requireStaff(OPS);
+  const key = str(formData, "key") as EmailKey;
+  if (!(key in EMAIL_LABELS)) redirect("/admin/emails?error=key");
+  const { data: me } = await db
+    .from("profiles")
+    .select("email,first_name")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!me?.email) redirect("/admin/emails?error=noemail");
+  const site = (
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://app.chardikalafitness.com"
+  ).replace(/\/$/, "");
+  const e = renderEmail(
+    key,
+    { name: me.first_name ?? undefined },
+    {
+      siteUrl: site,
+      unsubscribeUrl: ALWAYS_SENT.includes(key)
+        ? undefined
+        : `${site}/api/email/unsubscribe?t=sample`,
+    },
+  );
+  const ok = await sendRaw({
+    to: me.email,
+    subject: `[TEST] ${e.subject}`,
+    html: e.html,
+    text: e.text,
+  });
+  redirect(`/admin/emails?${ok ? `sent=${encodeURIComponent(me.email)}` : "error=send"}`);
 }

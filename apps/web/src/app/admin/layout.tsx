@@ -39,6 +39,7 @@ const NAV = [
   { href: "/admin/kpis", label: "KPIs", roles: ["owner", "admin"] },
   { href: "/admin/tags", label: "Tags", roles: ["owner", "admin", "content_manager"] },
   { href: "/admin/notifications", label: "Notifications", roles: ["owner", "admin"] },
+  { href: "/admin/emails", label: "Emails", roles: ["owner", "admin"] },
   { href: "/admin/crm", label: "CRM sync", roles: ["owner", "admin"] },
   { href: "/admin/settings", label: "Settings", roles: ["owner", "admin"] },
   { href: "/admin/audit", label: "Audit log", roles: ["owner", "admin"] },

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { dayKey, dayOfWeek, hourIn, weekStart, workoutReminderDue } from "@ck/core";
 import { cronGuard } from "@/lib/cron";
+import { sendMemberEmail } from "@/lib/email/send";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -53,7 +54,12 @@ export async function GET(request: NextRequest) {
     const { error } = await db
       .from("notifications")
       .insert({ user_id: userId, kind, title, body, link, dedupe_key: key });
-    if (!error) created++; // a duplicate key just means it was already sent
+    if (!error) {
+      created++; // a duplicate key just means it was already sent
+      // The two accountability nudges that are worth an email too (the rest stay in-app).
+      if (kind === "checkin") await sendMemberEmail(userId, "checkin_reminder");
+      if (kind === "restart") await sendMemberEmail(userId, "we_miss_you");
+    }
   };
 
   for (const p of (profiles ?? []) as {

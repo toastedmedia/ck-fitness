@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { getContext } from "@/lib/app";
+import { sendMemberEmail } from "@/lib/email/send";
 import { queueCrm, track } from "@/lib/events";
 
 /** A member explicitly asks for a real person. Creates a support request and a CRM task. */
@@ -23,5 +24,6 @@ export async function sendHelpRequest(formData: FormData): Promise<void> {
   const event = category === "coaching" ? "coaching_interest" : "help_requested";
   await queueCrm(user.id, event, { category, program, message: message.slice(0, 500) });
   await track(user.id, event, { category });
+  await sendMemberEmail(user.id, "support_received");
   redirect("/accountability/help?sent=1");
 }
