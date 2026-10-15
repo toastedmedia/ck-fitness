@@ -71,7 +71,9 @@ export default async function AdminAccountability() {
               </td>
               <td className={td}>
                 {r.last_activity_at
-                  ? new Date(r.last_activity_at).toLocaleDateString("en-CA", { timeZone: "America/Vancouver", timeZone: "America/Vancouver" })
+                  ? new Date(r.last_activity_at).toLocaleDateString("en-CA", {
+                      timeZone: "America/Vancouver",
+                    })
                   : "-"}
               </td>
               <td className={td}>

@@ -50,7 +50,8 @@ export default async function MemberCard({
             <h1 className="font-display text-[17px] text-brand">{m.display_name}</h1>
             <p className="text-[11px] text-muted">
               In the community since{" "}
-              {new Date(m.created_at).toLocaleDateString("en-CA", { timeZone: "America/Vancouver",
+              {new Date(m.created_at).toLocaleDateString("en-CA", {
+                timeZone: "America/Vancouver",
                 month: "long",
                 year: "numeric",
               })}

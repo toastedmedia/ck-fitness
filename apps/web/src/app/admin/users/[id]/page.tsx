@@ -327,13 +327,19 @@ export default async function AdminClient({
           <dl className="grid gap-x-6 gap-y-2 text-sm md:grid-cols-2">
             <div>
               <dt className="text-xs text-muted">Joined</dt>
-              <dd>{new Date(p.created_at).toLocaleDateString("en-CA", { timeZone: "America/Vancouver", timeZone: "America/Vancouver" })}</dd>
+              <dd>
+                {new Date(p.created_at).toLocaleDateString("en-CA", {
+                  timeZone: "America/Vancouver",
+                })}
+              </dd>
             </div>
             <div>
               <dt className="text-xs text-muted">Last active</dt>
               <dd>
                 {p.last_active_at
-                  ? new Date(p.last_active_at).toLocaleDateString("en-CA", { timeZone: "America/Vancouver", timeZone: "America/Vancouver" })
+                  ? new Date(p.last_active_at).toLocaleDateString("en-CA", {
+                      timeZone: "America/Vancouver",
+                    })
                   : "Never"}
               </dd>
             </div>
@@ -359,7 +365,7 @@ export default async function AdminClient({
               <dt className="text-xs text-muted">Terms accepted</dt>
               <dd>
                 {p.terms_accepted_at
-                  ? `${new Date(p.terms_accepted_at).toLocaleDateString("en-CA", { timeZone: "America/Vancouver", timeZone: "America/Vancouver" })} (${p.terms_version ?? "?"})`
+                  ? `${new Date(p.terms_accepted_at).toLocaleDateString("en-CA", { timeZone: "America/Vancouver" })} (${p.terms_version ?? "?"})`
                   : "Not recorded"}
               </dd>
             </div>
@@ -459,7 +465,7 @@ export default async function AdminClient({
             </Status>
             {m ? ` · via ${m.provider}` : ""}
             {res.endsAt
-              ? ` · until ${new Date(res.endsAt).toLocaleDateString("en-CA", { timeZone: "America/Vancouver", timeZone: "America/Vancouver" })}`
+              ? ` · until ${new Date(res.endsAt).toLocaleDateString("en-CA", { timeZone: "America/Vancouver" })}`
               : ""}
             {res.cancelling ? " · cancelling" : ""}
           </p>
@@ -482,7 +488,9 @@ export default async function AdminClient({
                   <tr key={i.id}>
                     <td className={td}>{i.number ?? i.id.slice(-8)}</td>
                     <td className={td}>
-                      {new Date(i.created).toLocaleDateString("en-CA", { timeZone: "America/Vancouver", timeZone: "America/Vancouver" })}
+                      {new Date(i.created).toLocaleDateString("en-CA", {
+                        timeZone: "America/Vancouver",
+                      })}
                     </td>
                     <td className={td}>
                       ${i.amount.toFixed(2)} {i.currency}
@@ -630,7 +638,11 @@ export default async function AdminClient({
       ["Why she is starting", o?.starting_reason],
       [
         "Safety acknowledgement",
-        o?.health_ack_at ? new Date(o.health_ack_at).toLocaleDateString("en-CA", { timeZone: "America/Vancouver", timeZone: "America/Vancouver" }) : null,
+        o?.health_ack_at
+          ? new Date(o.health_ack_at).toLocaleDateString("en-CA", {
+              timeZone: "America/Vancouver",
+            })
+          : null,
       ],
     ];
     return (
@@ -982,7 +994,9 @@ export default async function AdminClient({
           <div className="mt-2 flex items-center justify-between text-xs text-muted">
             <span>
               {(n.author_id && who.get(n.author_id)) || "Staff"} ·{" "}
-              {new Date(n.created_at).toLocaleString("en-CA", { timeZone: "America/Vancouver", timeZone: "America/Vancouver" })}
+              {new Date(n.created_at).toLocaleString("en-CA", {
+                timeZone: "America/Vancouver",
+              })}
             </span>
             {n.author_id === me.id || roles.includes("owner") ? (
               <form action={deleteClientNote.bind(null, id, n.id)}>

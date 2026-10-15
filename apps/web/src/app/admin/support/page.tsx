@@ -64,7 +64,10 @@ export default async function AdminSupport({
               {t.profiles?.first_name} {t.profiles?.last_name}
             </Link>
             <span className="text-xs text-muted">
-              {t.profiles?.email} · {new Date(t.created_at).toLocaleString("en-CA", { timeZone: "America/Vancouver", timeZone: "America/Vancouver" })}
+              {t.profiles?.email} ·{" "}
+              {new Date(t.created_at).toLocaleString("en-CA", {
+                timeZone: "America/Vancouver",
+              })}
             </span>
           </div>
           <p className="mt-2 whitespace-pre-line text-sm">{t.message}</p>

@@ -60,7 +60,11 @@ export default async function AdminCrm({
         <Table head={["When", "Event", "Member", "Status", "Detail", ""]}>
           {rows.map((r) => (
             <tr key={r.id}>
-              <td className={td}>{new Date(r.created_at).toLocaleString("en-CA", { timeZone: "America/Vancouver", timeZone: "America/Vancouver" })}</td>
+              <td className={td}>
+                {new Date(r.created_at).toLocaleString("en-CA", {
+                  timeZone: "America/Vancouver",
+                })}
+              </td>
               <td className={td}>
                 <code>{r.event_type}</code>
               </td>

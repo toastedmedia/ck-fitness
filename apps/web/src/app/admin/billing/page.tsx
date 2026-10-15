@@ -122,7 +122,11 @@ export default async function AdminBilling() {
                 </Status>
               </td>
               <td className={td}>
-                {m.period_end ? new Date(m.period_end).toLocaleDateString("en-CA", { timeZone: "America/Vancouver", timeZone: "America/Vancouver" }) : "-"}
+                {m.period_end
+                  ? new Date(m.period_end).toLocaleDateString("en-CA", {
+                      timeZone: "America/Vancouver",
+                    })
+                  : "-"}
               </td>
               <td className={td}>{m.provider}</td>
               <td className={td}>
@@ -158,7 +162,11 @@ export default async function AdminBilling() {
           <Table head={["Date", "Invoice", "Customer", "Amount", "Status", ""]}>
             {invoices.map((i) => (
               <tr key={i.id}>
-                <td className={td}>{new Date(i.created).toLocaleDateString("en-CA", { timeZone: "America/Vancouver", timeZone: "America/Vancouver" })}</td>
+                <td className={td}>
+                  {new Date(i.created).toLocaleDateString("en-CA", {
+                    timeZone: "America/Vancouver",
+                  })}
+                </td>
                 <td className={td}>{i.number ?? i.id.slice(-8)}</td>
                 <td className={td}>{i.customerEmail ?? "-"}</td>
                 <td className={td}>

@@ -15,7 +15,8 @@ const mmss = (sec: number) =>
   `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, "0")}`;
 const when = (iso: string | null) =>
   iso
-    ? new Date(iso).toLocaleString("en-CA", { timeZone: "America/Vancouver",
+    ? new Date(iso).toLocaleString("en-CA", {
+        timeZone: "America/Vancouver",
         day: "numeric",
         month: "short",
         hour: "numeric",
@@ -711,7 +712,8 @@ export async function ActivityTab({
               {list.map((i, n) => (
                 <li key={n} className="flex items-start gap-3 py-2 text-sm">
                   <span className="w-14 shrink-0 text-xs tabular-nums text-muted">
-                    {new Date(i.at).toLocaleTimeString("en-CA", { timeZone: "America/Vancouver",
+                    {new Date(i.at).toLocaleTimeString("en-CA", {
+                      timeZone: "America/Vancouver",
                       hour: "numeric",
                       minute: "2-digit",
                     })}

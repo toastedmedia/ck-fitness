@@ -366,7 +366,9 @@ export default async function AdminCommunity({
               ) : (
                 <Status tone="warn">
                   muted until{" "}
-                  {new Date(m.community_muted_until!).toLocaleDateString("en-CA", { timeZone: "America/Vancouver", timeZone: "America/Vancouver" })}
+                  {new Date(m.community_muted_until!).toLocaleDateString("en-CA", {
+                    timeZone: "America/Vancouver",
+                  })}
                 </Status>
               )}
             </span>
