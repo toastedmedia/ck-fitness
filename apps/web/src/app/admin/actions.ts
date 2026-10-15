@@ -6,6 +6,7 @@ import {
   ALWAYS_SENT,
   EMAIL_LABELS,
   renderCampaign,
+  validBannerLink,
   MAX_BULK_ACCESS,
   cleanIds,
   audienceMatches,
@@ -1570,4 +1571,99 @@ export async function duplicateCampaign(id: string): Promise<void> {
 export async function countCampaignAudience(a: Audience): Promise<number> {
   const { db } = await requireStaff(OPS);
   return (await audienceUserIds(db, a)).length;
+}
+
+/* -------------------------------------------------------------- home banners */
+/** A calendar date typed in the admin, as the start or end of that day in Vancouver. */
+function vancouverDay(date: string, end: boolean): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  const utc = new Date(`${date}T${end ? "23:59:59" : "00:00:00"}Z`);
+  const p = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Vancouver",
+      hourCycle: "h23",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    })
+      .formatToParts(utc)
+      .map((x) => [x.type, x.value]),
+  );
+  const asUtc = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second);
+  return new Date(utc.getTime() + (utc.getTime() - asUtc)).toISOString();
+}
+
+export async function saveBanner(formData: FormData): Promise<void> {
+  const { supabase, user } = await requireStaff(CONTENT);
+  const id = str(formData, "id");
+  const back = (q: string) => redirect(`/admin/banners?${q}${id ? `&edit=${id}` : ""}`);
+  const title = str(formData, "title", 100);
+  const link = str(formData, "link_url", 500);
+  if (!title) back("error=title");
+  if (!validBannerLink(link)) back("error=link");
+  const audience = ["free", "member"].includes(str(formData, "audience"))
+    ? str(formData, "audience")
+    : "all";
+  const row: Record<string, unknown> = {
+    title,
+    alt: str(formData, "alt", 200) || title,
+    link_url: link,
+    audience,
+    starts_at: vancouverDay(str(formData, "starts"), false),
+    ends_at: vancouverDay(str(formData, "ends"), true),
+    active: formData.get("active") === "on",
+    sort_order: int(formData, "sort_order", 0),
+  };
+  const file = formData.get("image");
+  if (file instanceof File && file.size > 0) {
+    if (
+      !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
+      file.size > 2_097_152
+    )
+      back("error=image");
+    const path = `banners/${crypto.randomUUID()}.jpg`;
+    const { error } = await supabase.storage
+      .from("program-thumbnails")
+      .upload(path, file, { contentType: file.type });
+    if (error) back("error=image");
+    row.image_path = path;
+  } else if (!id) back("error=image");
+  if (id) {
+    const { error } = await supabase.from("home_banners").update(row).eq("id", id);
+    if (error) back("error=save");
+  } else {
+    const { error } = await supabase
+      .from("home_banners")
+      .insert({ ...row, created_by: user.id });
+    if (error) back("error=save");
+  }
+  await audit(supabase, user.id, id ? "banner.update" : "banner.create", id || title);
+  revalidatePath("/home");
+  redirect("/admin/banners?saved=1");
+}
+
+export async function toggleBanner(id: string, on: boolean): Promise<void> {
+  const { supabase, user } = await requireStaff(CONTENT);
+  await supabase.from("home_banners").update({ active: on }).eq("id", id);
+  await audit(supabase, user.id, on ? "banner.on" : "banner.off", id);
+  revalidatePath("/home");
+  redirect("/admin/banners?saved=1");
+}
+
+export async function deleteBanner(id: string): Promise<void> {
+  const { supabase, user } = await requireStaff(CONTENT);
+  const { data } = await supabase
+    .from("home_banners")
+    .select("image_path")
+    .eq("id", id)
+    .maybeSingle();
+  await supabase.from("home_banners").delete().eq("id", id);
+  if (data?.image_path)
+    await supabase.storage.from("program-thumbnails").remove([data.image_path]);
+  await audit(supabase, user.id, "banner.delete", id);
+  revalidatePath("/home");
+  redirect("/admin/banners?saved=1");
 }

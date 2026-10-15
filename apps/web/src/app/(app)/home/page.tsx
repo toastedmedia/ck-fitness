@@ -39,8 +39,10 @@ import { activeDays } from "@/lib/milestones";
 import { ensurePlan, ensureWeekPlanned } from "@/lib/plan";
 import { getTodayWorkout } from "@/lib/programs";
 import { flags } from "@/lib/flags";
+import { bannerVisible } from "@ck/core";
 import { isNativeApp } from "@/lib/native";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { HomeBanners } from "@/components/home/HomeBanners";
 import { ReferralCard } from "@/components/home/ReferralCard";
 import { getViewer } from "@/lib/viewer";
 
@@ -228,6 +230,23 @@ export default async function HomePage({
   }).format(new Date());
   const isMember = viewer.entitlement !== "free";
   const native = await isNativeApp();
+  // Promo banners (missing table = none, so Home never breaks before the SQL is run).
+  const { data: bannerRows } = await supabase
+    .from("home_banners")
+    .select("id,title,alt,image_path,link_url,audience,starts_at,ends_at,active")
+    .eq("active", true)
+    .order("sort_order")
+    .order("created_at", { ascending: false });
+  const banners = (bannerRows ?? [])
+    .filter((b) => bannerVisible(b, new Date(), isMember))
+    .slice(0, 3)
+    .map((b) => ({
+      id: b.id as string,
+      title: b.title as string,
+      alt: b.alt as string,
+      link_url: b.link_url as string,
+      src: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/program-thumbnails/${b.image_path}`,
+    }));
 
   // Invite card. Tolerates the referral columns not existing yet (card is simply hidden).
   const [refRow, rewardRow] = await Promise.all([
@@ -298,6 +317,8 @@ export default async function HomePage({
       />
 
       <TodaysWorkout workout={workout} done={workoutDone} restDay={!workoutScheduled} />
+
+      <HomeBanners banners={banners} native={native} />
 
       <DayProvider
         initial={{ waterMl, steps, checkinDone }}

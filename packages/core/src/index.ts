@@ -17,3 +17,4 @@ export * from "./members";
 export * from "./emails";
 export * from "./tags";
 export * from "./campaigns";
+export * from "./banners";

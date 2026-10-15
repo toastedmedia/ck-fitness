@@ -14,6 +14,7 @@ const ICONS: Record<string, string> = {
   "/admin/accountability": "M12 3a9 9 0 100 18 9 9 0 000-18zM8 12.5l3 3 5-6",
   "/admin/support": "M4 5h16v11H9l-5 4zM8 9h8M8 12h5",
   "/admin/programs": "M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2zM4 19V5",
+  "/admin/banners": "M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6",
   "/admin/tags": "M3 12V4h8l10 10-8 8zM7.5 8.5h.01",
   "/admin/community": "M5 5h14v10H10l-5 4zM9 9h6",
   "/admin/emails": "M3 6h18v12H3zM3 7l9 7 9-7",

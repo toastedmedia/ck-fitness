@@ -53,3 +53,4 @@ Nothing has been verified against live Stripe, Cloudflare or the CRM yet. Status
 See `CLAUDE.md` Accounts and Pending: SQL 0020/0021, Stripe dashboard settings and live payment test, Resend, support inbox, CRM token, Sentry, production Supabase, landing page, App Store page and review, Google Play, lawyer-approved Privacy/Terms, live QA, 20-50 person beta.
 
 - **Marketing emails (admin, 2026-10-15):** Admin -> Emails -> Offers and campaigns: create diet-plan, promo, winter-offer, new-training and news emails from presets, live preview, picture, button, audience by plan/tag, test send, confirmed queued send with progress, stop, duplicate. Opt-in only (Offers and news + email). Admin menu grouped into seven sections.
+- **Home banners (2026-10-15):** Admin -> Home banners: rounded promo pictures on Home (events, challenges, offers) with optional link, dates, audience and order; max 3 live; store-app safe links only.
