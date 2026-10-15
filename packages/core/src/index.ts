@@ -16,3 +16,4 @@ export * from "./progress";
 export * from "./members";
 export * from "./emails";
 export * from "./tags";
+export * from "./campaigns";

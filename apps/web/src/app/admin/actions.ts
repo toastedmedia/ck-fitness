@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import {
   ALWAYS_SENT,
   EMAIL_LABELS,
+  renderCampaign,
   MAX_BULK_ACCESS,
   cleanIds,
   audienceMatches,
@@ -20,7 +21,17 @@ import {
 } from "@ck/core";
 import { CONTENT, OPS, SUPPORT, audit, requireStaff } from "@/lib/admin";
 import { processCrmQueue } from "@/lib/crm";
-import { sendMemberEmail, sendRaw } from "@/lib/email/send";
+import {
+  audienceUserIds,
+  imageUrlOf,
+  processCampaign,
+  siteBase,
+  startCampaign,
+  toCampaign,
+  type Audience,
+  type CampaignRow,
+} from "@/lib/email/campaign";
+import { sendMemberEmail, sendRaw, emailConfigured } from "@/lib/email/send";
 import { notifyUser } from "@/lib/events";
 import { createMember, grantAccess } from "@/lib/members";
 import {
@@ -1333,7 +1344,9 @@ export async function sendTestEmail(formData: FormData): Promise<void> {
     html: e.html,
     text: e.text,
   });
-  redirect(`/admin/emails?${ok ? `sent=${encodeURIComponent(me.email)}` : "error=send"}`);
+  redirect(
+    `/admin/emails?tab=auto&${ok ? `sent=${encodeURIComponent(me.email)}` : "error=send"}`,
+  );
 }
 
 /** Users page: add or remove a tag for every ticked member. */
@@ -1395,4 +1408,166 @@ export async function removeMemberTag(userId: string, tagId: string): Promise<vo
   await untagMembers(db, tagId, [userId]);
   await audit(supabase, user.id, "members.tag_remove", tagId, { count: 1 });
   redirect(`/admin/users/${userId}`);
+}
+
+/* ------------------------------------------------------------ marketing emails */
+const planOf = (v: string): Audience["plan"] =>
+  v === "free" || v === "member" ? v : "all";
+
+/** Create or update a marketing email draft. */
+export async function saveCampaign(id: string, formData: FormData): Promise<void> {
+  const { supabase, user } = await requireStaff(OPS);
+  const subject = str(formData, "subject", 150);
+  const body = str(formData, "body", 6000);
+  if (!subject || !body)
+    redirect(`/admin/emails/${id === "new" ? "new" : `${id}/edit`}?error=missing`);
+  const row: Record<string, unknown> = {
+    name: str(formData, "name", 80) || subject,
+    subject,
+    preheader: str(formData, "preheader", 150),
+    heading: str(formData, "heading", 150),
+    body,
+    cta_label: str(formData, "cta_label", 40),
+    cta_url: str(formData, "cta_url", 500),
+    audience: {
+      plan: planOf(str(formData, "audience_plan")),
+      ...(str(formData, "audience_tag") ? { tag_id: str(formData, "audience_tag") } : {}),
+    },
+  };
+  const file = formData.get("image");
+  if (file instanceof File && file.size > 0) {
+    if (
+      !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
+      file.size > 2_097_152
+    )
+      redirect(`/admin/emails/${id === "new" ? "new" : `${id}/edit`}?error=image`);
+    const path = `emails/${crypto.randomUUID()}.jpg`;
+    const { error } = await supabase.storage
+      .from("program-thumbnails")
+      .upload(path, file, { contentType: file.type });
+    if (error)
+      redirect(`/admin/emails/${id === "new" ? "new" : `${id}/edit`}?error=image`);
+    row.image_path = path;
+  } else if (formData.get("remove_image") === "on") row.image_path = null;
+  let target = id;
+  if (id === "new") {
+    const { data, error } = await supabase
+      .from("email_campaigns")
+      .insert({ ...row, created_by: user.id })
+      .select("id")
+      .single();
+    if (error || !data) redirect("/admin/emails/new?error=save");
+    target = data.id;
+  } else {
+    const { error } = await supabase
+      .from("email_campaigns")
+      .update(row)
+      .eq("id", id)
+      .eq("status", "draft");
+    if (error) redirect(`/admin/emails/${id}/edit?error=save`);
+  }
+  await audit(
+    supabase,
+    user.id,
+    id === "new" ? "campaign.create" : "campaign.update",
+    target,
+  );
+  redirect(`/admin/emails/${target}?saved=1`);
+}
+
+async function loadCampaign(id: string) {
+  const { supabase, user, db } = await requireStaff(OPS);
+  const { data } = await supabase
+    .from("email_campaigns")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (!data) redirect("/admin/emails");
+  return { supabase, user, db, c: data as CampaignRow };
+}
+
+/** Sends this email to the signed-in owner/admin only, so they can see the real thing. */
+export async function sendCampaignTest(id: string): Promise<void> {
+  const { user, db, c } = await loadCampaign(id);
+  const { data: me } = await db
+    .from("profiles")
+    .select("email,first_name")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!me?.email) redirect(`/admin/emails/${id}?error=noemail`);
+  const site = siteBase();
+  const e = renderCampaign(
+    { ...toCampaign(c), imageUrl: imageUrlOf(c.image_path) },
+    { name: me.first_name ?? undefined },
+    {
+      siteUrl: site,
+      unsubscribeUrl: `${site}/api/email/unsubscribe?c=marketing&t=sample`,
+    },
+  );
+  const ok = await sendRaw({
+    to: me.email,
+    subject: `[TEST] ${e.subject}`,
+    html: e.html,
+    text: e.text,
+  });
+  redirect(
+    `/admin/emails/${id}?${ok ? `test=${encodeURIComponent(me.email)}` : "error=send"}`,
+  );
+}
+
+/** Builds the list of who gets it (marketing consent only), then starts sending. */
+export async function launchCampaign(id: string): Promise<void> {
+  const { supabase, user, db, c } = await loadCampaign(id);
+  if (c.status !== "draft") redirect(`/admin/emails/${id}`);
+  if (!emailConfigured()) redirect(`/admin/emails/${id}?error=send`);
+  const n = await startCampaign(db, c);
+  await audit(supabase, user.id, "campaign.send", id, { recipients: n });
+  if (n > 0) await processCampaign(db, id, 180);
+  redirect(`/admin/emails/${id}?started=${n}`);
+}
+
+export async function cancelCampaign(id: string): Promise<void> {
+  const { supabase, user, db } = await loadCampaign(id);
+  await db
+    .from("email_campaigns")
+    .update({ status: "cancelled" })
+    .eq("id", id)
+    .eq("status", "sending");
+  await audit(supabase, user.id, "campaign.cancel", id);
+  redirect(`/admin/emails/${id}`);
+}
+
+export async function deleteCampaign(id: string): Promise<void> {
+  const { supabase, user, c } = await loadCampaign(id);
+  if (c.status === "draft" || c.status === "cancelled") {
+    await supabase.from("email_campaigns").delete().eq("id", id);
+    await audit(supabase, user.id, "campaign.delete", id);
+  }
+  redirect("/admin/emails");
+}
+
+export async function duplicateCampaign(id: string): Promise<void> {
+  const { supabase, user, c } = await loadCampaign(id);
+  const { data } = await supabase
+    .from("email_campaigns")
+    .insert({
+      name: `${c.name} (copy)`,
+      subject: c.subject,
+      preheader: c.preheader,
+      heading: c.heading,
+      body: c.body,
+      image_path: c.image_path,
+      cta_label: c.cta_label,
+      cta_url: c.cta_url,
+      audience: c.audience,
+      created_by: user.id,
+    })
+    .select("id")
+    .single();
+  redirect(data ? `/admin/emails/${data.id}/edit` : "/admin/emails");
+}
+
+export async function countCampaignAudience(a: Audience): Promise<number> {
+  const { db } = await requireStaff(OPS);
+  return (await audienceUserIds(db, a)).length;
 }

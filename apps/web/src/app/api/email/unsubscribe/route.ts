@@ -4,12 +4,17 @@ import { createAdminSupabase } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-async function turnOff(token: string | null) {
+async function turnOff(token: string | null, category: string | null) {
   const id = token ? verifyUnsubscribe(token) : null;
   if (!id) return false;
+  // "marketing" stops offers and news only; anything else stops all optional emails.
+  const patch: { user_id: string; marketing?: boolean; email?: boolean } =
+    category === "marketing"
+      ? { user_id: id, marketing: false }
+      : { user_id: id, email: false };
   const { error } = await createAdminSupabase()
     .from("notification_preferences")
-    .upsert({ user_id: id, email: false }, { onConflict: "user_id" });
+    .upsert(patch, { onConflict: "user_id" });
   return !error;
 }
 
@@ -28,8 +33,18 @@ const page = (ok: boolean) =>
 
 /** One-click link in the email footer (GET) and mail apps' unsubscribe button (POST). */
 export async function GET(request: NextRequest) {
-  return page(await turnOff(request.nextUrl.searchParams.get("t")));
+  return page(
+    await turnOff(
+      request.nextUrl.searchParams.get("t"),
+      request.nextUrl.searchParams.get("c"),
+    ),
+  );
 }
 export async function POST(request: NextRequest) {
-  return page(await turnOff(request.nextUrl.searchParams.get("t")));
+  return page(
+    await turnOff(
+      request.nextUrl.searchParams.get("t"),
+      request.nextUrl.searchParams.get("c"),
+    ),
+  );
 }
