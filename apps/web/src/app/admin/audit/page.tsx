@@ -35,7 +35,7 @@ export default async function AdminAudit() {
         <Table head={["When", "Who", "What", "Target", "Details"]}>
           {rows.map((r) => (
             <tr key={r.id}>
-              <td className={td}>{new Date(r.created_at).toLocaleString("en-CA")}</td>
+              <td className={td}>{new Date(r.created_at).toLocaleString("en-CA", { timeZone: "America/Vancouver", timeZone: "America/Vancouver" })}</td>
               <td className={td}>{(r.actor_id && name.get(r.actor_id)) || "-"}</td>
               <td className={td}>
                 <code>{r.action}</code>
