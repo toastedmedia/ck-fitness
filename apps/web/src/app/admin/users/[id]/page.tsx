@@ -13,7 +13,7 @@ import { LineChart } from "@/components/app/charts";
 import { ABtn, Flash, H1, Panel, Status, Table, aInput, td } from "@/components/admin/ui";
 import { audit, SUPPORT, requireStaff } from "@/lib/admin";
 import { listInvoices } from "@/lib/stripe";
-import { ActivityTab, GiveAccess, ProgramsTab } from "./sections";
+import { ActivityTab, GiveAccess, MemberTags, ProgramsTab } from "./sections";
 import {
   addClientNote,
   deleteClientNote,
@@ -260,6 +260,7 @@ export default async function AdminClient({
     return (
       <>
         {head}
+        <MemberTags userId={id} db={db} canEdit={isOps} />
         <Panel title="Contact details">
           {isOps ? (
             <form

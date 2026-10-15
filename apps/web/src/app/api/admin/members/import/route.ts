@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { normalizePhone } from "@ck/core";
 import { audit } from "@/lib/admin";
+import { addTag, ensureTag } from "@/lib/member-tags";
 import { createMember, grantAccess } from "@/lib/members";
 import { isSameOrigin } from "@/lib/same-origin";
 import { createAdminSupabase } from "@/lib/supabase/admin";
@@ -32,10 +33,12 @@ export async function POST(request: NextRequest) {
     rows?: { first?: string; last?: string; email?: string; phone?: string | null }[];
     programId?: string;
     notify?: boolean;
+    tag?: string;
   };
   const rows = (b.rows ?? []).slice(0, 40);
   if (!rows.length) return NextResponse.json({ error: "No rows." }, { status: 400 });
   const db = createAdminSupabase();
+  const tagId = b.tag ? await ensureTag(db, b.tag, user.id) : null;
   const site = (process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin).replace(
     /\/$/,
     "",
@@ -63,6 +66,7 @@ export async function POST(request: NextRequest) {
         email,
         phone: r.phone ? normalizePhone(String(r.phone)) : null,
       });
+      if (tagId) await addTag(db, tagId, [id]);
       let note = "";
       if (b.programId) {
         const g = await grantAccess(db, id, b.programId);

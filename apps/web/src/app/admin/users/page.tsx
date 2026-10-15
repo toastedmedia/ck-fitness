@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { resolveMembership } from "@ck/core";
 import { MemberImport } from "@/components/admin/MemberImport";
+import { UsersBulk } from "@/components/admin/UsersBulk";
 import { ABtn, Flash, H1, Panel, Status, Table, aInput, td } from "@/components/admin/ui";
 import { SUPPORT, requireStaff } from "@/lib/admin";
-import { addMember } from "../actions";
+import { addMember, bulkGiveAccess, bulkTag } from "../actions";
 
 export const metadata: Metadata = { title: "Users" };
 
@@ -20,9 +21,17 @@ const FILTERS = [
 export default async function AdminUsers({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; f?: string; view?: string; error?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    f?: string;
+    view?: string;
+    error?: string;
+    tag?: string;
+    bulk?: string;
+    n?: string;
+  }>;
 }) {
-  const { q = "", f = "all", view, error } = await searchParams;
+  const { q = "", f = "all", view, error, tag, bulk, n } = await searchParams;
   const filter = FILTERS.some(([k]) => k === f) ? f : "all";
   const { db, roles } = await requireStaff(SUPPORT);
   const isOps = roles.includes("owner") || roles.includes("admin");
@@ -39,6 +48,30 @@ export default async function AdminUsers({
     save: "We could not create that account. Please try again.",
   };
 
+  // Tags are optional: if the tags database change is not applied yet, the page just hides them.
+  const tagRows = isOps
+    ? await db.from("member_tags").select("id,name").order("name")
+    : { data: null, error: { message: "n/a" } };
+  const tagsOk = !tagRows.error;
+  const allTags = (tagsOk ? (tagRows.data ?? []) : []) as { id: string; name: string }[];
+  const bulkPrograms =
+    isOps && tagsOk
+      ? (((await db.from("programs").select("id,title").order("sort_order")).data ??
+          []) as {
+          id: string;
+          title: string;
+        }[])
+      : [];
+  let tagged: string[] | null = null;
+  if (tag && tagsOk) {
+    const { data: tm } = await db
+      .from("member_tag_map")
+      .select("user_id")
+      .eq("tag_id", tag)
+      .limit(5000);
+    tagged = ((tm ?? []) as { user_id: string }[]).map((x) => x.user_id);
+  }
+
   let query = db
     .from("profiles")
     .select(
@@ -51,6 +84,11 @@ export default async function AdminUsers({
       `email.ilike.%${term}%,first_name.ilike.%${term}%,last_name.ilike.%${term}%,phone.ilike.%${term}%`,
     );
   if (filter === "incomplete") query = query.eq("onboarding_complete", false);
+  if (tagged)
+    query = query.in(
+      "user_id",
+      tagged.length ? tagged : ["00000000-0000-0000-0000-000000000000"],
+    );
   const { data } = await query;
   const all = (data ?? []) as {
     user_id: string;
@@ -64,6 +102,19 @@ export default async function AdminUsers({
     coach_access_at: string | null;
   }[];
   const ids = all.map((r) => r.user_id);
+  const tagOf = new Map<string, string[]>();
+  if (tagsOk && ids.length) {
+    const { data: tm } = await db
+      .from("member_tag_map")
+      .select("user_id,tag_id")
+      .in("user_id", ids);
+    const nameById = new Map(allTags.map((t) => [t.id, t.name]));
+    for (const row of (tm ?? []) as { user_id: string; tag_id: string }[])
+      tagOf.set(row.user_id, [
+        ...(tagOf.get(row.user_id) ?? []),
+        nameById.get(row.tag_id) ?? "",
+      ]);
+  }
   const [{ data: ms }, { data: rs }] = await Promise.all([
     ids.length
       ? db
@@ -106,7 +157,7 @@ export default async function AdminUsers({
       ? `${Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 86_400_000))}d ago`
       : "never";
   const href = (extra: Record<string, string>) =>
-    `/admin/users?${new URLSearchParams({ ...(term ? { q: term } : {}), f: filter, ...extra })}`;
+    `/admin/users?${new URLSearchParams({ ...(term ? { q: term } : {}), f: filter, ...(tag ? { tag } : {}), ...extra })}`;
 
   return (
     <>
@@ -237,57 +288,155 @@ export default async function AdminUsers({
           </Link>
         ))}
       </div>
-      <Panel>
-        <Table
-          head={["Name", "Email", "Phone", "Plan", "Onboarding", "Last active", "Status"]}
-        >
-          {rows.map((r) => {
-            const m = mem.get(r.user_id);
-            const st = risk.get(r.user_id) ?? "active";
-            return (
-              <tr key={r.user_id}>
-                <td className={td}>
-                  <Link
-                    className="font-bold text-brand underline"
-                    href={`/admin/users/${r.user_id}`}
-                  >
-                    {r.first_name ?? "(no name)"} {r.last_name}
-                  </Link>
-                </td>
-                <td className={td}>{r.email}</td>
-                <td className={td}>{r.phone ?? "-"}</td>
-                <td className={td}>
-                  {m && m.state === "active" ? (
-                    <Status tone="ok">
-                      {m.entitlement === "ck_premium" ? "Premium" : "Member"}
-                    </Status>
-                  ) : m && m.state === "grace" ? (
-                    <Status tone="warn">Billing problem</Status>
-                  ) : (
-                    <Status tone="mute">Free</Status>
-                  )}
-                </td>
-                <td className={td}>
-                  {r.onboarding_complete ? "Complete" : "Not finished"}
-                </td>
-                <td className={td}>{ago(r.last_active_at)}</td>
-                <td className={td}>
-                  {st === "active" ? (
-                    "-"
-                  ) : (
-                    <Status tone={st === "at_risk_14d" ? "bad" : "warn"}>
-                      {st.replace("at_risk_", "Quiet ")}
-                    </Status>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </Table>
-        {rows.length === 0 ? (
-          <p className="py-3 text-sm text-muted">No members found.</p>
-        ) : null}
-      </Panel>
+      {bulk ? (
+        <Flash bad={["none", "notag", "toomany"].includes(bulk)}>
+          {bulk === "none"
+            ? "Tick at least one member first."
+            : bulk === "notag"
+              ? "Choose a tag or type a new one."
+              : bulk === "toomany"
+                ? "Give access works on up to 100 people at a time. Untick some, or use Import CSV with a training for bigger groups."
+                : bulk === "access"
+                  ? `Access given to ${n} members.`
+                  : bulk === "remove"
+                    ? `Tag removed from ${n} members.`
+                    : `Tag added to ${n} members.`}
+        </Flash>
+      ) : null}
+      {tagsOk && allTags.length ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-bold text-muted">Tags:</span>
+          {allTags.map((t) => (
+            <Link
+              key={t.id}
+              href={
+                tag === t.id ? href({}).replace(/&?tag=[^&]*/, "") : href({ tag: t.id })
+              }
+              aria-current={tag === t.id ? "page" : undefined}
+              className={`inline-flex min-h-8 items-center rounded-full border-2 px-3 text-xs font-semibold ${tag === t.id ? "border-brand bg-brand text-on-brand" : "border-line bg-surface"}`}
+            >
+              {t.name}
+            </Link>
+          ))}
+        </div>
+      ) : null}
+      {(() => {
+        const bulkOn = isOps && tagsOk;
+        const table = (
+          <Panel>
+            <Table
+              head={[
+                ...(bulkOn
+                  ? [
+                      <input
+                        key="all"
+                        type="checkbox"
+                        data-select-all
+                        aria-label="Select all members on this page"
+                        className="size-4 accent-brand"
+                      />,
+                    ]
+                  : []),
+                "Name",
+                "Email",
+                "Phone",
+                "Plan",
+                "Tags",
+                "Onboarding",
+                "Last active",
+                "Status",
+              ]}
+            >
+              {rows.map((r) => {
+                const m = mem.get(r.user_id);
+                const st = risk.get(r.user_id) ?? "active";
+                return (
+                  <tr key={r.user_id}>
+                    {bulkOn ? (
+                      <td className={td}>
+                        <input
+                          type="checkbox"
+                          name="ids"
+                          value={r.user_id}
+                          aria-label={`Select ${r.first_name ?? ""} ${r.last_name ?? ""}`}
+                          className="size-4 accent-brand"
+                        />
+                      </td>
+                    ) : null}
+                    <td className={td}>
+                      <Link
+                        className="font-bold text-brand underline"
+                        href={`/admin/users/${r.user_id}`}
+                      >
+                        {r.first_name ?? "(no name)"} {r.last_name}
+                      </Link>
+                    </td>
+                    <td className={td}>{r.email}</td>
+                    <td className={td}>{r.phone ?? "-"}</td>
+                    <td className={td}>
+                      {m && m.state === "active" ? (
+                        <Status tone="ok">
+                          {m.entitlement === "ck_premium" ? "Premium" : "Member"}
+                        </Status>
+                      ) : m && m.state === "grace" ? (
+                        <Status tone="warn">Billing problem</Status>
+                      ) : (
+                        <Status tone="mute">Free</Status>
+                      )}
+                    </td>
+                    <td className={td}>
+                      <div className="flex flex-wrap gap-1">
+                        {(tagOf.get(r.user_id) ?? []).map((t) => (
+                          <span
+                            key={t}
+                            className="rounded-full bg-page px-2 py-0.5 text-[11px] font-bold text-brand"
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className={td}>
+                      {r.onboarding_complete ? "Complete" : "Not finished"}
+                    </td>
+                    <td className={td}>{ago(r.last_active_at)}</td>
+                    <td className={td}>
+                      {st === "active" ? (
+                        "-"
+                      ) : (
+                        <Status tone={st === "at_risk_14d" ? "bad" : "warn"}>
+                          {st.replace("at_risk_", "Quiet ")}
+                        </Status>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </Table>
+            {rows.length === 0 ? (
+              <p className="py-3 text-sm text-muted">No members found.</p>
+            ) : null}
+            {rows.length >= 100 ? (
+              <p className="pt-2 text-xs text-muted">
+                Showing the first 100. Use search, filters or tags to narrow the list.
+              </p>
+            ) : null}
+          </Panel>
+        );
+        return bulkOn ? (
+          <UsersBulk
+            back={href({})}
+            tags={allTags}
+            programs={bulkPrograms}
+            tagAction={bulkTag}
+            accessAction={bulkGiveAccess}
+          >
+            {table}
+          </UsersBulk>
+        ) : (
+          table
+        );
+      })()}
       <Panel title="Privacy">
         <p className="text-sm text-muted">
           Open a person to see their questionnaire, check-ins, progress and photos.

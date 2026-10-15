@@ -1599,4 +1599,27 @@ describe("community feed: reactions, photos with approval, edits, replies, direc
       ),
     ).rejects.toThrow();
   });
+  it("keeps member tags visible to staff only", async () => {
+    const tag = (
+      await db.query("insert into public.member_tags (name) values ('VIP') returning id")
+    ).rows[0] as { id: string };
+    await db.query("insert into public.member_tag_map (user_id, tag_id) values ($1,$2)", [
+      A1,
+      tag.id,
+    ]);
+    const asMember = await asUser(
+      db,
+      A1,
+      async () => (await db.query("select 1 from public.member_tag_map")).rows.length,
+    );
+    expect(asMember).toBe(0);
+    await expect(
+      asUser(db, A1, () =>
+        db.query("insert into public.member_tags (name) values ('x')"),
+      ),
+    ).rejects.toThrow();
+    await expect(
+      db.query("insert into public.member_tags (name) values ('vip')"),
+    ).rejects.toThrow();
+  });
 });

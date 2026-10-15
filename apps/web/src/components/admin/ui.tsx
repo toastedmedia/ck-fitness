@@ -75,15 +75,15 @@ export function ABtn({
     </button>
   );
 }
-export function Table({ head, children }: { head: string[]; children: ReactNode }) {
+export function Table({ head, children }: { head: ReactNode[]; children: ReactNode }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[560px] border-collapse text-sm">
         <thead>
           <tr>
-            {head.map((h) => (
+            {head.map((h, i) => (
               <th
-                key={h}
+                key={i}
                 className="border-b border-line px-2 py-2 text-left text-[11px] font-bold uppercase tracking-wider text-muted"
               >
                 {h}

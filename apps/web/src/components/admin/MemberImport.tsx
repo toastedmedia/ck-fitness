@@ -16,6 +16,7 @@ export function MemberImport({
   const [fileName, setFileName] = useState("");
   const [programId, setProgramId] = useState("");
   const [notify, setNotify] = useState(false);
+  const [tag, setTag] = useState("");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(0);
   const [results, setResults] = useState<Result[] | null>(null);
@@ -152,6 +153,16 @@ export function MemberImport({
                 </option>
               ))}
             </select>
+          </label>
+          <label className="text-xs font-bold text-brand">
+            Add a tag to everyone (optional, for example imported from Go High Level)
+            <input
+              value={tag}
+              onChange={(e) => setTag(e.target.value)}
+              maxLength={30}
+              className="mt-1 min-h-10 w-full rounded-xl border-2 border-line bg-surface px-3 text-sm font-normal"
+              placeholder="imported"
+            />
           </label>
           <label className="flex items-start gap-3 text-sm">
             <input

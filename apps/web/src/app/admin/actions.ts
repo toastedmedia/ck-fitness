@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import {
   ALWAYS_SENT,
   EMAIL_LABELS,
+  MAX_BULK_ACCESS,
+  cleanIds,
   audienceMatches,
   canManageRole,
   normalizePhone,
@@ -21,6 +23,11 @@ import { processCrmQueue } from "@/lib/crm";
 import { sendMemberEmail, sendRaw } from "@/lib/email/send";
 import { notifyUser } from "@/lib/events";
 import { createMember, grantAccess } from "@/lib/members";
+import {
+  addTag as tagMembers,
+  ensureTag,
+  removeTag as untagMembers,
+} from "@/lib/member-tags";
 import { releaseVideo } from "@/lib/r2";
 import { isInternalPath } from "@/lib/same-origin";
 
@@ -1327,4 +1334,65 @@ export async function sendTestEmail(formData: FormData): Promise<void> {
     text: e.text,
   });
   redirect(`/admin/emails?${ok ? `sent=${encodeURIComponent(me.email)}` : "error=send"}`);
+}
+
+/** Users page: add or remove a tag for every ticked member. */
+export async function bulkTag(formData: FormData): Promise<void> {
+  const { supabase, user, db } = await requireStaff(OPS);
+  const back = str(formData, "back") || "/admin/users";
+  const safeBack = back.startsWith("/admin/users") ? back : "/admin/users";
+  const ids = cleanIds(formData.getAll("ids"));
+  const mode = str(formData, "mode") === "remove" ? "remove" : "add";
+  if (!ids.length) redirect(`${safeBack}${safeBack.includes("?") ? "&" : "?"}bulk=none`);
+  const existing = str(formData, "tag_id");
+  const typed = str(formData, "new_tag", 30);
+  const tagId = typed ? await ensureTag(db, typed, user.id) : existing || null;
+  if (!tagId) redirect(`${safeBack}${safeBack.includes("?") ? "&" : "?"}bulk=notag`);
+  if (mode === "add") await tagMembers(db, tagId, ids);
+  else await untagMembers(db, tagId, ids);
+  await audit(supabase, user.id, `members.tag_${mode}`, tagId, { count: ids.length });
+  redirect(
+    `${safeBack}${safeBack.includes("?") ? "&" : "?"}bulk=${mode}&n=${ids.length}`,
+  );
+}
+
+/** Users page: give a training to every ticked member (up to 100 at a time). */
+export async function bulkGiveAccess(formData: FormData): Promise<void> {
+  const { supabase, user, db } = await requireStaff(OPS);
+  const back = str(formData, "back") || "/admin/users";
+  const safeBack = back.startsWith("/admin/users") ? back : "/admin/users";
+  const join = safeBack.includes("?") ? "&" : "?";
+  const ids = cleanIds(formData.getAll("ids"), 5000);
+  const programId = str(formData, "program_id");
+  if (!ids.length || !programId) redirect(`${safeBack}${join}bulk=none`);
+  if (ids.length > MAX_BULK_ACCESS) redirect(`${safeBack}${join}bulk=toomany`);
+  let ok = 0;
+  for (const id of ids) {
+    try {
+      await grantAccess(db, id, programId);
+      ok++;
+    } catch {
+      /* keep going; the count shows how many worked */
+    }
+  }
+  await audit(supabase, user.id, "members.bulk_access", programId, { count: ok });
+  redirect(`${safeBack}${join}bulk=access&n=${ok}`);
+}
+
+/** One member's page: add a tag, or remove one. */
+export async function addMemberTag(userId: string, formData: FormData): Promise<void> {
+  const { supabase, user, db } = await requireStaff(OPS);
+  const typed = str(formData, "new_tag", 30);
+  const tagId = typed ? await ensureTag(db, typed, user.id) : str(formData, "tag_id");
+  if (tagId) {
+    await tagMembers(db, tagId, [userId]);
+    await audit(supabase, user.id, "members.tag_add", tagId, { count: 1 });
+  }
+  redirect(`/admin/users/${userId}`);
+}
+export async function removeMemberTag(userId: string, tagId: string): Promise<void> {
+  const { supabase, user, db } = await requireStaff(OPS);
+  await untagMembers(db, tagId, [userId]);
+  await audit(supabase, user.id, "members.tag_remove", tagId, { count: 1 });
+  redirect(`/admin/users/${userId}`);
 }

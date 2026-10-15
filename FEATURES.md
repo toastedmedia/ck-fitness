@@ -47,7 +47,7 @@ Nothing has been verified against live Stripe, Cloudflare or the CRM yet. Status
 - ✅ Price: $31.49 CAD per month including GST (Stripe price); failed renewals keep access 3 days, then lock until paid
 
 ## Next (me)
-- ⏳ Native push notifications (iPhone, needs the Apple push key in Vercel), admin bulk select + tags on people, logged-in automated tests, week description and image in the builder
+- ⏳ Native push notifications (iPhone, needs the Apple push key in Vercel), logged-in automated tests, week description and image in the builder
 
 ## Still to do before launch (owners)
 See `CLAUDE.md` Accounts and Pending: SQL 0020/0021, Stripe dashboard settings and live payment test, Resend, support inbox, CRM token, Sentry, production Supabase, landing page, App Store page and review, Google Play, lawyer-approved Privacy/Terms, live QA, 20-50 person beta.

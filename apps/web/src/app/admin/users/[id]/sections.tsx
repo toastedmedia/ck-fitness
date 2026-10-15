@@ -7,7 +7,7 @@ import {
   type Units,
 } from "@ck/core";
 import { ABtn, Panel, Status, Table, aInput, td } from "@/components/admin/ui";
-import { giveAccessToUser } from "../../actions";
+import { addMemberTag, giveAccessToUser, removeMemberTag } from "../../actions";
 import type { requireStaff } from "@/lib/admin";
 
 type Ctx = Awaited<ReturnType<typeof requireStaff>>;
@@ -773,6 +773,81 @@ export async function GiveAccess({
         </label>
         <ABtn variant="primary">Give access</ABtn>
       </form>
+    </Panel>
+  );
+}
+
+/** Internal tags on this member (members never see them). Hidden if the tags database change is not applied. */
+export async function MemberTags({
+  userId,
+  db,
+  canEdit,
+}: {
+  userId: string;
+  db: Ctx["db"];
+  canEdit: boolean;
+}) {
+  const all = await db.from("member_tags").select("id,name").order("name");
+  if (all.error) return null;
+  const { data: mine } = await db
+    .from("member_tag_map")
+    .select("tag_id")
+    .eq("user_id", userId);
+  const have = new Set(((mine ?? []) as { tag_id: string }[]).map((m) => m.tag_id));
+  const tags = (all.data ?? []) as { id: string; name: string }[];
+  return (
+    <Panel title="Tags (internal, members never see these)">
+      <div className="flex flex-wrap items-center gap-2">
+        {tags
+          .filter((t) => have.has(t.id))
+          .map((t) => (
+            <span
+              key={t.id}
+              className="inline-flex items-center gap-1 rounded-full bg-page px-3 py-1 text-xs font-bold text-brand"
+            >
+              {t.name}
+              {canEdit ? (
+                <form action={removeMemberTag.bind(null, userId, t.id)}>
+                  <button aria-label={`Remove tag ${t.name}`} className="px-1 text-muted">
+                    ×
+                  </button>
+                </form>
+              ) : null}
+            </span>
+          ))}
+        {have.size === 0 ? (
+          <span className="text-xs text-muted">No tags yet.</span>
+        ) : null}
+      </div>
+      {canEdit ? (
+        <form
+          action={addMemberTag.bind(null, userId)}
+          className="mt-3 flex flex-wrap items-end gap-2"
+        >
+          <select
+            name="tag_id"
+            className={aInput + " max-w-48"}
+            aria-label="Existing tag"
+          >
+            <option value="">Choose a tag</option>
+            {tags
+              .filter((t) => !have.has(t.id))
+              .map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+          </select>
+          <input
+            name="new_tag"
+            maxLength={30}
+            placeholder="or type a new tag"
+            className={aInput + " max-w-48"}
+            aria-label="New tag name"
+          />
+          <ABtn variant="ghost">Add tag</ABtn>
+        </form>
+      ) : null}
     </Panel>
   );
 }
