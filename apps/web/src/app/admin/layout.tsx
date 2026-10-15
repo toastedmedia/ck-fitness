@@ -49,6 +49,12 @@ const NAV = [
     roles: ["owner", "admin", "content_manager"],
   },
   {
+    group: "Content",
+    href: "/admin/meal-plans",
+    label: "Meal plans",
+    roles: ["owner", "admin", "coach", "content_manager"],
+  },
+  {
     group: "Community",
     href: "/admin/community",
     label: "Community",

@@ -16,6 +16,7 @@ const TITLES: Record<string, string> = {
   "/progress/photos": "Progress photos",
   "/accountability/summary": "Your week",
   "/accountability/checkin": "Weekly check-in",
+  "/accountability/diet": "Meal plan",
   "/accountability/help": "Talk to a real person",
   "/community/guidelines": "Community guidelines",
 };
@@ -24,6 +25,8 @@ type Back = { href: string; label: string } | null;
 
 /** The "back" link for detail pages, shown in the header so there is no empty row above the content. */
 function backFor(path: string): Back {
+  if (path === "/accountability/diet")
+    return { href: "/accountability", label: "My Week" };
   if (path === "/progress/photos") return { href: "/progress", label: "Progress" };
   if (path === "/community/guidelines") return { href: "/community", label: "Community" };
   if (/^\/community\/members\/[^/]+$/.test(path))

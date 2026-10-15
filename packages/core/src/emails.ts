@@ -3,6 +3,7 @@ export type EmailKey =
   | "welcome"
   | "checkin_reminder"
   | "we_miss_you"
+  | "meal_plan"
   | "membership_welcome"
   | "payment_problem"
   | "membership_ended"
@@ -37,6 +38,7 @@ export const EMAIL_LABELS: Record<EmailKey, string> = {
   welcome: "Welcome (after onboarding)",
   checkin_reminder: "Weekly check-in reminder",
   we_miss_you: "We miss you (quiet for a few days)",
+  meal_plan: "New meal plan is ready",
   membership_welcome: "Membership started",
   payment_problem: "Payment problem",
   membership_ended: "Membership ended",
@@ -90,6 +92,16 @@ const SPECS: Record<EmailKey, Spec> = {
       "If something is getting in the way, tell us and we will help you find a plan that fits.",
     ],
     cta: { label: "Start a short session", path: "/home" },
+  },
+  meal_plan: {
+    subject: () => "Your new meal plan is ready",
+    preheader: "See what to eat this week, with portions.",
+    heading: (n) => `Your meal plan is ready, ${n}`,
+    paragraphs: [
+      "Your new meal plan is in the app, with what to eat and how much. Choose vegetarian or non-vegetarian, whichever suits you.",
+      "Following a plan is one of the easiest ways to stay consistent. Have a look and plan your week.",
+    ],
+    cta: { label: "Open my meal plan", path: "/accountability/diet" },
   },
   membership_welcome: {
     subject: () => "Welcome to Chardikala Fitness membership",

@@ -7,6 +7,7 @@ import {
   EMAIL_LABELS,
   renderCampaign,
   validBannerLink,
+  isDiet,
   MAX_BULK_ACCESS,
   cleanIds,
   audienceMatches,
@@ -1666,4 +1667,66 @@ export async function deleteBanner(id: string): Promise<void> {
   await audit(supabase, user.id, "banner.delete", id);
   revalidatePath("/home");
   redirect("/admin/banners?saved=1");
+}
+
+/* ---------------------------------------------------------------- meal plans */
+const MEAL: Parameters<typeof requireStaff>[0] = [
+  "owner",
+  "admin",
+  "coach",
+  "content_manager",
+];
+const dateOnly = (v: string) => (/^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
+
+export async function saveMealPlan(formData: FormData): Promise<void> {
+  const { supabase, user } = await requireStaff(MEAL);
+  const id = str(formData, "id");
+  const back = (q: string) =>
+    redirect(`/admin/meal-plans?${q}${id ? `&edit=${id}` : ""}`);
+  const title = str(formData, "title", 120);
+  const diet = str(formData, "diet");
+  const starts = dateOnly(str(formData, "starts_on"));
+  const body = str(formData, "body", 20000);
+  if (!title || !body) back("error=missing");
+  if (!isDiet(diet) || !starts) back("error=dates");
+  const row = {
+    title,
+    diet,
+    body,
+    starts_on: starts,
+    ends_on: dateOnly(str(formData, "ends_on")),
+    published: formData.get("published") === "on",
+    notify_on: dateOnly(str(formData, "notify_on")),
+  };
+  if (id) {
+    const { error } = await supabase.from("diet_plans").update(row).eq("id", id);
+    if (error) back("error=save");
+  } else {
+    const { error } = await supabase
+      .from("diet_plans")
+      .insert({ ...row, created_by: user.id });
+    if (error) back("error=save");
+  }
+  await audit(supabase, user.id, id ? "mealplan.update" : "mealplan.create", id || title);
+  revalidatePath("/accountability/diet");
+  revalidatePath("/home");
+  redirect("/admin/meal-plans?saved=1");
+}
+
+export async function toggleMealPlan(id: string, on: boolean): Promise<void> {
+  const { supabase, user } = await requireStaff(MEAL);
+  await supabase.from("diet_plans").update({ published: on }).eq("id", id);
+  await audit(supabase, user.id, on ? "mealplan.publish" : "mealplan.unpublish", id);
+  revalidatePath("/accountability/diet");
+  revalidatePath("/home");
+  redirect("/admin/meal-plans?saved=1");
+}
+
+export async function deleteMealPlan(id: string): Promise<void> {
+  const { supabase, user } = await requireStaff(MEAL);
+  await supabase.from("diet_plans").delete().eq("id", id);
+  await audit(supabase, user.id, "mealplan.delete", id);
+  revalidatePath("/accountability/diet");
+  revalidatePath("/home");
+  redirect("/admin/meal-plans?saved=1");
 }

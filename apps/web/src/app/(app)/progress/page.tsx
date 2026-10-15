@@ -11,6 +11,7 @@ import {
 } from "@ck/core";
 import { BarChart, LineChart } from "@/components/app/charts";
 import { Button, Cap, Card, Flash } from "@/components/app/ui";
+import { MealPlanCard } from "@/components/home/MealPlanCard";
 import { getContext } from "@/lib/app";
 import { flags } from "@/lib/flags";
 import { logMeasurements } from "../actions";
@@ -197,6 +198,8 @@ export default async function ProgressPage({
           </form>
         </details>
       </Card>
+
+      <MealPlanCard title={null} />
 
       {flags.progressPhotos ? (
         <Card>

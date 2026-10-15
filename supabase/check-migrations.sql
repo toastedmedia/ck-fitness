@@ -1,4 +1,4 @@
--- CK Fitness: checks that every database change (0001 to 0024) is applied. Read-only, safe to run any time.
+-- CK Fitness: checks that every database change (0001 to 0025) is applied. Read-only, safe to run any time.
 with need(mig, kind, tbl, col) as (values
   ('0001','table','profiles',null),('0001','table','staff_roles',null),('0001','table','app_settings',null),('0001','table','admin_audit_log',null),
   ('0002','table','onboarding_profiles',null),('0002','table','notification_preferences',null),
@@ -21,7 +21,8 @@ with need(mig, kind, tbl, col) as (values
   ('0021','func_has','current_entitlement','''3 days'''),
   ('0022','table','member_tags',null),('0022','table','member_tag_map',null),
   ('0023','table','email_campaigns',null),('0023','table','email_campaign_sends',null),
-  ('0024','table','home_banners',null)
+  ('0024','table','home_banners',null),
+  ('0025','table','diet_plans',null),('0025','table','member_diet_pref',null)
 ), found as (
   select n.*, case n.kind
     when 'table' then exists (select 1 from information_schema.tables t where t.table_schema='public' and t.table_name=n.tbl)

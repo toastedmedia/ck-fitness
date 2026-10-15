@@ -39,9 +39,10 @@ import { activeDays } from "@/lib/milestones";
 import { ensurePlan, ensureWeekPlanned } from "@/lib/plan";
 import { getTodayWorkout } from "@/lib/programs";
 import { flags } from "@/lib/flags";
-import { bannerVisible } from "@ck/core";
+import { DIET_LABELS, bannerVisible, currentPlan, isDiet } from "@ck/core";
 import { isNativeApp } from "@/lib/native";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { MealPlanCard } from "@/components/home/MealPlanCard";
 import { HomeBanners } from "@/components/home/HomeBanners";
 import { ReferralCard } from "@/components/home/ReferralCard";
 import { getViewer } from "@/lib/viewer";
@@ -237,6 +238,16 @@ export default async function HomePage({
     .eq("active", true)
     .order("sort_order")
     .order("created_at", { ascending: false });
+  // Current meal plan for the diet she follows (missing tables = no card).
+  const [{ data: dietRow }, { data: planRows }] = await Promise.all([
+    supabase.from("member_diet_pref").select("diet").eq("user_id", user.id).maybeSingle(),
+    supabase
+      .from("diet_plans")
+      .select("title,diet,starts_on,ends_on,published")
+      .eq("published", true),
+  ]);
+  const myDiet = isDiet(dietRow?.diet) ? dietRow.diet : "vegetarian";
+  const mealPlan = currentPlan(planRows ?? [], myDiet, today);
   const banners = (bannerRows ?? [])
     .filter((b) => bannerVisible(b, new Date(), isMember))
     .slice(0, 3)
@@ -319,6 +330,10 @@ export default async function HomePage({
       <TodaysWorkout workout={workout} done={workoutDone} restDay={!workoutScheduled} />
 
       <HomeBanners banners={banners} native={native} />
+
+      {mealPlan ? (
+        <MealPlanCard title={mealPlan.title} diet={DIET_LABELS[myDiet]} />
+      ) : null}
 
       <DayProvider
         initial={{ waterMl, steps, checkinDone }}

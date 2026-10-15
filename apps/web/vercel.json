@@ -19,6 +19,10 @@
     {
       "path": "/api/cron/campaigns",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/meal-plans",
+      "schedule": "0 15 * * *"
     }
   ]
 }

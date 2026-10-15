@@ -13,6 +13,7 @@ import {
 import { ActionButton } from "@/components/app/ActionButton";
 import { DayPicker } from "@/components/app/Scale";
 import { Button, Cap, Card, Flash, Pill } from "@/components/app/ui";
+import { MealPlanCard } from "@/components/home/MealPlanCard";
 import { getContext } from "@/lib/app";
 import { activeDays } from "@/lib/milestones";
 import { AccountabilityInsights } from "@/components/accountability/Insights";
@@ -227,6 +228,8 @@ export default async function AccountabilityPage({
       </Card>
 
       <AccountabilityInsights />
+
+      <MealPlanCard title={null} />
 
       <Link
         href="/accountability/summary"

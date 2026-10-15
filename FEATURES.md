@@ -54,3 +54,4 @@ See `CLAUDE.md` Accounts and Pending: SQL 0020/0021, Stripe dashboard settings a
 
 - **Marketing emails (admin, 2026-10-15):** Admin -> Emails -> Offers and campaigns: create diet-plan, promo, winter-offer, new-training and news emails from presets, live preview, picture, button, audience by plan/tag, test send, confirmed queued send with progress, stop, duplicate. Opt-in only (Offers and news + email). Admin menu grouped into seven sections.
 - **Home banners (2026-10-15):** Admin -> Home banners: rounded promo pictures on Home (events, challenges, offers) with optional link, dates, audience and order; max 3 live; store-app safe links only.
+- **Meal plans (2026-10-15):** Admin-written weekly/monthly vegetarian and non-vegetarian plans (pasted text), member diet choice, Home/My Week/Progress cards, one-time announcement (notification + email) on a chosen date.
