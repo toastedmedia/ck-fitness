@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { FormMemory } from "@/components/FormMemory";
 import { NativeShell } from "@/components/NativeShell";
 import { NavProgress } from "@/components/NavProgress";
 
@@ -35,6 +36,7 @@ export default function RootLayout({
         </a>
         <NativeShell />
         <NavProgress />
+        <FormMemory />
         {children}
       </body>
     </html>
