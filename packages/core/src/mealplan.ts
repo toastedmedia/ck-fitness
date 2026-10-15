@@ -64,3 +64,10 @@ export function currentPlan<T extends PlanLike>(
   ok.sort((a, b) => (a.starts_on < b.starts_on ? 1 : -1));
   return ok[0] ?? null;
 }
+
+/** The diet to show: her own change wins, else what she answered when she signed up (vegetarian or non-vegetarian). */
+export function effectiveDiet(override: unknown, onboarding: unknown): DietKey | null {
+  if (isDiet(override)) return override;
+  if (isDiet(onboarding)) return onboarding;
+  return null;
+}

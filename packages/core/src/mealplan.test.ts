@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { currentPlan, mealPlanBlocks } from "./mealplan";
+import { currentPlan, effectiveDiet, mealPlanBlocks } from "./mealplan";
 
 describe("mealPlanBlocks", () => {
   it("reads headings, bullets and paragraphs", () => {
@@ -35,5 +35,14 @@ describe("currentPlan", () => {
     expect(currentPlan(plans, "vegetarian", "2026-11-15")?.starts_on).toBe("2026-11-10");
     expect(currentPlan(plans, "non_vegetarian", "2026-11-04")).toBeNull();
     expect(currentPlan(plans, "vegetarian", "2026-10-31")).toBeNull();
+  });
+});
+
+describe("effectiveDiet", () => {
+  it("uses her change first, then her sign-up answer, else asks", () => {
+    expect(effectiveDiet("vegetarian", "non_vegetarian")).toBe("vegetarian");
+    expect(effectiveDiet(null, "non_vegetarian")).toBe("non_vegetarian");
+    expect(effectiveDiet(undefined, "other")).toBeNull();
+    expect(effectiveDiet(undefined, undefined)).toBeNull();
   });
 });

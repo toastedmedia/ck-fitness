@@ -39,7 +39,7 @@ import { activeDays } from "@/lib/milestones";
 import { ensurePlan, ensureWeekPlanned } from "@/lib/plan";
 import { getTodayWorkout } from "@/lib/programs";
 import { flags } from "@/lib/flags";
-import { DIET_LABELS, bannerVisible, currentPlan, isDiet } from "@ck/core";
+import { DIET_LABELS, bannerVisible, currentPlan, effectiveDiet } from "@ck/core";
 import { isNativeApp } from "@/lib/native";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { MealPlanCard } from "@/components/home/MealPlanCard";
@@ -239,15 +239,20 @@ export default async function HomePage({
     .order("sort_order")
     .order("created_at", { ascending: false });
   // Current meal plan for the diet she follows (missing tables = no card).
-  const [{ data: dietRow }, { data: planRows }] = await Promise.all([
+  const [{ data: dietRow }, { data: dietOb }, { data: planRows }] = await Promise.all([
     supabase.from("member_diet_pref").select("diet").eq("user_id", user.id).maybeSingle(),
+    supabase
+      .from("onboarding_profiles")
+      .select("nutrition_preference")
+      .eq("user_id", user.id)
+      .maybeSingle(),
     supabase
       .from("diet_plans")
       .select("title,diet,starts_on,ends_on,published")
       .eq("published", true),
   ]);
-  const myDiet = isDiet(dietRow?.diet) ? dietRow.diet : "vegetarian";
-  const mealPlan = currentPlan(planRows ?? [], myDiet, today);
+  const myDiet = effectiveDiet(dietRow?.diet, dietOb?.nutrition_preference);
+  const mealPlan = myDiet ? currentPlan(planRows ?? [], myDiet, today) : null;
   const banners = (bannerRows ?? [])
     .filter((b) => bannerVisible(b, new Date(), isMember))
     .slice(0, 3)
@@ -331,7 +336,7 @@ export default async function HomePage({
 
       <HomeBanners banners={banners} native={native} />
 
-      {mealPlan ? (
+      {mealPlan && myDiet ? (
         <MealPlanCard title={mealPlan.title} diet={DIET_LABELS[myDiet]} />
       ) : null}
 

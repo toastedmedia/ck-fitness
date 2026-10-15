@@ -20,6 +20,7 @@ import {
   setMembership,
   setStaffRole,
   updateClientContact,
+  updateQuestionnaire,
 } from "../../actions";
 
 export const metadata: Metadata = { title: "Client" };
@@ -50,7 +51,13 @@ export default async function AdminClient({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; kind?: string; saved?: string; error?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    kind?: string;
+    saved?: string;
+    error?: string;
+    edit?: string;
+  }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
@@ -97,6 +104,8 @@ export default async function AdminClient({
   const err: Record<string, string> = {
     stripe: "This member pays through Stripe. Manage it in Stripe.",
     role: "Only an owner can change staff roles.",
+    notshared: "This member has not shared their records with the coach.",
+    answers: "Choose an answer for each question.",
     lastowner: "There must always be at least one owner.",
     email: "That email could not be changed.",
     name: "Please enter a first and last name.",
@@ -661,7 +670,72 @@ export default async function AdminClient({
           <p className="mt-3 text-xs text-muted">
             Shared by the member. Your access to this page was recorded in the audit log.
           </p>
+          {o ? (
+            <Link
+              href={`/admin/users/${id}?tab=questionnaire&edit=1`}
+              className="mt-3 inline-flex min-h-10 items-center rounded-button border-2 border-line px-4 text-xs font-bold text-brand"
+            >
+              Edit answers
+            </Link>
+          ) : null}
         </Panel>
+        {sp.edit && o ? (
+          <Panel title="Edit answers (food, pregnancy, limitations)">
+            <form
+              action={updateQuestionnaire.bind(null, id)}
+              className="grid gap-3 md:grid-cols-2"
+            >
+              <label className="text-xs font-bold text-brand">
+                Food preference
+                <select
+                  name="nutrition"
+                  defaultValue={o.nutrition_preference ?? "vegetarian"}
+                  className={`${aInput} mt-1 font-normal`}
+                >
+                  <option value="vegetarian">Vegetarian</option>
+                  <option value="non_vegetarian">Non-vegetarian</option>
+                  <option value="other">Something else</option>
+                </select>
+              </label>
+              <label className="text-xs font-bold text-brand">
+                Pregnant or postpartum
+                <select
+                  name="pregnancy"
+                  defaultValue={flags.pregnancy_context ?? "no"}
+                  className={`${aInput} mt-1 font-normal`}
+                >
+                  <option value="no">No</option>
+                  <option value="yes">Yes</option>
+                  <option value="prefer_not_to_say">Prefer not to say</option>
+                </select>
+              </label>
+              <label className="text-xs font-bold text-brand md:col-span-2">
+                Injuries or limitations
+                <textarea
+                  name="limitations"
+                  rows={3}
+                  maxLength={500}
+                  defaultValue={flags.limitations ?? ""}
+                  className={`${aInput} mt-1 py-2 font-normal`}
+                />
+              </label>
+              <p className="text-xs text-muted md:col-span-2">
+                Use this when the member tells you their situation has changed. The change
+                (before and after) is recorded, and the member&apos;s meal plan and safety
+                guidance follow the new answers.
+              </p>
+              <div className="flex gap-2 md:col-span-2">
+                <ABtn variant="primary">Save answers</ABtn>
+                <Link
+                  href={`/admin/users/${id}?tab=questionnaire`}
+                  className="inline-flex min-h-10 items-center rounded-button border-2 border-line px-4 text-xs font-bold text-brand"
+                >
+                  Cancel
+                </Link>
+              </div>
+            </form>
+          </Panel>
+        ) : null}
       </>
     );
   }

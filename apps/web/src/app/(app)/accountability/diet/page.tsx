@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
-import { DIET_LABELS, currentPlan, isDiet, mealPlanBlocks, type DietKey } from "@ck/core";
+import {
+  DIET_LABELS,
+  currentPlan,
+  effectiveDiet,
+  mealPlanBlocks,
+  type DietKey,
+} from "@ck/core";
 import { Button, Card, Cap } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
 import { setDietPref } from "./actions";
@@ -18,8 +24,13 @@ interface Plan {
 
 export default async function DietPage() {
   const { supabase, user, today } = await getContext();
-  const [{ data: pref }, { data: plans }] = await Promise.all([
+  const [{ data: pref }, { data: ob }, { data: plans }] = await Promise.all([
     supabase.from("member_diet_pref").select("diet").eq("user_id", user.id).maybeSingle(),
+    supabase
+      .from("onboarding_profiles")
+      .select("nutrition_preference")
+      .eq("user_id", user.id)
+      .maybeSingle(),
     supabase
       .from("diet_plans")
       .select("*")
@@ -27,30 +38,44 @@ export default async function DietPage() {
       .order("starts_on", { ascending: false }),
   ]);
   const all = (plans ?? []) as Plan[];
-  const diet: DietKey = isDiet(pref?.diet) ? pref.diet : "vegetarian";
+  const chosen = effectiveDiet(pref?.diet, ob?.nutrition_preference);
+  const diet: DietKey = chosen ?? "vegetarian";
   const plan = currentPlan(all, diet, today);
   const earlier = all
     .filter((p) => p.diet === diet && p.starts_on <= today && p.id !== plan?.id)
     .slice(0, 6);
+  const picker = (current: DietKey | null) => (
+    <form action={setDietPref} className="mt-2 grid grid-cols-2 gap-2">
+      {(Object.keys(DIET_LABELS) as DietKey[]).map((d) => (
+        <Button
+          key={d}
+          name="diet"
+          value={d}
+          variant={d === current ? "primary" : "ghost"}
+          aria-pressed={d === current}
+        >
+          {DIET_LABELS[d]}
+        </Button>
+      ))}
+    </form>
+  );
   return (
     <>
       <h1 className="sr-only">Meal plan</h1>
-      <Card>
-        <Cap>I eat</Cap>
-        <form action={setDietPref} className="mt-2 grid grid-cols-2 gap-2">
-          {(Object.keys(DIET_LABELS) as DietKey[]).map((d) => (
-            <Button
-              key={d}
-              name="diet"
-              value={d}
-              variant={d === diet ? "primary" : "ghost"}
-              aria-pressed={d === diet}
-            >
-              {DIET_LABELS[d]}
-            </Button>
-          ))}
-        </form>
-      </Card>
+      {chosen ? (
+        <details className="px-1 text-xs text-muted">
+          <summary className="min-h-10 cursor-pointer py-2">
+            Showing the {DIET_LABELS[diet].toLowerCase()} plan, based on your answers.
+            Change?
+          </summary>
+          {picker(diet)}
+        </details>
+      ) : (
+        <Card>
+          <Cap>Which plan do you want?</Cap>
+          {picker(null)}
+        </Card>
+      )}
       {plan ? (
         <Card>
           <Cap>{DIET_LABELS[diet]} plan</Cap>

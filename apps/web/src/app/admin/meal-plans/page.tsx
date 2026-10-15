@@ -46,8 +46,9 @@ export default async function AdminMealPlans({
     <>
       <H1>Meal plans</H1>
       <p className="text-sm text-muted">
-        Write a weekly or monthly plan for each diet. Members choose vegetarian or
-        non-vegetarian and see the latest live plan under My Week, with a card on Home.
+        Write a weekly or monthly plan for each diet. Each member automatically sees the plan that
+        matches the food preference from their sign-up questionnaire (they can change it
+        themselves, and you can correct it on their client page), under My Week and on Home.
       </p>
       {sp.saved ? <Flash>Saved.</Flash> : null}
       {error ? (

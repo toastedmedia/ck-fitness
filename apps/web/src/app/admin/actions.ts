@@ -8,6 +8,8 @@ import {
   renderCampaign,
   validBannerLink,
   isDiet,
+  needsSafetyGuidance,
+  NUTRITION,
   MAX_BULK_ACCESS,
   cleanIds,
   audienceMatches,
@@ -1729,4 +1731,63 @@ export async function deleteMealPlan(id: string): Promise<void> {
   revalidatePath("/accountability/diet");
   revalidatePath("/home");
   redirect("/admin/meal-plans?saved=1");
+}
+
+/* ------------------------------------------------- edit a member's questionnaire */
+const PREGNANCY_OPTIONS = ["yes", "no", "prefer_not_to_say"];
+
+/** A coach/admin updates a member's food preference, pregnancy answer and limitations. Logged before and after. */
+export async function updateQuestionnaire(
+  userId: string,
+  formData: FormData,
+): Promise<void> {
+  const { supabase, user, db } = await requireStaff(["owner", "admin", "coach"]);
+  const back = (q: string) => redirect(`/admin/users/${userId}?tab=questionnaire&${q}`);
+  const { data: prof } = await db
+    .from("profiles")
+    .select("coach_access_at")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!prof?.coach_access_at) back("error=notshared");
+  const nutrition = str(formData, "nutrition");
+  const pregnancy = str(formData, "pregnancy");
+  const limitations = str(formData, "limitations", 500);
+  if (
+    !(NUTRITION as readonly string[]).includes(nutrition) ||
+    !PREGNANCY_OPTIONS.includes(pregnancy)
+  )
+    back("edit=1&error=answers");
+  const { data: before } = await db
+    .from("onboarding_profiles")
+    .select("nutrition_preference,safety_flags")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!before) back("error=answers");
+  const flags = (before?.safety_flags ?? {}) as Record<string, unknown>;
+  const safety_flags = {
+    ...flags,
+    limitations,
+    pregnancy_context: pregnancy,
+    show_guidance: needsSafetyGuidance({
+      limitations,
+      pregnancyContext: pregnancy as "yes" | "no" | "prefer_not_to_say",
+    }),
+  };
+  await db
+    .from("onboarding_profiles")
+    .update({ nutrition_preference: nutrition, safety_flags })
+    .eq("user_id", userId);
+  // Her own earlier plan choice would override the corrected answer, so clear it.
+  await db.from("member_diet_pref").delete().eq("user_id", userId);
+  await audit(supabase, user.id, "client.questionnaire_update", userId, {
+    before: {
+      nutrition: before?.nutrition_preference,
+      pregnancy: flags.pregnancy_context,
+      limitations: flags.limitations,
+    },
+    after: { nutrition, pregnancy, limitations },
+  });
+  revalidatePath("/home");
+  revalidatePath("/accountability/diet");
+  back("saved=1");
 }
