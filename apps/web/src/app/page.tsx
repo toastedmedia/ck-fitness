@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
 
-export default function WelcomePage() {
+export default async function WelcomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ deleted?: string }>;
+}) {
+  const sp = await searchParams;
   return (
     <div className="flex min-h-dvh flex-col bg-brand text-on-brand">
       <main
@@ -9,6 +14,14 @@ export default function WelcomePage() {
         className="mx-auto flex w-full max-w-md flex-1 flex-col justify-between gap-10 px-5 pb-6 pt-16"
       >
         <div>
+          {sp.deleted ? (
+            <p
+              role="status"
+              className="mb-6 rounded-card bg-success-soft p-3 text-sm font-semibold text-success"
+            >
+              Your account and all your data have been deleted.
+            </p>
+          ) : null}
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">
             Chardikala Fitness &amp; Performance
           </p>

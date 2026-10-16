@@ -19,7 +19,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url), { status: 303 });
 
   const form = await request.formData();
-  if (String(form.get("confirm") ?? "").trim() !== "DELETE") {
+  if (
+    String(form.get("confirm") ?? "")
+      .trim()
+      .toUpperCase() !== "DELETE"
+  ) {
     return NextResponse.redirect(new URL("/profile?error=confirm", request.url), {
       status: 303,
     });
