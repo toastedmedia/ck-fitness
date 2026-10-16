@@ -11,6 +11,7 @@ const TITLES: Record<string, string> = {
   "/community": "Community",
   "/community/members": "Members",
   "/profile": "Profile",
+  "/profile/delete": "Delete account",
   "/membership": "Membership",
   "/notifications": "Notifications",
   "/progress/photos": "Progress photos",
@@ -25,6 +26,7 @@ type Back = { href: string; label: string } | null;
 
 /** The "back" link for detail pages, shown in the header so there is no empty row above the content. */
 function backFor(path: string): Back {
+  if (path === "/profile/delete") return { href: "/profile", label: "Profile" };
   if (path === "/accountability/diet")
     return { href: "/accountability", label: "My Week" };
   if (path === "/progress/photos") return { href: "/progress", label: "Progress" };

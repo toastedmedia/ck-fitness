@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       .trim()
       .toUpperCase() !== "DELETE"
   ) {
-    return NextResponse.redirect(new URL("/profile?error=confirm", request.url), {
+    return NextResponse.redirect(new URL("/profile/delete?error=confirm", request.url), {
       status: 303,
     });
   }
@@ -40,9 +40,12 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       // Do not delete while billing might continue: ask her to cancel in the billing portal instead.
       console.error("could not cancel subscription before deletion", e);
-      return NextResponse.redirect(new URL("/profile?error=billing", request.url), {
-        status: 303,
-      });
+      return NextResponse.redirect(
+        new URL("/profile/delete?error=billing", request.url),
+        {
+          status: 303,
+        },
+      );
     }
   }
   // Photo files are not removed by the database cascade, so delete them explicitly.
@@ -65,7 +68,7 @@ export async function POST(request: NextRequest) {
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (!error) await track(null, "account_deleted");
   if (error)
-    return NextResponse.redirect(new URL("/profile?error=delete", request.url), {
+    return NextResponse.redirect(new URL("/profile/delete?error=delete", request.url), {
       status: 303,
     });
   await supabase.auth.signOut();

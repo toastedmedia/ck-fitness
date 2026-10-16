@@ -63,20 +63,6 @@ export default async function ProfilePage({
     <>
       <h1 className="sr-only">Profile</h1>
       {sp.saved ? <Flash>Saved.</Flash> : null}
-      {sp.error === "confirm" ? (
-        <Flash tone="error">Type DELETE exactly to confirm.</Flash>
-      ) : null}
-      {sp.error === "billing" ? (
-        <Flash tone="error">
-          We could not cancel your membership automatically. Please cancel it under
-          Membership first, then delete your account.
-        </Flash>
-      ) : null}
-      {sp.error === "delete" ? (
-        <Flash tone="error">
-          We could not delete your account. Please contact support.
-        </Flash>
-      ) : null}
       {sp.error === "phone" ? (
         <Flash tone="error">Enter a valid phone number.</Flash>
       ) : null}
@@ -298,26 +284,12 @@ export default async function ProfilePage({
         </ul>
       </Card>
 
-      <Card className="border-[#e8bdb6]">
-        <Cap>Delete account</Cap>
-        <p className="mt-1 text-xs text-muted">
-          This permanently removes your account and everything you have logged. It cannot
-          be undone. Cancel any membership first so you are not billed again.
-        </p>
-        <form
-          action="/api/account/delete"
-          method="post"
-          className="mt-2 flex flex-col gap-2"
-        >
-          <label className="text-xs font-bold text-brand">
-            Type DELETE to confirm
-            <input name="confirm" autoComplete="off" className={input} />
-          </label>
-          <button className="min-h-11 rounded-button border-2 border-danger px-4 text-xs font-bold text-danger">
-            Delete my account
-          </button>
-        </form>
-      </Card>
+      <Link
+        href="/profile/delete"
+        className="inline-flex min-h-11 items-center justify-center rounded-button border-2 border-danger px-4 text-xs font-bold text-danger"
+      >
+        Delete my account
+      </Link>
 
       <form action="/auth/signout" method="post">
         <Button variant="ghost" className="w-full">
