@@ -10,6 +10,7 @@ import {
   type Units,
 } from "@ck/core";
 import { LineChart } from "@/components/app/charts";
+import { QuickMessage } from "@/components/admin/QuickMessage";
 import { ABtn, Flash, H1, Panel, Status, Table, aInput, td } from "@/components/admin/ui";
 import { audit, SUPPORT, requireStaff } from "@/lib/admin";
 import { listInvoices } from "@/lib/stripe";
@@ -52,6 +53,7 @@ export default async function AdminClient({
 }: {
   params: Promise<{ id: string }>;
   searchParams: Promise<{
+    sent?: string;
     tab?: string;
     kind?: string;
     saved?: string;
@@ -124,6 +126,9 @@ export default async function AdminClient({
         {p.first_name} {p.last_name}
       </H1>
       {sp.saved ? <Flash>Saved.</Flash> : null}
+      {sp.sent ? (
+        <Flash>Message sent. The member sees it in their notifications.</Flash>
+      ) : null}
       {sp.error ? <Flash bad>{err[sp.error] ?? "Something went wrong."}</Flash> : null}
       <nav aria-label="Client sections" className="flex flex-wrap gap-2">
         {TABS.map(([t, l]) => (
@@ -269,6 +274,15 @@ export default async function AdminClient({
     return (
       <>
         {head}
+        {canSeeRecords ? (
+          <Panel title="Send a quick message">
+            <p className="text-xs text-muted">
+              Shows in the member&apos;s notifications in the app (and as a push
+              notification once push is on).
+            </p>
+            <QuickMessage userId={id} back="client" />
+          </Panel>
+        ) : null}
         <MemberTags userId={id} db={db} canEdit={isOps} />
         <Panel title="Contact details">
           {isOps ? (

@@ -55,6 +55,21 @@ export const BARRIERS = [
   ["other", "Other"],
 ] as const;
 export type Barrier = (typeof BARRIERS)[number][0];
+/** Friendly starting messages a coach can send (and edit) for each reason a member gave. */
+export const BARRIER_REPLIES: Record<Barrier, string> = {
+  no_time:
+    "No problem. Even a 10-minute session counts. Pick the shortest workout in your plan today and do just that.",
+  low_motivation:
+    "It happens to everyone. Start with just 5 minutes and see how you feel. We are here if you want to talk.",
+  sore: "Okay, you are feeling sore. Take it easy today: a 10-minute walk, gentle stretching and plenty of water. Come back to your plan when you feel ready.",
+  dont_understand:
+    "Thanks for telling us. Open the lesson and watch the first minute, or reply here and we will walk you through it.",
+  nutrition:
+    "That is okay. Check your meal plan under My Week and pick one meal to get right today. Small steps add up.",
+  other:
+    "Thanks for letting us know. Reply here and tell us what is getting in the way, and we will help you find a plan that fits.",
+};
+
 export const isBarrier = (v: unknown): v is Barrier => BARRIERS.some(([k]) => k === v);
 
 export function validateDailyCheckin(

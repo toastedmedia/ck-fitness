@@ -1791,3 +1791,26 @@ export async function updateQuestionnaire(
   revalidatePath("/accountability/diet");
   back("saved=1");
 }
+
+/* ------------------------------------------------------- quick coach message */
+/** A coach sends a short message that appears in the member's notifications (and as a push later). */
+export async function sendCoachMessage(
+  userId: string,
+  formData: FormData,
+): Promise<void> {
+  const { supabase, user } = await requireStaff(["owner", "admin", "coach"]);
+  const back =
+    str(formData, "back") === "client"
+      ? `/admin/users/${userId}`
+      : "/admin/accountability";
+  const message = str(formData, "message", 500);
+  if (!message) redirect(`${back}?error=message`);
+  await notifyUser(userId, {
+    kind: "coach",
+    title: "A message from your CK coach",
+    body: message,
+    link: "/notifications",
+  });
+  await audit(supabase, user.id, "coach.message", userId, { message });
+  redirect(`${back}?sent=1`);
+}
