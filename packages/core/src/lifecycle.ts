@@ -76,8 +76,16 @@ export function nextLifecycleEmail(i: LifecycleInput): LifecycleKey | null {
   return null;
 }
 
-/** The weekly check-in reminder (in-app and email) waits until an account is nearly a week old. */
-export const CHECKIN_MIN_ACCOUNT_DAYS = 6;
-export function checkinNudgeAllowed(createdAtMs: number, nowMs: number): boolean {
-  return nowMs - createdAtMs >= CHECKIN_MIN_ACCOUNT_DAYS * 86_400_000;
+/**
+ * The weekly check-in reminder goes out Monday morning (the calendar week starts Monday), once, for the
+ * week that just ended. Everyone who joined before this Monday gets it, including Sunday sign-ups; nobody
+ * gets one on the day they join or mid-week. `joinedDay` and `today` are the member's local YYYY-MM-DD.
+ */
+export function weeklyCheckinDue(i: {
+  today: string;
+  dayOfWeek: number; // 0 = Monday
+  hour: number;
+  joinedDay: string;
+}): boolean {
+  return i.dayOfWeek === 0 && i.hour >= 9 && i.hour < 18 && i.joinedDay < i.today;
 }

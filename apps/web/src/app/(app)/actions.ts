@@ -351,7 +351,9 @@ export async function setCommitment(formData: FormData): Promise<void> {
 export async function submitWeeklyCheckin(formData: FormData): Promise<void> {
   const ctx = await getContext();
   const { supabase, user, today } = ctx;
-  const start = weekStart(today);
+  // Monday's reminder looks back at the week that just ended.
+  const start =
+    formData.get("week") === "last" ? addDays(weekStart(today), -7) : weekStart(today);
   const energy = score(formData.get("energy")),
     sleep = score(formData.get("sleep"));
   const soreness = score(formData.get("soreness")),

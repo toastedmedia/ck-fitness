@@ -22,12 +22,14 @@ const OBSTACLES = [
 export default async function CheckinPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; week?: string }>;
 }) {
   const sp = await searchParams;
   const ctx = await getContext();
   const plan = await ensurePlan(ctx);
-  const start = weekStart(ctx.today);
+  // "week=last": the Monday reminder, looking back at the week that just ended.
+  const last = sp.week === "last";
+  const start = last ? addDays(weekStart(ctx.today), -7) : weekStart(ctx.today);
   const { data } = await ctx.supabase
     .from("scheduled_actions")
     .select("scheduled_for,status")
@@ -43,17 +45,18 @@ export default async function CheckinPage({
     <>
       <h1 className="sr-only">Weekly check-in</h1>
       <p className="text-xs text-muted">
-        You planned {prog.planned} and completed {prog.completed} this week. Every bit
-        counts.
+        You planned {prog.planned} and completed {prog.completed} {last ? "last" : "this"}{" "}
+        week. Every bit counts.
       </p>
       {sp.error ? (
         <Flash tone="error">Please answer the four scale questions.</Flash>
       ) : null}
       <form action={submitWeeklyCheckin} className="flex flex-col gap-4">
+        <input type="hidden" name="week" value={last ? "last" : "this"} />
         <Card className="flex flex-col gap-4">
           <Scale
             name="energy"
-            label="How was your energy this week?"
+            label={`How was your energy ${last ? "last" : "this"} week?`}
             low="Low"
             high="High"
           />

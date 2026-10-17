@@ -1,10 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
-  checkinNudgeAllowed,
+  addDays,
   dayKey,
   dayOfWeek,
   hourIn,
   weekStart,
+  weeklyCheckinDue,
   workoutReminderDue,
 } from "@ck/core";
 import { cronGuard } from "@/lib/cron";
@@ -153,28 +154,33 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    // Friday evening onwards: gentle weekly check-in nudge, once per week.
+    // Monday morning (the calendar week starts Monday): the weekly check-in for the week that just ended,
+    // once per week, for everyone who joined before today. Never on Friday, never on the day they join.
     if (
       pr?.weekly_checkin !== false &&
-      checkinNudgeAllowed(new Date(p.created_at).getTime(), now.getTime()) &&
-      dayOfWeek(today) >= 4 &&
-      hour >= 17
+      weeklyCheckinDue({
+        today,
+        dayOfWeek: dayOfWeek(today),
+        hour,
+        joinedDay: dayKey(new Date(p.created_at), p.timezone),
+      })
     ) {
-      const start = weekStart(today);
+      const thisWeek = weekStart(today);
+      const lastWeek = addDays(thisWeek, -7);
       const { data: ci } = await db
         .from("weekly_checkins")
         .select("id")
         .eq("user_id", p.user_id)
-        .eq("week_start", start)
+        .eq("week_start", lastWeek)
         .maybeSingle();
       if (!ci)
         await send(
           p.user_id,
-          `checkin:${start}`,
+          `checkin-mon:${thisWeek}`,
           "checkin",
           "Your weekly check-in is ready",
-          "It takes about a minute.",
-          "/accountability/checkin",
+          "How was last week? It takes about a minute.",
+          "/accountability/checkin?week=last",
         );
     }
 

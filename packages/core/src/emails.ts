@@ -90,12 +90,12 @@ const SPECS: Record<EmailKey, Spec> = {
   },
   checkin_reminder: {
     subject: () => "Your weekly check-in is ready",
-    preheader: "One minute to reflect and plan your next week.",
-    heading: (n) => `${n}, how was your week?`,
+    preheader: "One minute to look back at last week and plan this one.",
+    heading: (n) => `${n}, how was last week?`,
     paragraphs: [
-      "Your weekly check-in is ready. It takes about a minute and helps you plan next week.",
+      "Your weekly check-in is ready. It takes about a minute and helps you plan this week.",
     ],
-    cta: { label: "Do my weekly check-in", path: "/accountability/checkin" },
+    cta: { label: "Do my weekly check-in", path: "/accountability/checkin?week=last" },
   },
   we_miss_you: {
     subject: (n) => `${n}, pick up where you left off`,

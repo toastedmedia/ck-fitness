@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  checkinNudgeAllowed,
-  nextLifecycleEmail,
-  type LifecycleInput,
-} from "./lifecycle";
+import { nextLifecycleEmail, weeklyCheckinDue, type LifecycleInput } from "./lifecycle";
 
 const D = 24 * 3_600_000;
 const now = Date.UTC(2026, 10, 20, 12);
@@ -88,10 +84,20 @@ describe("after onboarding", () => {
 });
 
 describe("weekly check-in reminder timing", () => {
-  it("waits until the account is nearly a week old", () => {
-    expect(checkinNudgeAllowed(now - 1 * D, now)).toBe(false);
-    expect(checkinNudgeAllowed(now - 5 * D, now)).toBe(false);
-    expect(checkinNudgeAllowed(now - 6 * D, now)).toBe(true);
-    expect(checkinNudgeAllowed(now - 40 * D, now)).toBe(true);
+  const base = { today: "2026-10-19", dayOfWeek: 0, hour: 9, joinedDay: "2026-10-11" };
+  it("goes out Monday morning, around 9", () => {
+    expect(weeklyCheckinDue(base)).toBe(true);
+    expect(weeklyCheckinDue({ ...base, hour: 8 })).toBe(false);
+    expect(weeklyCheckinDue({ ...base, hour: 17 })).toBe(true);
+    expect(weeklyCheckinDue({ ...base, hour: 18 })).toBe(false);
+  });
+  it("never goes out on other days, including Friday", () => {
+    for (const d of [1, 2, 3, 4, 5, 6])
+      expect(weeklyCheckinDue({ ...base, dayOfWeek: d })).toBe(false);
+  });
+  it("includes anyone who joined before Monday (even Sunday) but not someone who joined today", () => {
+    expect(weeklyCheckinDue({ ...base, joinedDay: "2026-10-18" })).toBe(true);
+    expect(weeklyCheckinDue({ ...base, joinedDay: "2026-10-16" })).toBe(true);
+    expect(weeklyCheckinDue({ ...base, joinedDay: "2026-10-19" })).toBe(false);
   });
 });
