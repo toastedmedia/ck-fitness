@@ -107,6 +107,8 @@ create policy "meal items: own" on public.meal_items for all
   using (user_id = auth.uid()) with check (user_id = auth.uid());
 drop policy if exists "meal scans: own read" on public.meal_scans;
 create policy "meal scans: own read" on public.meal_scans for select using (user_id = auth.uid());
+drop policy if exists "meal scans: own insert" on public.meal_scans;
+create policy "meal scans: own insert" on public.meal_scans for insert with check (user_id = auth.uid());
 
 -- Staff: read-only, shared records only. Support and content roles are never included.
 drop policy if exists "nutrition profile: staff read shared" on public.nutrition_profiles;

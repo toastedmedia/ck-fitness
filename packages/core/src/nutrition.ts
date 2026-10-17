@@ -328,3 +328,14 @@ export function localTime(at: Date | string, tz: string): string {
     minute: "2-digit",
   }).format(d);
 }
+
+/** Totals per day, newest first. Used by history and the weekly summary. */
+export function groupByDay(
+  meals: (Partial<Macros> & { meal_date: string })[],
+): { date: string; totals: Macros; meals: number }[] {
+  const by = new Map<string, Partial<Macros>[]>();
+  for (const m of meals) by.set(m.meal_date, [...(by.get(m.meal_date) ?? []), m]);
+  return [...by.entries()]
+    .map(([date, rows]) => ({ date, totals: sumMacros(rows), meals: rows.length }))
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+}

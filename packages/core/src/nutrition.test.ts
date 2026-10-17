@@ -6,6 +6,7 @@ import {
   dayProgress,
   estimateTargets,
   extractJson,
+  groupByDay,
   itemsTotal,
   localTime,
   localToUtc,
@@ -206,5 +207,17 @@ describe("local date and time", () => {
       ),
     ).toBe("2026-10-16");
     expect(localToUtc("bad", "13:22", "America/Vancouver")).toBeNull();
+  });
+});
+
+describe("history grouping", () => {
+  it("groups meals into days, newest first", () => {
+    const g = groupByDay([
+      { meal_date: "2026-10-15", calories: 500, protein: 30 },
+      { meal_date: "2026-10-16", calories: 400, protein: 20 },
+      { meal_date: "2026-10-16", calories: 300, protein: 10 },
+    ]);
+    expect(g.map((d) => d.date)).toEqual(["2026-10-16", "2026-10-15"]);
+    expect(g[0]).toMatchObject({ meals: 2, totals: { calories: 700, protein: 30 } });
   });
 });

@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import { localTime, mealTypeForHour, validMealDate } from "@ck/core";
 import { Flash } from "@/components/app/ui";
 import { LockedNutrition } from "@/components/nutrition/Bits";
-import { MealEditor } from "@/components/nutrition/MealEditor";
+import { ScanFlow } from "@/components/nutrition/ScanFlow";
 import { nutritionGate } from "@/lib/nutrition";
-import { saveMeal } from "../actions";
+import { aiConfigured } from "@/lib/nutrition-ai";
 
+export const maxDuration = 60;
 export const metadata: Metadata = { title: "Log meal" };
 
 const ERRORS: Record<string, string> = {
@@ -21,7 +22,7 @@ export default async function LogMealPage({
   searchParams: Promise<{ date?: string; error?: string }>;
 }) {
   const sp = await searchParams;
-  const { tz, today, allowed, native } = await nutritionGate();
+  const { tz, today, allowed, native, user } = await nutritionGate();
   if (!allowed) return <LockedNutrition native={native} />;
   const now = new Date();
   const date = sp.date && validMealDate(sp.date, today) ? sp.date : today;
@@ -30,15 +31,14 @@ export default async function LogMealPage({
     <>
       <h1 className="sr-only">Log meal</h1>
       {sp.error ? <Flash tone="error">{ERRORS[sp.error] ?? ERRORS.save}</Flash> : null}
-      <MealEditor
-        action={saveMeal}
-        confirmLabel="Save meal"
-        initial={{
+      <ScanFlow
+        userId={user.id}
+        aiAvailable={aiConfigured()}
+        base={{
           mealType: mealTypeForHour(Number(time.slice(0, 2))),
           date,
           time,
           description: "",
-          items: [],
         }}
       />
     </>

@@ -207,6 +207,9 @@ export default async function NutritionPage({
         <Link href="/accountability/diet" className="underline underline-offset-4">
           Meal plan
         </Link>
+        <Link href="/nutrition/history" className="underline underline-offset-4">
+          History
+        </Link>
         <Link href="/nutrition/setup" className="underline underline-offset-4">
           Change my targets
         </Link>

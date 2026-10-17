@@ -15,6 +15,7 @@ const TITLES: Record<string, string> = {
   "/nutrition": "Nutrition",
   "/nutrition/setup": "Nutrition targets",
   "/nutrition/log": "Log meal",
+  "/nutrition/history": "History",
   "/membership": "Membership",
   "/notifications": "Notifications",
   "/progress/photos": "Progress photos",

@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
+  SCAN_LIMIT_PER_DAY,
+  canScan,
   asUnits,
   cleanItem,
   estimateTargets,
@@ -19,6 +21,7 @@ import {
   type MealItemInput,
 } from "@ck/core";
 import { track } from "@/lib/events";
+import { aiConfigured, aiModel, analyzeMeal } from "@/lib/nutrition-ai";
 import { nutritionGate } from "@/lib/nutrition";
 
 const text = (f: FormData, k: string, max = 500) =>
@@ -224,4 +227,104 @@ export async function deleteMeal(id: string): Promise<void> {
   await track(user.id, "meal_deleted");
   revalidatePath("/nutrition");
   redirect(`/nutrition?date=${meal.meal_date}`);
+}
+
+export type ScanResult =
+  | {
+      ok: true;
+      items: {
+        name: string;
+        serving: string;
+        calories: number;
+        protein: number;
+        carbs: number;
+        fat: number;
+        confidence: string | null;
+      }[];
+      notes: string[];
+      model: string;
+      scansLeft: number;
+    }
+  | { ok: false; error: string };
+
+/**
+ * One AI meal scan. Paid members only, limited per day, never saves anything: the member reviews and
+ * confirms. Editing a saved meal never calls this again.
+ */
+export async function scanMeal(input: {
+  photoPath?: string;
+  description?: string;
+  mealType?: string;
+}): Promise<ScanResult> {
+  const { supabase, user, tz, today, allowed } = await nutritionGate();
+  if (!allowed) return { ok: false, error: "Nutrition is part of CK Membership." };
+  if (!aiConfigured())
+    return {
+      ok: false,
+      error: "AI scanning is not available right now. You can add the meal manually.",
+    };
+  const description = (input.description ?? "").trim().slice(0, 500);
+  const photoPath = input.photoPath ?? "";
+  if (!photoPath && !description)
+    return { ok: false, error: "Add a photo or describe the meal." };
+  if (photoPath && !photoPath.startsWith(`${user.id}/`))
+    return { ok: false, error: "That photo could not be read." };
+
+  const dayStart = localToUtc(today, "00:00", tz) ?? new Date(Date.now() - 86_400_000);
+  const { count } = await supabase
+    .from("meal_scans")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .gte("created_at", dayStart.toISOString());
+  const used = count ?? 0;
+  if (!canScan(used))
+    return {
+      ok: false,
+      error: `You have used today's ${SCAN_LIMIT_PER_DAY} AI scans. You can still add meals manually, and scans reset at midnight.`,
+    };
+
+  let imageBase64: string | undefined;
+  if (photoPath) {
+    const { data, error } = await supabase.storage
+      .from("meal-photos")
+      .download(photoPath);
+    if (error || !data)
+      return { ok: false, error: "We could not open that photo. Please try again." };
+    imageBase64 = Buffer.from(await data.arrayBuffer()).toString("base64");
+  }
+  await track(user.id, "meal_scan_started");
+  const result = await analyzeMeal({
+    imageBase64,
+    description,
+    mealType: isMealType(input.mealType) ? input.mealType : undefined,
+  });
+  await supabase
+    .from("meal_scans")
+    .insert({ user_id: user.id, model: aiModel(), ok: result.ok });
+  if (!result.ok) {
+    await track(user.id, "meal_scan_failed", { reason: result.error });
+    return {
+      ok: false,
+      error:
+        result.error === "unreadable"
+          ? "We could not find foods in that. Try a clearer photo, add a short description, or add the meal manually."
+          : "The AI scan did not work this time. Try again, or add the meal manually.",
+    };
+  }
+  await track(user.id, "meal_scan_success");
+  return {
+    ok: true,
+    items: result.value.items.map((i) => ({
+      name: i.name,
+      serving: i.serving,
+      calories: i.calories,
+      protein: i.protein,
+      carbs: i.carbs,
+      fat: i.fat,
+      confidence: i.confidence,
+    })),
+    notes: result.value.notes,
+    model: result.model,
+    scansLeft: Math.max(0, SCAN_LIMIT_PER_DAY - used - 1),
+  };
 }
