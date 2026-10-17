@@ -2,7 +2,7 @@
  * CK Nutrition rules. Pure functions (no I/O) so the server, the pages and the tests share one definition.
  * Everything here is an ESTIMATE for habit-building, never medical advice.
  */
-import { addDays, dayKey } from "./dates";
+import { addDays, dayKey, daysBetween } from "./dates";
 
 export const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack", "other"] as const;
 export type MealType = (typeof MEAL_TYPES)[number];
@@ -338,4 +338,129 @@ export function groupByDay(
   return [...by.entries()]
     .map(([date, rows]) => ({ date, totals: sumMacros(rows), meals: rows.length }))
     .sort((a, b) => (a.date < b.date ? 1 : -1));
+}
+
+/* ------------------------------------------------------------- weekly summary */
+export interface WeekSummary {
+  mealsLogged: number;
+  daysTracked: number;
+  daysElapsed: number;
+  proteinDaysHit: number;
+  avgCalories: number | null;
+  line: string;
+}
+
+/** This week so far (Monday to today), from per-day totals. Supportive wording only. */
+export function nutritionWeek(
+  days: { date: string; totals: Macros; meals: number }[],
+  target: Targets,
+  weekStartKey: string,
+  today: string,
+): WeekSummary {
+  const inWeek = days.filter(
+    (d) => d.date >= weekStartKey && d.date <= today && d.meals > 0,
+  );
+  const daysElapsed = Math.min(7, daysBetween(weekStartKey, today) + 1);
+  const mealsLogged = inWeek.reduce((n, d) => n + d.meals, 0);
+  const proteinDaysHit = inWeek.filter((d) => d.totals.protein >= target.protein).length;
+  const avgCalories = inWeek.length
+    ? Math.round(inWeek.reduce((n, d) => n + d.totals.calories, 0) / inWeek.length)
+    : null;
+  const line =
+    inWeek.length >= 3 && inWeek.length >= Math.ceil(daysElapsed * 0.7)
+      ? "Strong consistency this week."
+      : inWeek.length > 0
+        ? "Every logged meal helps. Keep going."
+        : "One photo is enough to get started.";
+  return {
+    mealsLogged,
+    daysTracked: inWeek.length,
+    daysElapsed,
+    proteinDaysHit,
+    avgCalories,
+    line,
+  };
+}
+
+/* -------------------------------------------------------------------- nudges */
+export interface NudgeConfig {
+  /** Local hour after which "nothing logged yet" may be sent. */
+  noMealHour: number;
+  /** Local hour after which a protein reminder may be sent. */
+  proteinCheckHour: number;
+  /** Send the protein reminder when protein is below this % of the target. */
+  proteinShortPct: number;
+  /** Days without a meal (after using the feature) before a gentle restart note. */
+  idleDays: number;
+}
+export const DEFAULT_NUDGE_CONFIG: NudgeConfig = {
+  noMealHour: 13,
+  proteinCheckHour: 17,
+  proteinShortPct: 60,
+  idleDays: 3,
+};
+
+/** Admin-editable overrides (app_settings "nutrition_nudges"), bounded so a typo cannot cause spam. */
+export function mergeNudgeConfig(v: unknown): NudgeConfig {
+  const o = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
+  const pick = (k: keyof NudgeConfig, min: number, max: number) => {
+    const n = Number(o[k]);
+    return Number.isFinite(n) && n >= min && n <= max
+      ? Math.round(n)
+      : DEFAULT_NUDGE_CONFIG[k];
+  };
+  return {
+    noMealHour: pick("noMealHour", 8, 19),
+    proteinCheckHour: pick("proteinCheckHour", 12, 20),
+    proteinShortPct: pick("proteinShortPct", 10, 95),
+    idleDays: pick("idleDays", 2, 14),
+  };
+}
+
+export interface NudgeInput {
+  hour: number;
+  today: string;
+  mealsToday: number;
+  proteinToday: number;
+  proteinTarget: number;
+  /** Local day of her most recent meal before today, if she has ever logged one. */
+  lastMealDay: string | null;
+  config?: NudgeConfig;
+}
+export type Nudge = { kind: "idle" | "no_meal" | "protein"; title: string; body: string };
+
+/**
+ * At most one rule-based nudge, never shaming, never about going over a target.
+ * The caller sends at most one nutrition nudge per member per day.
+ */
+export function nutritionNudge(i: NudgeInput): Nudge | null {
+  const c = i.config ?? DEFAULT_NUDGE_CONFIG;
+  if (i.mealsToday === 0 && i.lastMealDay && i.hour >= 10 && i.hour < 20) {
+    if (daysBetween(i.lastMealDay, i.today) >= c.idleDays)
+      return {
+        kind: "idle",
+        title: "Pick up where you left off",
+        body: "Haven't logged a meal lately? One photo is enough. You don't need to track perfectly.",
+      };
+  }
+  if (i.mealsToday === 0 && i.hour >= c.noMealHour && i.hour < 20)
+    return {
+      kind: "no_meal",
+      title: "Nothing logged yet today",
+      body: "Nothing logged yet today. One photo is enough to get started.",
+    };
+  if (
+    i.mealsToday > 0 &&
+    i.hour >= c.proteinCheckHour &&
+    i.hour < 21 &&
+    i.proteinToday < (i.proteinTarget * c.proteinShortPct) / 100
+  ) {
+    const short = Math.max(5, Math.round((i.proteinTarget - i.proteinToday) / 5) * 5);
+    return {
+      kind: "protein",
+      title: "Protein check-in",
+      body: `You're still about ${short}g short of today's protein goal.`,
+    };
+  }
+  return null;
 }

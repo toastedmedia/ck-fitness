@@ -417,6 +417,8 @@ export async function saveNotificationPrefs(formData: FormData): Promise<void> {
       weekly_checkin: on("weekly_checkin"),
       new_content: on("new_content"),
       community: on("community"),
+      // Only when the Nutrition toggle was on screen, so saving never switches it off by accident.
+      ...(formData.has("nutrition_present") ? { nutrition: on("nutrition") } : {}),
       marketing: on("marketing"),
       email: on("email"),
       sms: on("sms"),

@@ -42,6 +42,8 @@ import { flags } from "@/lib/flags";
 import { DIET_LABELS, bannerVisible, currentPlan, effectiveDiet } from "@ck/core";
 import { isNativeApp } from "@/lib/native";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { HomeNutritionCard } from "@/components/nutrition/NutritionCards";
+import { nutritionSnapshot } from "@/lib/nutrition-summary";
 import { MealPlanCard } from "@/components/home/MealPlanCard";
 import { HomeBanners } from "@/components/home/HomeBanners";
 import { ReferralCard } from "@/components/home/ReferralCard";
@@ -253,6 +255,8 @@ export default async function HomePage({
   ]);
   const myDiet = effectiveDiet(dietRow?.diet, dietOb?.nutrition_preference);
   const mealPlan = myDiet ? currentPlan(planRows ?? [], myDiet, today) : null;
+  // Nutrition card: only when the feature is switched on for members (no queries otherwise).
+  const nutrition = await nutritionSnapshot(ctx);
   const banners = (bannerRows ?? [])
     .filter((b) => bannerVisible(b, new Date(), isMember))
     .slice(0, 3)
@@ -335,6 +339,8 @@ export default async function HomePage({
       <TodaysWorkout workout={workout} done={workoutDone} restDay={!workoutScheduled} />
 
       <HomeBanners banners={banners} native={native} />
+
+      {nutrition ? <HomeNutritionCard snap={nutrition} /> : null}
 
       {mealPlan && myDiet ? (
         <MealPlanCard title={mealPlan.title} diet={DIET_LABELS[myDiet]} />

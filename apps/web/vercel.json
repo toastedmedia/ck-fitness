@@ -27,6 +27,10 @@
     {
       "path": "/api/cron/lifecycle",
       "schedule": "30 17 * * *"
+    },
+    {
+      "path": "/api/cron/nutrition",
+      "schedule": "15 * * * *"
     }
   ]
 }

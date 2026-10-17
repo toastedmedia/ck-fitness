@@ -11,6 +11,9 @@ import {
   localTime,
   localToUtc,
   mealDay,
+  mergeNudgeConfig,
+  nutritionNudge,
+  nutritionWeek,
   mealTypeForHour,
   parseAiMeal,
   sumMacros,
@@ -219,5 +222,86 @@ describe("history grouping", () => {
     ]);
     expect(g.map((d) => d.date)).toEqual(["2026-10-16", "2026-10-15"]);
     expect(g[0]).toMatchObject({ meals: 2, totals: { calories: 700, protein: 30 } });
+  });
+});
+
+describe("weekly summary", () => {
+  const d = (date: string, calories: number, protein: number) => ({
+    date,
+    totals: { calories, protein, carbs: 0, fat: 0 },
+    meals: 3,
+  });
+  it("counts days tracked, protein days and the average", () => {
+    const w = nutritionWeek(
+      [
+        d("2026-10-12", 1800, 110),
+        d("2026-10-13", 1700, 90),
+        d("2026-10-14", 1900, 120),
+        d("2026-10-09", 3000, 200),
+      ],
+      { calories: 1850, protein: 110 },
+      "2026-10-12",
+      "2026-10-15",
+    );
+    expect(w).toMatchObject({
+      daysTracked: 3,
+      daysElapsed: 4,
+      proteinDaysHit: 2,
+      mealsLogged: 9,
+      avgCalories: 1800,
+    });
+    expect(w.line).toBe("Strong consistency this week.");
+  });
+  it("stays encouraging when nothing is logged", () => {
+    expect(
+      nutritionWeek([], { calories: 1850, protein: 110 }, "2026-10-12", "2026-10-13")
+        .line,
+    ).toBe("One photo is enough to get started.");
+  });
+});
+
+describe("nutrition nudges", () => {
+  const base = {
+    today: "2026-10-16",
+    proteinTarget: 110,
+    proteinToday: 0,
+    mealsToday: 0,
+    lastMealDay: "2026-10-15" as string | null,
+  };
+  it("asks gently when nothing is logged by the afternoon", () => {
+    expect(nutritionNudge({ ...base, hour: 9 })).toBeNull();
+    expect(nutritionNudge({ ...base, hour: 14 })?.kind).toBe("no_meal");
+    expect(nutritionNudge({ ...base, hour: 21 })).toBeNull();
+  });
+  it("mentions protein only late in the day and only when well short", () => {
+    const m = { ...base, mealsToday: 2 };
+    expect(nutritionNudge({ ...m, hour: 15, proteinToday: 20 })).toBeNull();
+    expect(nutritionNudge({ ...m, hour: 18, proteinToday: 75 })).toBeNull();
+    const n = nutritionNudge({ ...m, hour: 18, proteinToday: 40 });
+    expect(n?.kind).toBe("protein");
+    expect(n?.body).toContain("70g short");
+  });
+  it("sends a restart note after 3 quiet days and never shames", () => {
+    const n = nutritionNudge({ ...base, hour: 11, lastMealDay: "2026-10-12" });
+    expect(n?.kind).toBe("idle");
+    const all = [
+      n,
+      nutritionNudge({ ...base, hour: 14 }),
+      nutritionNudge({ ...base, hour: 18, mealsToday: 1, proteinToday: 10 }),
+    ];
+    for (const x of all)
+      expect(`${x?.title} ${x?.body}`).not.toMatch(/fail|overate|bad day/i);
+  });
+  it("is quiet when the member is over their calories (no such rule exists)", () => {
+    expect(
+      nutritionNudge({ ...base, hour: 18, mealsToday: 4, proteinToday: 120 }),
+    ).toBeNull();
+  });
+  it("bounds admin overrides", () => {
+    expect(mergeNudgeConfig({ noMealHour: 2, idleDays: 5 })).toMatchObject({
+      noMealHour: 13,
+      idleDays: 5,
+    });
+    expect(mergeNudgeConfig(null).proteinShortPct).toBe(60);
   });
 });

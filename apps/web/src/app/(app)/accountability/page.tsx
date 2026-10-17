@@ -13,6 +13,8 @@ import {
 import { ActionButton } from "@/components/app/ActionButton";
 import { DayPicker } from "@/components/app/Scale";
 import { Button, Cap, Card, Flash, Pill } from "@/components/app/ui";
+import { NutritionWeekCard } from "@/components/nutrition/NutritionCards";
+import { nutritionSnapshot } from "@/lib/nutrition-summary";
 import { MealPlanCard } from "@/components/home/MealPlanCard";
 import { getContext } from "@/lib/app";
 import { activeDays } from "@/lib/milestones";
@@ -80,6 +82,8 @@ export default async function AccountabilityPage({
   const earned = ((milestones.data ?? []) as { milestone_type: MilestoneType }[])
     .map((m) => MILESTONE_COPY[m.milestone_type])
     .filter(Boolean);
+
+  const nutrition = await nutritionSnapshot(ctx);
 
   return (
     <>
@@ -228,6 +232,13 @@ export default async function AccountabilityPage({
       </Card>
 
       <AccountabilityInsights />
+
+      {nutrition ? (
+        <NutritionWeekCard
+          snap={nutrition}
+          workouts={{ done: prog.completed, planned: prog.planned }}
+        />
+      ) : null}
 
       <MealPlanCard title={null} />
 

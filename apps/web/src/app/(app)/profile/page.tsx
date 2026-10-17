@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PushButton } from "@/components/app/PushButton";
 import { Button, Cap, Card, Flash } from "@/components/app/ui";
+import { flags } from "@/lib/flags";
 import { getContext } from "@/lib/app";
 import {
   saveNotificationPrefs,
@@ -195,6 +196,17 @@ export default async function ProfilePage({
             label="New trainings and content"
             on={prefs?.new_content ?? true}
           />
+          {flags.nutrition_tracker_enabled ? (
+            <>
+              <input type="hidden" name="nutrition_present" value="1" />
+              <Toggle
+                name="nutrition"
+                label="Nutrition reminders"
+                hint="At most one gentle reminder a day."
+                on={prefs?.nutrition ?? true}
+              />
+            </>
+          ) : null}
           <Toggle
             name="community"
             label="Community activity"
