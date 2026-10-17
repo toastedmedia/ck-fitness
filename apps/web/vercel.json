@@ -23,6 +23,10 @@
     {
       "path": "/api/cron/meal-plans",
       "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/cron/lifecycle",
+      "schedule": "30 17 * * *"
     }
   ]
 }

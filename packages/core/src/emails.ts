@@ -4,6 +4,13 @@ export type EmailKey =
   | "checkin_reminder"
   | "we_miss_you"
   | "meal_plan"
+  | "onboarding_1"
+  | "onboarding_2"
+  | "onboarding_3"
+  | "start_1"
+  | "start_2"
+  | "quiet_7"
+  | "quiet_14"
   | "membership_welcome"
   | "payment_problem"
   | "membership_ended"
@@ -39,6 +46,13 @@ export const EMAIL_LABELS: Record<EmailKey, string> = {
   checkin_reminder: "Weekly check-in reminder",
   we_miss_you: "We miss you (quiet for a few days)",
   meal_plan: "New meal plan is ready",
+  onboarding_1: "Finish setting up #1 (24 hours after sign-up, if not finished)",
+  onboarding_2: "Finish setting up #2 (2 days after #1)",
+  onboarding_3: "Finish setting up #3, last one (3 days after #2)",
+  start_1: "Start your first training (1 day after setup, if no workout yet)",
+  start_2: "First training, motivation (3 days after the first nudge)",
+  quiet_7: "Motivation: a week away",
+  quiet_14: "Motivation: two weeks away, last note",
   membership_welcome: "Membership started",
   payment_problem: "Payment problem",
   membership_ended: "Membership ended",
@@ -92,6 +106,74 @@ const SPECS: Record<EmailKey, Spec> = {
       "If something is getting in the way, tell us and we will help you find a plan that fits.",
     ],
     cta: { label: "Start a short session", path: "/home" },
+  },
+  onboarding_1: {
+    subject: (n) => `${n}, your plan is almost ready`,
+    preheader: "Two minutes to finish setting up.",
+    heading: (n) => `Let's finish your setup, ${n}`,
+    paragraphs: [
+      "You created your Chardikala Fitness account, but your setup is not finished yet. It takes about two minutes and lets us build your week around your goals.",
+    ],
+    cta: { label: "Finish my setup", path: "/onboarding" },
+  },
+  onboarding_2: {
+    subject: () => "Your plan is waiting for you",
+    preheader: "Pick up right where you left off.",
+    heading: (n) => `Your spot is saved, ${n}`,
+    paragraphs: [
+      "A few quick questions about your goals and schedule are all that is left. Your answers are private and you can change them any time.",
+      "Every strong routine starts with one small step. This is yours.",
+    ],
+    cta: { label: "Continue my setup", path: "/onboarding" },
+  },
+  onboarding_3: {
+    subject: () => "One last reminder from Chardikala Fitness",
+    preheader: "We would love to help you get started.",
+    heading: (n) => `We are rooting for you, ${n}`,
+    paragraphs: [
+      "This is our last reminder about your setup. Whenever you are ready, your account will be here, and finishing takes about two minutes.",
+      "If something is getting in the way, reply to this email and a real person will help.",
+    ],
+    cta: { label: "Finish my setup", path: "/onboarding" },
+  },
+  start_1: {
+    subject: (n) => `${n}, ready for your first session?`,
+    preheader: "Start small. A short session counts.",
+    heading: (n) => `Your first session is waiting, ${n}`,
+    paragraphs: [
+      "Your plan is set up. The hardest part is starting, so make it small: one short session today is a great beginning.",
+    ],
+    cta: { label: "Start my first session", path: "/home" },
+  },
+  start_2: {
+    subject: () => "You do not need to be perfect, just consistent",
+    preheader: "Ten minutes is enough to begin.",
+    heading: (n) => `Small steps add up, ${n}`,
+    paragraphs: [
+      "People who see results are rarely the ones who train the hardest in week one. They are the ones who keep showing up.",
+      "Pick the shortest session in your plan and do just that. We will be cheering you on.",
+    ],
+    cta: { label: "Open my plan", path: "/home" },
+  },
+  quiet_7: {
+    subject: (n) => `${n}, a fresh start is one session away`,
+    preheader: "It has been a week. No guilt, just a restart.",
+    heading: (n) => `Welcome back whenever you are ready, ${n}`,
+    paragraphs: [
+      "It has been about a week. That is okay: every routine has pauses. What matters is the next step.",
+      "Start with a short session, a walk or even a stretch. Your progress and plan are saved exactly where you left them.",
+    ],
+    cta: { label: "Restart today", path: "/home" },
+  },
+  quiet_14: {
+    subject: () => "We are still here for you",
+    preheader: "Your plan and progress are saved.",
+    heading: (n) => `Still thinking of you, ${n}`,
+    paragraphs: [
+      "It has been a couple of weeks. If life got busy, we understand. If something about the plan did not fit, tell us and we will help adjust it.",
+      "This is our last note for now. Whenever you want to come back, everything is waiting.",
+    ],
+    cta: { label: "Open Chardikala Fitness", path: "/home" },
   },
   meal_plan: {
     subject: () => "Your new meal plan is ready",
