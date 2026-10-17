@@ -8,8 +8,7 @@ import {
   type WeekSummary,
 } from "@ck/core";
 import type { AppContext } from "@/lib/app";
-import { flags } from "@/lib/flags";
-import { getViewer } from "@/lib/viewer";
+import { nutritionAccess } from "@/lib/nutrition";
 
 export interface NutritionSnapshot {
   hasTarget: boolean;
@@ -26,9 +25,8 @@ export interface NutritionSnapshot {
 export async function nutritionSnapshot(
   ctx: AppContext,
 ): Promise<NutritionSnapshot | null> {
-  if (!flags.nutrition_tracker_enabled) return null;
-  const { viewer } = await getViewer();
-  if (viewer.entitlement === "free") return null;
+  const access = await nutritionAccess(ctx);
+  if (!access.on || !access.allowed) return null;
   const { supabase, user, today } = ctx;
   const start = weekStart(today);
   const [{ data: np }, { data: meals }] = await Promise.all([

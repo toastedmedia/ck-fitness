@@ -15,6 +15,7 @@ import {
   localToUtc,
   mealDay,
   validMealDate,
+  addDays,
   validateTargets,
   weightToKg,
   lengthToCm,
@@ -28,6 +29,12 @@ const text = (f: FormData, k: string, max = 500) =>
   String(f.get(k) ?? "")
     .trim()
     .slice(0, max);
+
+/** A whole number between 1 and max, or null when left empty. */
+function optional(f: FormData, k: string, max: number): number | null {
+  const n = Math.round(Number(String(f.get(k) ?? "").trim()));
+  return Number.isFinite(n) && n > 0 && n <= max ? n : null;
+}
 
 async function gate() {
   const ctx = await nutritionGate();
@@ -83,6 +90,13 @@ export async function saveTargets(formData: FormData): Promise<void> {
       target_source: source,
       activity_level: activity,
       goal_type: goal,
+      // Optional carb and fat targets, only when she types her own numbers.
+      ...(mode === "member"
+        ? {
+            daily_carbs_target: optional(formData, "carbs", 1000),
+            daily_fat_target: optional(formData, "fat", 500),
+          }
+        : {}),
     },
     { onConflict: "user_id" },
   );
@@ -161,7 +175,7 @@ export async function saveMeal(formData: FormData): Promise<void> {
     final_fat_g: total.fat,
     ai_model: text(formData, "ai_model", 80) || null,
     ai_notes: text(formData, "ai_notes", 600) || null,
-    share_with_coach: formData.get("share") === "on",
+    share_with_coach: true,
   };
 
   let mealId = id;
@@ -270,6 +284,13 @@ export async function scanMeal(input: {
       ok: false,
       error: "AI scanning is not available right now. You can add the meal manually.",
     };
+  const { data: consent } = await supabase
+    .from("nutrition_profiles")
+    .select("ai_consent_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!consent?.ai_consent_at)
+    return { ok: false, error: "Please agree to the AI scan notice first." };
   const description = (input.description ?? "").trim().slice(0, 500);
   const photoPath = input.photoPath ?? "";
   if (!photoPath && !description)
@@ -336,14 +357,83 @@ export async function scanMeal(input: {
   };
 }
 
-/** Share (or stop sharing) nutrition logs and meal photos with the CK coach. */
-export async function setNutritionSharing(formData: FormData): Promise<void> {
+/** She agrees (once) that her meal photo/note is sent to the AI service to create the estimate. */
+export async function giveAiConsent(): Promise<void> {
   const { supabase, user } = await gate();
-  const share = formData.get("share") === "on";
   await supabase
     .from("nutrition_profiles")
-    .update({ share_with_coach: share })
+    .update({ ai_consent_at: new Date().toISOString() })
     .eq("user_id", user.id);
-  revalidatePath("/nutrition/setup");
-  redirect("/nutrition/setup?saved=sharing");
+  await track(user.id, "nutrition_ai_consent");
+  revalidatePath("/nutrition/log");
+  redirect("/nutrition/log");
+}
+
+/** One tap: copy yesterday's meals to today (same times, no photos), then edit what was different. */
+export async function copyYesterday(): Promise<void> {
+  const { supabase, user, today, tz } = await gate();
+  const yesterday = addDays(today, -1);
+  const { count } = await supabase
+    .from("meal_logs")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("meal_date", today);
+  if (count) redirect("/nutrition");
+  const { data: meals } = await supabase
+    .from("meal_logs")
+    .select("*, meal_items(*)")
+    .eq("user_id", user.id)
+    .eq("meal_date", yesterday);
+  for (const m of meals ?? []) {
+    const time = new Date(m.eaten_at as string);
+    const at =
+      localToUtc(
+        today,
+        new Intl.DateTimeFormat("en-GB", {
+          timeZone: tz,
+          hourCycle: "h23",
+          hour: "2-digit",
+          minute: "2-digit",
+        }).format(time),
+        tz,
+      ) ?? new Date();
+    const { data: made } = await supabase
+      .from("meal_logs")
+      .insert({
+        user_id: user.id,
+        meal_date: today,
+        eaten_at: at.toISOString(),
+        meal_type: m.meal_type,
+        description: m.description,
+        ai_estimated: false,
+        final_calories: m.final_calories,
+        final_protein_g: m.final_protein_g,
+        final_carbs_g: m.final_carbs_g,
+        final_fat_g: m.final_fat_g,
+        share_with_coach: true,
+      })
+      .select("id")
+      .single();
+    if (!made) continue;
+    const items = (m.meal_items ?? []) as Record<string, unknown>[];
+    if (items.length)
+      await supabase.from("meal_items").insert(
+        items.map((i) => ({
+          meal_log_id: made.id,
+          user_id: user.id,
+          name: i.name,
+          quantity: i.quantity,
+          serving_description: i.serving_description,
+          final_calories: i.final_calories,
+          final_protein_g: i.final_protein_g,
+          final_carbs_g: i.final_carbs_g,
+          final_fat_g: i.final_fat_g,
+          confidence: i.confidence,
+          sort_order: i.sort_order,
+        })),
+      );
+  }
+  await track(user.id, "meal_copied_from_yesterday");
+  revalidatePath("/nutrition");
+  redirect("/nutrition");
 }

@@ -580,7 +580,7 @@ describe("progress photos", () => {
       asUser(db, K, () => db.query(row, [K, `${K}/dup.jpg`])),
     ).rejects.toThrow(); // one photo per pose per week
   });
-  it("hides photos from everyone else, including owners and support", async () => {
+  it("hides photos from other members and support staff, but owners can see them", async () => {
     expect(
       await asUser(
         db,
@@ -588,13 +588,14 @@ describe("progress photos", () => {
         async () => (await db.query("select * from public.progress_photos")).rows.length,
       ),
     ).toBe(0);
+    // S is an owner (and support): owners read member photos by design.
     expect(
       await asUser(
         db,
         S,
         async () => (await db.query("select * from public.progress_photos")).rows.length,
       ),
-    ).toBe(0);
+    ).toBe(1);
   });
   it("lets her delete her own, but nobody else's", async () => {
     await asUser(db, S, () => db.query("delete from public.progress_photos"));
@@ -702,15 +703,17 @@ describe("client records for coaching staff", () => {
         }[],
     );
 
-  it("lets a coach read only the records of members who agreed to share", async () => {
+  it("lets a coach read the records of every member", async () => {
     for (const t of ["weigh_ins", "daily_checkins", "onboarding_profiles"]) {
-      expect((await rows(COACH, t)).map((r) => r.user_id).sort()).toEqual(
-        [M1, M3].sort(),
+      expect((await rows(COACH, t)).map((r) => r.user_id)).toEqual(
+        expect.arrayContaining([M1, M2, M3]),
       );
     }
   });
-  it("lets a coach see photos only when photo sharing is also on", async () => {
-    expect((await rows(COACH, "progress_photos")).map((r) => r.user_id)).toEqual([M3]);
+  it("lets a coach see every member's photos", async () => {
+    expect((await rows(COACH, "progress_photos")).map((r) => r.user_id)).toEqual(
+      expect.arrayContaining([M1, M3]),
+    );
   });
   it("keeps support staff away from health records entirely", async () => {
     for (const t of [
@@ -721,12 +724,14 @@ describe("client records for coaching staff", () => {
     ])
       expect(await rows(SUPPORT, t)).toHaveLength(0);
   });
-  it("stops access the moment a member withdraws", async () => {
+  it("does not depend on any old sharing choice", async () => {
     await db.query(
       "update public.profiles set coach_access_at = null where user_id = $1",
       [M1],
     );
-    expect((await rows(COACH, "weigh_ins")).map((r) => r.user_id)).toEqual([M3]);
+    expect((await rows(COACH, "weigh_ins")).map((r) => r.user_id)).toEqual(
+      expect.arrayContaining([M1, M2, M3]),
+    );
     await db.query(
       "update public.profiles set coach_access_at = now() where user_id = $1",
       [M1],
@@ -847,7 +852,7 @@ describe("client activity: watch detail and change log", () => {
       ]),
     );
   });
-  it("shows the change log to a coach only for members who share", async () => {
+  it("shows the change log to a coach for every member", async () => {
     await db.query("update public.profiles set phone = '123' where user_id = $1", [N2]);
     const owners = await asUser(
       db,
@@ -859,7 +864,7 @@ describe("client activity: watch detail and change log", () => {
     );
     const ids = owners.map((r) => r.user_id);
     expect(ids).toContain(N1);
-    expect(ids).not.toContain(N2);
+    expect(ids).toContain(N2);
   });
   it("lets members read nothing from the change log and never write to it", async () => {
     expect(await seen(N1, "client_changes")).toBe(0);
@@ -1698,9 +1703,11 @@ describe("nutrition records", () => {
       ),
     ).rejects.toThrow();
   });
-  it("lets a coach read only members who share records AND nutrition", async () => {
+  it("lets a coach read every member's nutrition", async () => {
     for (const t of tables)
-      expect((await rows(NCOACH, t)).map((r) => r.user_id)).toEqual([N1]);
+      expect((await rows(NCOACH, t)).map((r) => r.user_id).sort()).toEqual(
+        [N1, N2, N3].sort(),
+      );
   });
   it("keeps support and content staff away from nutrition entirely", async () => {
     for (const u of [NSUPPORT, NCONTENT])
@@ -1729,18 +1736,6 @@ describe("nutrition records", () => {
       )
     ).rows[0] as { daily_calorie_target: number };
     expect(t.daily_calorie_target).toBe(1850);
-  });
-  it("hides a single meal the member chose not to share", async () => {
-    await db.query(
-      "update public.meal_logs set share_with_coach = false where user_id = $1",
-      [N1],
-    );
-    expect(await rows(NCOACH, "meal_logs")).toHaveLength(0);
-    expect(await rows(NCOACH, "meal_items")).toHaveLength(0);
-    await db.query(
-      "update public.meal_logs set share_with_coach = true where user_id = $1",
-      [N1],
-    );
   });
   it("removes everything when the account is deleted", async () => {
     await db.query("delete from auth.users where id = $1", [N3]);

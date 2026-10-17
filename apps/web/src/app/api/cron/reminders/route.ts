@@ -1,5 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { dayKey, dayOfWeek, hourIn, weekStart, workoutReminderDue } from "@ck/core";
+import {
+  checkinNudgeAllowed,
+  dayKey,
+  dayOfWeek,
+  hourIn,
+  weekStart,
+  workoutReminderDue,
+} from "@ck/core";
 import { cronGuard } from "@/lib/cron";
 import { sendMemberEmail } from "@/lib/email/send";
 import { createAdminSupabase } from "@/lib/supabase/admin";
@@ -17,7 +24,7 @@ export async function GET(request: NextRequest) {
   const now = new Date();
   const { data: profiles } = await db
     .from("profiles")
-    .select("user_id,first_name,timezone,last_active_at")
+    .select("user_id,first_name,timezone,last_active_at,created_at")
     .eq("onboarding_complete", true);
   const { data: prefs } = await db
     .from("notification_preferences")
@@ -67,6 +74,7 @@ export async function GET(request: NextRequest) {
     first_name: string | null;
     timezone: string;
     last_active_at: string | null;
+    created_at: string;
   }[]) {
     const today = dayKey(now, p.timezone);
     const hour = hourIn(now, p.timezone);
@@ -146,7 +154,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Friday evening onwards: gentle weekly check-in nudge, once per week.
-    if (pr?.weekly_checkin !== false && dayOfWeek(today) >= 4 && hour >= 17) {
+    if (
+      pr?.weekly_checkin !== false &&
+      checkinNudgeAllowed(new Date(p.created_at).getTime(), now.getTime()) &&
+      dayOfWeek(today) >= 4 &&
+      hour >= 17
+    ) {
       const start = weekStart(today);
       const { data: ci } = await db
         .from("weekly_checkins")

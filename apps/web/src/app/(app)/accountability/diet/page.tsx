@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import {
   DIET_LABELS,
   currentPlan,
@@ -8,6 +9,7 @@ import {
 } from "@ck/core";
 import { Button, Card, Cap } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
+import { nutritionAccess } from "@/lib/nutrition";
 import { setDietPref } from "./actions";
 
 export const metadata: Metadata = { title: "Meal plan" };
@@ -23,7 +25,9 @@ interface Plan {
 }
 
 export default async function DietPage() {
-  const { supabase, user, today } = await getContext();
+  const ctx = await getContext();
+  const { supabase, user, today } = ctx;
+  const nutritionOn = (await nutritionAccess(ctx)).allowed;
   const [{ data: pref }, { data: ob }, { data: plans }] = await Promise.all([
     supabase.from("member_diet_pref").select("diet").eq("user_id", user.id).maybeSingle(),
     supabase
@@ -62,6 +66,14 @@ export default async function DietPage() {
   return (
     <>
       <h1 className="sr-only">Meal plan</h1>
+      {nutritionOn ? (
+        <Link
+          href="/nutrition/log"
+          className="inline-flex min-h-11 items-center justify-center rounded-button border-2 border-line px-4 text-xs font-bold text-brand"
+        >
+          Log a meal from this plan
+        </Link>
+      ) : null}
       {chosen ? (
         <details className="px-1 text-xs text-muted">
           <summary className="min-h-10 cursor-pointer py-2">

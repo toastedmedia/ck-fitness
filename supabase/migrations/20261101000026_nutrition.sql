@@ -88,11 +88,10 @@ alter table public.meal_scans enable row level security;
 -- Nutrition reminders switch (default on; the one proactive nudge a day follows it).
 alter table public.notification_preferences add column if not exists nutrition boolean not null default true;
 
--- Who may read a member's nutrition: coach/admin/owner, only if she shares records AND nutrition.
+-- Who may read a member's nutrition: owner/admin/coach (same rule as every other member record).
 create or replace function public.staff_can_view_nutrition(uid uuid) returns boolean
 language sql stable security definer set search_path = public as $$
-  select public.staff_can_view_client(uid)
-     and exists (select 1 from public.nutrition_profiles n where n.user_id = uid and n.share_with_coach);
+  select public.staff_can_view_client(uid);
 $$;
 
 -- Members: full control of their own rows.
@@ -116,11 +115,10 @@ create policy "nutrition profile: staff read shared" on public.nutrition_profile
   using (public.staff_can_view_nutrition(user_id));
 drop policy if exists "meal logs: staff read shared" on public.meal_logs;
 create policy "meal logs: staff read shared" on public.meal_logs for select
-  using (share_with_coach and public.staff_can_view_nutrition(user_id));
+  using (public.staff_can_view_nutrition(user_id));
 drop policy if exists "meal items: staff read shared" on public.meal_items;
 create policy "meal items: staff read shared" on public.meal_items for select
-  using (public.staff_can_view_nutrition(user_id)
-     and exists (select 1 from public.meal_logs m where m.id = meal_log_id and m.share_with_coach));
+  using (public.staff_can_view_nutrition(user_id));
 
 -- Private meal photo bucket (own folder only; staff only where shared).
 do $$
@@ -139,6 +137,5 @@ begin
   execute 'drop policy if exists "meal photos: staff read shared" on storage.objects';
   execute $p$create policy "meal photos: staff read shared" on storage.objects for select
     using (bucket_id = 'meal-photos'
-      and public.staff_can_view_nutrition(((storage.foldername(name))[1])::uuid)
-      and exists (select 1 from public.meal_logs m where m.photo_path = name and m.share_with_coach))$p$;
+      and public.staff_can_view_nutrition(((storage.foldername(name))[1])::uuid))$p$;
 end $$;

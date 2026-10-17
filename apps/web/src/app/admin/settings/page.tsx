@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { mergeGoals } from "@ck/core";
+import { mergeGoals, parseTesters } from "@ck/core";
 import { ABtn, Flash, H1, Panel, aInput } from "@/components/admin/ui";
 import { OPS, requireStaff } from "@/lib/admin";
 import { flags } from "@/lib/flags";
@@ -182,6 +182,18 @@ export default async function AdminSettings({
               />
             </label>
           </div>
+        </Panel>
+        <Panel title="Nutrition testers">
+          <label className={lab}>
+            Emails that can use Nutrition before it is switched on for everyone (one per
+            line). chanveerkaur5310@gmail.com is always included.
+            <textarea
+              name="nutrition_testers"
+              rows={4}
+              defaultValue={parseTesters(s.get("nutrition_testers")).join("\n")}
+              className={`${aInput} mt-1 py-2 font-normal`}
+            />
+          </label>
         </Panel>
         <ABtn variant="primary" className="self-start">
           Save settings

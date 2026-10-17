@@ -464,3 +464,76 @@ export function nutritionNudge(i: NudgeInput): Nudge | null {
   }
   return null;
 }
+
+/* ------------------------------------------------------------ tester access */
+/** Members who see Nutrition before it is switched on for everyone (owner-managed, plus these defaults). */
+export const DEFAULT_NUTRITION_TESTERS = ["chanveerkaur5310@gmail.com"];
+
+/** Reads the admin-edited list (a JSON array, or one email per line) and adds the defaults. */
+export function parseTesters(value: unknown): string[] {
+  const raw = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? value.split(/[\s,;]+/)
+      : [];
+  const emails = [...DEFAULT_NUTRITION_TESTERS, ...raw]
+    .map((e) => String(e).trim().toLowerCase())
+    .filter((e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+  return [...new Set(emails)];
+}
+
+export const isTester = (email: string | null | undefined, testers: string[]) =>
+  Boolean(email) && testers.includes(String(email).trim().toLowerCase());
+
+export const AI_CONSENT_TEXT =
+  "To estimate your meal, the photo and any note you add are sent securely to OpenAI, a third-party AI service, only to create the estimate. We do not send your name or email.";
+
+/* ------------------------------------------------------------ streaks, recents */
+/**
+ * Days in a row with at least one meal logged. Today not logged yet does not break the streak
+ * (it counts back from yesterday), so the number never drops before the day is over.
+ */
+export function loggingStreak(dates: string[], today: string): number {
+  const set = new Set(dates);
+  let day = set.has(today) ? today : addDays(today, -1);
+  let n = 0;
+  while (set.has(day)) {
+    n++;
+    day = addDays(day, -1);
+  }
+  return n;
+}
+
+/** Newest first, one entry per distinct set of foods, so "log again" shows each usual meal once. */
+export function distinctRecent<T extends { items: { name: string }[] }>(
+  meals: T[],
+  max = 6,
+): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const m of meals) {
+    const key = m.items
+      .map((i) => i.name.trim().toLowerCase())
+      .sort()
+      .join("|");
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(m);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
+/** Scales a food row's numbers (portion slider). */
+export function scaleItem<
+  T extends { calories: number; protein: number; carbs: number; fat: number },
+>(item: T, factor: number): T {
+  const f = Number.isFinite(factor) && factor > 0 && factor <= 5 ? factor : 1;
+  return {
+    ...item,
+    calories: Math.round(item.calories * f),
+    protein: round1(item.protein * f),
+    carbs: round1(item.carbs * f),
+    fat: round1(item.fat * f),
+  };
+}

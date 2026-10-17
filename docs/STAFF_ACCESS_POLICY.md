@@ -1,20 +1,19 @@
 # Staff access policy (Build Guide §15)
 
-Member health and wellness information is sensitive. Staff see it only when the member has chosen to share it, and the database enforces that (not just the app).
+Member health and wellness information is sensitive. Since 2026-10-17 (owner decision, database migration 0027) owners, admins and coaches can see everything a member enters, with no member opt-out; the database enforces who, not just the app.
 
-## How sharing works
+## How access works
 
-- At the end of onboarding each member agrees to **share her answers and progress with her CK coach**. She can turn it off any time in **Profile -> Sharing with your coach**, and access stops immediately.
-- **Progress photos** need a second, separate choice (off by default).
-- Staff cannot change member records. They can only read them, and add private notes.
-- Every time staff open a member's questionnaire, check-ins, progress or photos, it is written to the audit log (Admin -> Audit log).
+- At the end of onboarding each member confirms that her **CK coach and the CK team can see what she enters** (answers, check-ins, weight, measurements, activity, meals, photos). The Privacy Policy says the same. There is no per-category switch.
+- Staff cannot change member records (except documented coach actions such as nutrition targets and questionnaire corrections, which are audited). They can read them, and add private notes.
+- Every time staff open a member's questionnaire, check-ins, progress, photos, nutrition or meals, it is written to the audit log (Admin -> Audit log).
 
-| Role            | Contact, plan, activity          | Questionnaire, check-ins, weight, measurements | Photos         | Notes |
-| --------------- | -------------------------------- | ---------------------------------------------- | -------------- | ----- |
-| owner, admin    | yes                              | only if the member shares                      | only if shared | yes   |
-| coach           | yes                              | only if the member shares                      | only if shared | yes   |
-| support         | basic contact + support messages | **never**                                      | **never**      | yes   |
-| content_manager | no member data                   | never                                          | never          | no    |
+| Role            | Contact, plan, activity          | Questionnaire, check-ins, weight, measurements, nutrition | Photos    | Notes |
+| --------------- | -------------------------------- | --------------------------------------------------------- | --------- | ----- |
+| owner, admin    | yes                              | yes                                                       | yes       | yes   |
+| coach           | yes                              | yes                                                       | yes       | yes   |
+| support         | basic contact + support messages | **never**                                                 | **never** | yes   |
+| content_manager | no member data                   | never                                                     | never     | no    |
 
 ## Rules for staff
 

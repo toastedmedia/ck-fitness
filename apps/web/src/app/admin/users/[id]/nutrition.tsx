@@ -12,6 +12,7 @@ import {
 } from "@ck/core";
 import { ABtn, Panel, Status, Tile, aInput } from "@/components/admin/ui";
 import { audit } from "@/lib/admin";
+import { QuickMessage } from "@/components/admin/QuickMessage";
 import { adjustNutritionTarget } from "../../actions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import Link from "next/link";
@@ -127,6 +128,10 @@ export async function NutritionTab({
           {meal.description ? (
             <p className="mt-1 text-sm">Note: {meal.description}</p>
           ) : null}
+          <div className="mt-2">
+            <p className="text-xs font-bold text-brand">Reply about this meal</p>
+            <QuickMessage userId={id} back="client" />
+          </div>
           <ul className="mt-2 divide-y divide-line text-sm">
             {(items ?? []).map((i) => (
               <li key={i.id} className="py-2">

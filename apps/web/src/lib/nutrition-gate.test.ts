@@ -11,6 +11,7 @@ const state = {
   entitlement: "free" as "free" | "ck_member" | "ck_premium",
   roles: [] as string[],
   native: false,
+  email: "member@example.com",
 };
 vi.mock("@/lib/flags", () => ({
   flags: {
@@ -20,7 +21,16 @@ vi.mock("@/lib/flags", () => ({
   },
 }));
 vi.mock("@/lib/app", () => ({
-  getContext: async () => ({ today: "2026-10-16", tz: "America/Vancouver" }),
+  getContext: async () => ({
+    today: "2026-10-16",
+    tz: "America/Vancouver",
+    user: { email: state.email },
+    supabase: {
+      from: () => ({
+        select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }),
+      }),
+    },
+  }),
 }));
 vi.mock("@/lib/viewer", () => ({
   getViewer: async () => ({
@@ -35,7 +45,13 @@ describe("nutritionGate", () => {
   beforeEach(() => {
     vi.resetModules();
     notFound.mockClear();
-    Object.assign(state, { flag: false, entitlement: "free", roles: [], native: false });
+    Object.assign(state, {
+      flag: false,
+      entitlement: "free",
+      roles: [],
+      native: false,
+      email: "member@example.com",
+    });
   });
 
   it("is invisible while the feature flag is off, even for paid members", async () => {
@@ -58,6 +74,14 @@ describe("nutritionGate", () => {
     expect((await gate()).allowed).toBe(true);
     state.entitlement = "ck_premium";
     expect((await gate()).allowed).toBe(true);
+  });
+  it("shows Nutrition to the tester list before the flag is on, even without a membership", async () => {
+    state.email = "ChanveerKaur5310@gmail.com";
+    const g = await gate();
+    expect(g.allowed).toBe(true);
+    expect(g.tester).toBe(true);
+    state.email = "someone@example.com";
+    await expect(gate()).rejects.toThrow("NOT_FOUND");
   });
   it("tells pages when they run inside the store app", async () => {
     state.flag = true;

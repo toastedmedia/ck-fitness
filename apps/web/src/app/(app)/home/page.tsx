@@ -208,7 +208,6 @@ export default async function HomePage({
     stillTrainToday:
       Boolean(plannedToday) && !workoutDone && hourNow >= nudgeHour && hourNow < 21,
     paymentProblem: membership.state === "grace",
-    sharingPending: !profile?.sharing_decided_at && !profile?.coach_access_at,
     startWorkoutHref: workout.href,
   });
 

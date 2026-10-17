@@ -2,14 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PushButton } from "@/components/app/PushButton";
 import { Button, Cap, Card, Flash } from "@/components/app/ui";
-import { flags } from "@/lib/flags";
+import { nutritionAccess } from "@/lib/nutrition";
 import { getContext } from "@/lib/app";
-import {
-  saveNotificationPrefs,
-  setSharing,
-  setUnits,
-  updateProfileName,
-} from "../actions";
+import { saveNotificationPrefs, setUnits, updateProfileName } from "../actions";
 
 export const metadata: Metadata = { title: "Profile" };
 
@@ -49,7 +44,9 @@ export default async function ProfilePage({
   searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
   const sp = await searchParams;
-  const { supabase, user, profile } = await getContext();
+  const ctx = await getContext();
+  const { supabase, user, profile } = ctx;
+  const nutritionOn = (await nutritionAccess(ctx)).allowed;
   const { data: prefs } = await supabase
     .from("notification_preferences")
     .select("*")
@@ -131,41 +128,20 @@ export default async function ProfilePage({
       </Card>
 
       <Card id="sharing" className="scroll-mt-4">
-        <Cap>Sharing with your coach</Cap>
-        <form action={setSharing} className="mt-2 flex flex-col gap-1">
-          <label className="flex min-h-12 items-start gap-3 text-xs">
-            <input
-              type="checkbox"
-              name="records"
-              defaultChecked={Boolean(profile?.coach_access_at)}
-              className="mt-0.5 size-5 accent-brand"
-            />
-            <span>
-              <b className="block text-brand">My answers and progress</b>Lets your CK
-              coach see your questionnaire, daily check-ins, weight and measurements so
-              they can support you.
-            </span>
-          </label>
-          <label className="flex min-h-12 items-start gap-3 text-xs">
-            <input
-              type="checkbox"
-              name="photos"
-              defaultChecked={Boolean(profile?.photo_coach_access_at)}
-              className="mt-0.5 size-5 accent-brand"
-            />
-            <span>
-              <b className="block text-brand">My progress photos</b>Optional. Only if you
-              use photos. Off by default.
-            </span>
-          </label>
-          <p className="text-[10.5px] text-muted">
-            Turn either off and your coach loses access immediately. Every time staff open
-            your record, it is logged.
-          </p>
-          <Button variant="primary" className="mt-1">
-            Save sharing choices
-          </Button>
-        </form>
+        <Cap>Your CK coach</Cap>
+        <p className="mt-1 text-xs">
+          Your CK coach and the CK team can see what you enter in the app (your answers,
+          check-ins, weight, measurements, activity, meals and photos) so they can support
+          you. It is private to CK staff and never shown to other members. Every time
+          staff open your record it is logged, and support and content staff cannot see
+          it.
+        </p>
+        <Link
+          href="/privacy"
+          className="mt-2 inline-flex min-h-11 items-center text-xs font-bold text-brand underline underline-offset-4"
+        >
+          Read how we protect your information
+        </Link>
       </Card>
 
       <Card>
@@ -196,7 +172,7 @@ export default async function ProfilePage({
             label="New trainings and content"
             on={prefs?.new_content ?? true}
           />
-          {flags.nutrition_tracker_enabled ? (
+          {nutritionOn ? (
             <>
               <input type="hidden" name="nutrition_present" value="1" />
               <Toggle

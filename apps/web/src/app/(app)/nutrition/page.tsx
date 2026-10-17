@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   MEAL_LABELS,
   MEAL_TYPES,
+  loggingStreak,
   addDays,
   approxKcal,
   dayProgress,
@@ -10,7 +11,7 @@ import {
   localTime,
   type MealType,
 } from "@ck/core";
-import { Cap, Card } from "@/components/app/ui";
+import { Button, Cap, Card } from "@/components/app/ui";
 import { Bar, LockedNutrition } from "@/components/nutrition/Bits";
 import { track } from "@/lib/events";
 import {
@@ -19,6 +20,7 @@ import {
   type NutritionProfileRow,
 } from "@/lib/nutrition";
 import { redirect } from "next/navigation";
+import { copyYesterday } from "./actions";
 
 export const metadata: Metadata = { title: "Nutrition" };
 
@@ -78,6 +80,16 @@ export default async function NutritionPage({
     })),
   );
   // Thumbnails: short-lived links to private photos.
+  // Streak and "copy yesterday" helpers (cheap: dates only).
+  const { data: recentDays } = await supabase
+    .from("meal_logs")
+    .select("meal_date")
+    .eq("user_id", user.id)
+    .gte("meal_date", addDays(today, -60));
+  const loggedDates = [...new Set((recentDays ?? []).map((r) => r.meal_date as string))];
+  const streak = loggingStreak(loggedDates, today);
+  const canCopy =
+    date === today && meals.length === 0 && loggedDates.includes(addDays(today, -1));
   const paths = meals.map((m) => m.photo_path).filter((p): p is string => Boolean(p));
   const { data: signed } = paths.length
     ? await supabase.storage.from("meal-photos").createSignedUrls(paths, 120)
@@ -146,7 +158,10 @@ export default async function NutritionPage({
           </p>
         </div>
         <p className="mt-3 text-xs text-muted">
-          Carbs {grams(day.consumed.carbs)} · Fat {grams(day.consumed.fat)} ·{" "}
+          Carbs {grams(day.consumed.carbs)}
+          {profile.daily_carbs_target ? ` / ${profile.daily_carbs_target}g` : ""} · Fat{" "}
+          {grams(day.consumed.fat)}
+          {profile.daily_fat_target ? ` / ${profile.daily_fat_target}g` : ""} ·{" "}
           {meals.length} meal{meals.length === 1 ? "" : "s"} logged
         </p>
       </Card>
@@ -157,6 +172,18 @@ export default async function NutritionPage({
       >
         + Log meal
       </Link>
+      {streak >= 2 ? (
+        <p className="text-center text-xs font-bold text-brand">
+          {streak}-day logging streak. Keep it going.
+        </p>
+      ) : null}
+      {canCopy ? (
+        <form action={copyYesterday}>
+          <Button variant="ghost" className="w-full">
+            Copy yesterday&apos;s meals
+          </Button>
+        </form>
+      ) : null}
 
       {MEAL_TYPES.map((t) => {
         const list = meals.filter((m) => m.meal_type === t);

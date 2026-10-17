@@ -8,6 +8,7 @@ import {
   renderCampaign,
   validBannerLink,
   isDiet,
+  parseTesters,
   validateTargets,
   needsSafetyGuidance,
   NUTRITION,
@@ -796,6 +797,9 @@ export async function saveSettings(formData: FormData): Promise<void> {
     referral_reward: JSON.stringify(str(formData, "referral_reward", 160)),
     privacy_url: JSON.stringify(str(formData, "privacy_url", 200)),
     terms_url: JSON.stringify(str(formData, "terms_url", 200)),
+    nutrition_testers: JSON.stringify(
+      parseTesters(str(formData, "nutrition_testers", 2000)),
+    ),
     daily_goals: JSON.stringify({
       waterTargetMl: num("water", 2500),
       stepGoal: num("steps", 8000),
@@ -1745,12 +1749,6 @@ export async function updateQuestionnaire(
 ): Promise<void> {
   const { supabase, user, db } = await requireStaff(["owner", "admin", "coach"]);
   const back = (q: string) => redirect(`/admin/users/${userId}?tab=questionnaire&${q}`);
-  const { data: prof } = await db
-    .from("profiles")
-    .select("coach_access_at")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (!prof?.coach_access_at) back("error=notshared");
   const nutrition = str(formData, "nutrition");
   const pregnancy = str(formData, "pregnancy");
   const limitations = str(formData, "limitations", 500);

@@ -52,24 +52,15 @@ export default async function PhotosPage({
         <Card>
           <Cap>Before you start</Cap>
           <ul className="mt-2 flex flex-col gap-1.5 text-xs">
-            <li>Photos are optional and completely private. Only you can see them.</li>
+            <li>Photos are optional and never shown to other members.</li>
             <li>
-              CK staff cannot see your photos unless you choose to share them with your
-              coach in Profile. That choice is off by default.
+              Your CK coach and the CK team can see your progress photos so they can
+              support you. Support and content staff cannot.
             </li>
-            <li>They are stored securely and shown to you through short-lived links.</li>
+            <li>They are stored securely and shown through short-lived links.</li>
             <li>You can delete any photo, or all of them, at any time.</li>
           </ul>
           <form action={giveConsent} className="mt-3 flex flex-col gap-3">
-            <label className="flex min-h-12 items-start gap-3 text-xs">
-              <input
-                type="checkbox"
-                name="share"
-                defaultChecked
-                className="mt-0.5 size-5 accent-brand"
-              />
-              <span>Let my CK coach see my progress photos.</span>
-            </label>
             <Button variant="primary" className="min-h-12 w-full">
               I understand, turn on photos
             </Button>

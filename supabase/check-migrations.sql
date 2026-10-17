@@ -1,4 +1,4 @@
--- CK Fitness: checks that every database change (0001 to 0026) is applied. Read-only, safe to run any time.
+-- CK Fitness: checks that every database change (0001 to 0028) is applied. Read-only, safe to run any time.
 with need(mig, kind, tbl, col) as (values
   ('0001','table','profiles',null),('0001','table','staff_roles',null),('0001','table','app_settings',null),('0001','table','admin_audit_log',null),
   ('0002','table','onboarding_profiles',null),('0002','table','notification_preferences',null),
@@ -24,7 +24,9 @@ with need(mig, kind, tbl, col) as (values
   ('0024','table','home_banners',null),
   ('0025','table','diet_plans',null),('0025','table','member_diet_pref',null),
   ('0026','table','nutrition_profiles',null),('0026','table','meal_logs',null),('0026','table','meal_items',null),('0026','table','meal_scans',null),
-  ('0026','column','notification_preferences','nutrition')
+  ('0026','column','notification_preferences','nutrition'),
+  ('0027','func_has','staff_can_view_client','staff_see_all'),
+  ('0028','column','nutrition_profiles','ai_consent_at')
 ), found as (
   select n.*, case n.kind
     when 'table' then exists (select 1 from information_schema.tables t where t.table_schema='public' and t.table_name=n.tbl)

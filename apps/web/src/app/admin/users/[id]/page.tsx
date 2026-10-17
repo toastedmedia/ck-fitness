@@ -100,8 +100,9 @@ export default async function AdminClient({
   const canSeeRecords = roles.some(
     (r) => r === "owner" || r === "admin" || r === "coach",
   );
-  const shared = Boolean(p.coach_access_at);
-  const photosShared = Boolean(p.photo_coach_access_at);
+  // Owner decision: owners, admins and coaches see everything a member enters. No member opt-out.
+  const shared = true;
+  const photosShared = true;
   const units = (p.units === "imperial" ? "imperial" : "metric") as Units;
   const open = SENSITIVE.has(tab) && canSeeRecords && shared;
   if (open) await audit(supabase, me.id, "client_record.view", id, { tab });
@@ -432,20 +433,8 @@ export default async function AdminClient({
               </dd>
             </div>
             <div>
-              <dt className="text-xs text-muted">Sharing records with coach</dt>
-              <dd>
-                {shared ? (
-                  <Status tone="ok">Yes</Status>
-                ) : (
-                  <Status tone="mute">No</Status>
-                )}{" "}
-                Photos:{" "}
-                {photosShared ? (
-                  <Status tone="ok">Yes</Status>
-                ) : (
-                  <Status tone="mute">No</Status>
-                )}
-              </dd>
+              <dt className="text-xs text-muted">Who can see their records</dt>
+              <dd>Owners, admins and coaches (every view is logged)</dd>
             </div>
             {p.referral_code ? (
               <div className="md:col-span-2">

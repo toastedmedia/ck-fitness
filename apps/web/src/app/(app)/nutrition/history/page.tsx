@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { addDays, approxKcal, grams, groupByDay } from "@ck/core";
-import { Card } from "@/components/app/ui";
+import { Cap, Card } from "@/components/app/ui";
 import { LockedNutrition } from "@/components/nutrition/Bits";
 import { nutritionGate } from "@/lib/nutrition";
 
@@ -25,9 +25,50 @@ export default async function NutritionHistoryPage() {
       fat: Number(m.final_fat_g),
     })),
   );
+  const { data: np } = await supabase
+    .from("nutrition_profiles")
+    .select("daily_calorie_target")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const target = np?.daily_calorie_target ?? 0;
+  const byDate = new Map(days.map((d) => [d.date, d.totals.calories]));
+  const last14 = Array.from({ length: 14 }, (_, i) => addDays(today, i - 13)).map(
+    (date) => ({
+      date,
+      kcal: byDate.get(date) ?? 0,
+    }),
+  );
+  const top = Math.max(target, ...last14.map((d) => d.kcal), 1);
   return (
     <>
       <h1 className="sr-only">Nutrition history</h1>
+      <Card>
+        <Cap>Last 14 days (estimated kcal)</Cap>
+        <div
+          role="img"
+          aria-label={`Estimated calories each day for the last 14 days. Target ${target} kcal.`}
+          className="relative mt-3 flex h-28 items-end gap-1"
+        >
+          {target ? (
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-0 border-t border-dashed border-brand"
+              style={{ bottom: `${(target / top) * 100}%` }}
+            />
+          ) : null}
+          {last14.map((d) => (
+            <div
+              key={d.date}
+              title={`${d.date}: ${d.kcal} kcal`}
+              className="flex-1 rounded-t bg-accent"
+              style={{ height: `${Math.max(d.kcal ? 4 : 0, (d.kcal / top) * 100)}%` }}
+            />
+          ))}
+        </div>
+        <p className="mt-2 text-[11px] text-muted">
+          The dashed line is your daily target. Estimates only.
+        </p>
+      </Card>
       <form method="get" action="/nutrition" className="flex items-end gap-2">
         <label className="flex-1 text-xs font-bold text-brand">
           Jump to a date

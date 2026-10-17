@@ -3,7 +3,9 @@ import {
   dayKey,
   hourIn,
   localToUtc,
+  isTester,
   mergeNudgeConfig,
+  parseTesters,
   nutritionNudge,
   resolveMembership,
 } from "@ck/core";
@@ -19,21 +21,22 @@ export const maxDuration = 60;
 /**
  * Hourly: rule-based, supportive nutrition nudges (in-app now, web push where on, native push later).
  * Paid members who set up nutrition and kept "Nutrition reminders" on. At most ONE proactive nutrition
- * nudge per member per local day. Never email, never about going over a target. Off with the feature flag.
+ * nudge per member per local day. Never email, never about going over a target. While the feature flag is off
+ * only the tester list gets them.
  */
 export async function GET(request: NextRequest) {
   const denied = cronGuard(request);
   if (denied) return denied;
-  if (!flags.nutrition_tracker_enabled)
-    return NextResponse.json({ skipped: "feature off" });
   const db = createAdminSupabase();
   const now = new Date();
 
-  const [{ data: setting }, { data: np }] = await Promise.all([
+  const [{ data: setting }, { data: testerSetting }, { data: np }] = await Promise.all([
     db.from("app_settings").select("value").eq("key", "nutrition_nudges").maybeSingle(),
+    db.from("app_settings").select("value").eq("key", "nutrition_testers").maybeSingle(),
     db.from("nutrition_profiles").select("user_id,daily_protein_target"),
   ]);
   const config = mergeNudgeConfig(setting?.value);
+  const testers = parseTesters(testerSetting?.value);
   const people = (np ?? []) as { user_id: string; daily_protein_target: number }[];
   if (people.length === 0) return NextResponse.json({ sent: 0 });
   const ids = people.map((p) => p.user_id);
@@ -43,7 +46,10 @@ export async function GET(request: NextRequest) {
       .from("memberships")
       .select("user_id,entitlement,status,period_end,cancel_at_period_end")
       .in("user_id", ids),
-    db.from("profiles").select("user_id,timezone,onboarding_complete").in("user_id", ids),
+    db
+      .from("profiles")
+      .select("user_id,timezone,onboarding_complete,email")
+      .in("user_id", ids),
     db.from("notification_preferences").select("*").in("user_id", ids),
   ]);
   const paid = new Set(
@@ -56,13 +62,22 @@ export async function GET(request: NextRequest) {
       .filter((p) => p.onboarding_complete)
       .map((p) => [p.user_id as string, (p.timezone as string) || "America/Vancouver"]),
   );
+  // While the feature is off for everyone, only testers get nudges (and they need no membership).
+  const testerIds = new Set(
+    (profiles ?? [])
+      .filter((p) => isTester(p.email as string | null, testers))
+      .map((p) => p.user_id as string),
+  );
   const off = new Set(
     (prefs ?? []).filter((p) => p.nutrition === false).map((p) => p.user_id as string),
   );
 
   let sent = 0;
   for (const p of people) {
-    if (!paid.has(p.user_id) || !tzOf.has(p.user_id) || off.has(p.user_id)) continue;
+    const isT = testerIds.has(p.user_id);
+    if (!flags.nutrition_tracker_enabled && !isT) continue;
+    if ((!paid.has(p.user_id) && !isT) || !tzOf.has(p.user_id) || off.has(p.user_id))
+      continue;
     const tz = tzOf.get(p.user_id) as string;
     const today = dayKey(now, tz);
     const hour = hourIn(now, tz);

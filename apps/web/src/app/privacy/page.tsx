@@ -10,7 +10,7 @@ export default function PrivacyPage() {
       <main id="main" className="mx-auto max-w-2xl px-4 pt-10">
         <h1 className="font-display text-3xl text-brand">Privacy Policy</h1>
         <p className="mt-2 text-muted">
-          Last updated: October 14, 2026. Who we are: Chardikala Fitness &amp;
+          Last updated: October 17, 2026. Who we are: Chardikala Fitness &amp;
           Performance, operating the Chardikala Fitness app, based in Surrey, British
           Columbia, Canada. Contact: support@chardikalafitness.com.
         </p>
@@ -35,9 +35,9 @@ export default function PrivacyPage() {
             number.
           </li>
           <li>
-            Progress photos, only if you choose to upload them. They are stored privately
-            and shown only to you unless you separately choose to share them with your
-            coach.
+            Progress photos and meal logs and photos, only if you choose to add them. They
+            are stored privately and are never shown to other members; your CK coach and
+            the CK team can see them to support you (see below).
           </li>
           <li>
             Community posts, photos, comments and reactions you choose to share with other
@@ -60,24 +60,26 @@ export default function PrivacyPage() {
 
         <h2 className={h}>Who can see your health information</h2>
         <p className="mt-2">
-          You can. When you finish onboarding you choose to share your answers, daily and
-          weekly check-ins, weight and measurements with your coach so they can support
-          you. Coaches, admins and owners can then see them; support staff and content
-          editors cannot. Progress photos are shared only if you separately choose to
-          share them. You can turn either off at any time in Profile and access stops
-          immediately. Every time staff open your record it is logged. Staff can see your
-          name, email, phone, membership and activity to run the service. Your health
-          information is never sent to our email or CRM tools.
+          Your CK coach, the CK admins and the owners can see what you enter in the app,
+          including your questionnaire answers, daily and weekly check-ins, weight,
+          measurements, activity, notes, progress photos, and meal logs and photos, so
+          they can coach and support you. This is part of how the coaching service works
+          and you agree to it when you sign up. Support staff and content editors cannot
+          see these records. Other members never see them. Every time staff open your
+          record it is logged. Staff can also see your name, email, phone, membership and
+          activity to run the service. Your health information is never sent to our email
+          or CRM tools.
         </p>
 
         <h2 className={h}>Who we share data with</h2>
         <p className="mt-2">
           Service providers that help us run the app, under contract: Supabase (database
           and sign-in), Vercel (hosting), Cloudflare (video and file storage), Stripe
-          (membership payments, outside the app), Resend (account emails) and Toasted
-          Media CRM (follow-up messages you have agreed to). Some of these may store data
-          outside Canada, including in the United States. We may also share information if
-          the law requires it.
+          (membership payments, outside the app), OpenAI (AI estimates of meals you choose
+          to scan, using only the photo and note you send, never your name or email),
+          Resend (account emails) and Toasted Media CRM (follow-up messages you have
+          agreed to). Some of these may store data outside Canada, including in the United
+          States. We may also share information if the law requires it.
         </p>
 
         <h2 className={h}>Your choices</h2>
@@ -93,7 +95,8 @@ export default function PrivacyPage() {
             time.
           </li>
           <li>
-            Withdraw your consent to sharing with your coach at any time in Profile.
+            Ask us questions or raise a concern about how your information is used at
+            support@chardikalafitness.com. Deleting your account removes your records.
           </li>
         </ul>
 

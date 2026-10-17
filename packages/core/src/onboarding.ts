@@ -221,7 +221,7 @@ export function validateSafety(raw: Record<string, unknown>): Result<SafetyInput
   if (raw.acknowledged !== true) errors.acknowledged = "Please confirm to continue.";
   if (raw.coachAccess !== true)
     errors.coachAccess =
-      "Please agree to share your progress with your CK coach so they can support you.";
+      "Please confirm that your CK coach can see what you enter so they can support you.";
   if (Object.keys(errors).length) return { ok: false, errors };
   return {
     ok: true,

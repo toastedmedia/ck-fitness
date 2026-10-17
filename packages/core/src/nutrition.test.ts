@@ -6,8 +6,13 @@ import {
   dayProgress,
   estimateTargets,
   extractJson,
+  distinctRecent,
   groupByDay,
+  loggingStreak,
+  scaleItem,
+  isTester,
   itemsTotal,
+  parseTesters,
   localTime,
   localToUtc,
   mealDay,
@@ -303,5 +308,58 @@ describe("nutrition nudges", () => {
       idleDays: 5,
     });
     expect(mergeNudgeConfig(null).proteinShortPct).toBe(60);
+  });
+});
+
+describe("tester list", () => {
+  it("always includes the owners' default tester and cleans the list", () => {
+    expect(parseTesters(null)).toEqual(["chanveerkaur5310@gmail.com"]);
+    expect(parseTesters("A@x.com, bad\n a@X.com ;b@y.org")).toEqual([
+      "chanveerkaur5310@gmail.com",
+      "a@x.com",
+      "b@y.org",
+    ]);
+    expect(parseTesters(["Z@z.com", 5])).toContain("z@z.com");
+  });
+  it("matches emails case-insensitively", () => {
+    const t = parseTesters(null);
+    expect(isTester("ChanveerKaur5310@Gmail.com", t)).toBe(true);
+    expect(isTester("someone@else.com", t)).toBe(false);
+    expect(isTester(null, t)).toBe(false);
+  });
+});
+
+describe("streaks, recents and portions", () => {
+  it("counts consecutive logged days and keeps the streak alive until the day ends", () => {
+    expect(loggingStreak(["2026-10-14", "2026-10-15", "2026-10-16"], "2026-10-16")).toBe(
+      3,
+    );
+    expect(loggingStreak(["2026-10-14", "2026-10-15"], "2026-10-16")).toBe(2);
+    expect(loggingStreak(["2026-10-12", "2026-10-15"], "2026-10-16")).toBe(1);
+    expect(loggingStreak(["2026-10-10"], "2026-10-16")).toBe(0);
+  });
+  it("lists each usual meal once, newest first", () => {
+    const m = (id: string, ...names: string[]) => ({
+      id,
+      items: names.map((name) => ({ name })),
+    });
+    const r = distinctRecent([
+      m("a", "Dal", "Roti"),
+      m("b", "roti", "dal"),
+      m("c", "Oats"),
+      m("d"),
+    ]);
+    expect(r.map((x) => x.id)).toEqual(["a", "c"]);
+  });
+  it("scales a portion", () => {
+    expect(scaleItem({ calories: 200, protein: 10, carbs: 30, fat: 5 }, 1.5)).toEqual({
+      calories: 300,
+      protein: 15,
+      carbs: 45,
+      fat: 7.5,
+    });
+    expect(
+      scaleItem({ calories: 200, protein: 10, carbs: 30, fat: 5 }, 99).calories,
+    ).toBe(200);
   });
 });

@@ -23,6 +23,17 @@ export default async function AdminAccountability({
   const { db } = await requireStaff(["owner", "admin", "coach"]);
   const start = weekStart(dayKey(new Date()));
   const since = addDays(dayKey(new Date(), "America/Vancouver"), -7);
+  const [{ data: nutProfiles }, { data: nutMeals }] = await Promise.all([
+    db
+      .from("nutrition_profiles")
+      .select(
+        "user_id,daily_calorie_target,daily_protein_target,profiles(first_name,last_name)",
+      ),
+    db
+      .from("meal_logs")
+      .select("user_id,meal_date,final_protein_g")
+      .gte("meal_date", addDays(dayKey(new Date(), "America/Vancouver"), -6)),
+  ]);
   const [risk, checkins, members, helpers, missed] = await Promise.all([
     db
       .from("risk_states")
@@ -44,19 +55,41 @@ export default async function AdminAccountability({
       .in("category", ["help", "coaching"])
       .order("created_at", { ascending: false })
       .limit(10),
-    // Reasons members gave for a missed workout (only members who share records with the coach).
+    // Reasons members gave for a missed workout.
     db
       .from("scheduled_actions")
-      .select(
-        "id,user_id,scheduled_for,barrier,profiles!inner(first_name,last_name,coach_access_at)",
-      )
+      .select("id,user_id,scheduled_for,barrier,profiles!inner(first_name,last_name)")
       .eq("action_type", "workout")
       .not("barrier", "is", null)
-      .not("profiles.coach_access_at", "is", null)
       .gte("scheduled_for", since)
       .order("scheduled_for", { ascending: false })
       .limit(20),
   ]);
+  const nutToday = dayKey(new Date(), "America/Vancouver");
+  const nutRows = (
+    (nutProfiles ?? []) as unknown as {
+      user_id: string;
+      daily_protein_target: number;
+      profiles: { first_name: string; last_name: string } | null;
+    }[]
+  )
+    .map((p) => {
+      const mine = (nutMeals ?? []).filter((m) => m.user_id === p.user_id);
+      const days = new Set(mine.map((m) => m.meal_date as string));
+      const last = [...days].sort().pop() ?? null;
+      const byDay = new Map<string, number>();
+      for (const m of mine)
+        byDay.set(
+          m.meal_date as string,
+          (byDay.get(m.meal_date as string) ?? 0) + Number(m.final_protein_g),
+        );
+      const proteinDays = [...byDay.values()].filter(
+        (v) => v >= p.daily_protein_target,
+      ).length;
+      return { ...p, days: days.size, last, proteinDays };
+    })
+    .filter((r) => !r.last || r.last <= addDays(nutToday, -2))
+    .sort((a, b) => (a.last ?? "").localeCompare(b.last ?? ""));
   type Help = {
     id: string;
     user_id: string;
@@ -166,6 +199,39 @@ export default async function AdminAccountability({
                 </li>
               );
             })}
+          </ul>
+        )}
+      </Panel>
+      <Panel title="Nutrition: who may need a nudge (no meal logged for 2+ days)">
+        {nutRows.length === 0 ? (
+          <p className="text-sm text-muted">
+            Everyone who set up Nutrition has logged recently, or nobody has set it up
+            yet.
+          </p>
+        ) : (
+          <ul className="divide-y divide-line">
+            {nutRows.map((r) => (
+              <li
+                key={r.user_id}
+                className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"
+              >
+                <span>
+                  <b className="text-brand">
+                    {r.profiles?.first_name} {r.profiles?.last_name}
+                  </b>{" "}
+                  <span className="text-xs text-muted">
+                    last meal {r.last ?? "never logged"} · {r.days} day
+                    {r.days === 1 ? "" : "s"} this week
+                  </span>
+                </span>
+                <Link
+                  className="font-bold text-brand underline"
+                  href={`/admin/users/${r.user_id}?tab=nutrition`}
+                >
+                  Open nutrition
+                </Link>
+              </li>
+            ))}
           </ul>
         )}
       </Panel>

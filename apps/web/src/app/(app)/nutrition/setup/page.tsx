@@ -20,7 +20,7 @@ import {
   nutritionGate,
   type NutritionProfileRow,
 } from "@/lib/nutrition";
-import { saveTargets, setNutritionSharing } from "../actions";
+import { saveTargets } from "../actions";
 
 export const metadata: Metadata = { title: "Nutrition targets" };
 
@@ -113,7 +113,6 @@ export default async function NutritionSetupPage({
   return (
     <>
       <h1 className="sr-only">Nutrition targets</h1>
-      {sp.saved === "sharing" ? <Flash>Sharing choice saved.</Flash> : null}
       {sp.error ? (
         <Flash tone="error">{ERRORS[sp.error] ?? decodeURIComponent(sp.error)}</Flash>
       ) : null}
@@ -243,6 +242,24 @@ export default async function NutritionSetupPage({
                 className={input}
               />
             </label>
+            <label className="text-xs font-bold text-brand">
+              Carbs (g/day, optional)
+              <input
+                name="carbs"
+                inputMode="numeric"
+                defaultValue={existing?.daily_carbs_target ?? ""}
+                className={input}
+              />
+            </label>
+            <label className="text-xs font-bold text-brand">
+              Fat (g/day, optional)
+              <input
+                name="fat"
+                inputMode="numeric"
+                defaultValue={existing?.daily_fat_target ?? ""}
+                className={input}
+              />
+            </label>
           </div>
           <Button name="mode" value="member" variant="ghost" className="mt-3 w-full">
             Save my own target
@@ -251,25 +268,11 @@ export default async function NutritionSetupPage({
       </form>
       {existing ? (
         <Card>
-          <Cap>Sharing with your coach</Cap>
-          <form action={setNutritionSharing} className="mt-2 flex flex-col gap-2">
-            <label className="flex min-h-11 items-start gap-2 text-xs">
-              <input
-                type="checkbox"
-                name="share"
-                defaultChecked={existing.share_with_coach}
-                className="mt-0.5 size-5 shrink-0 accent-brand"
-              />
-              <span>
-                <b className="text-brand">Share my nutrition logs with my CK coach</b>
-                <br />
-                When this is on, your CK coach may view your meal logs, estimated
-                nutrition and meal photos to support your coaching. This also needs your
-                general coach sharing on in Profile. You can turn it off any time.
-              </span>
-            </label>
-            <Button variant="ghost">Save</Button>
-          </form>
+          <Cap>Your CK coach</Cap>
+          <p className="mt-1 text-xs">
+            Your CK coach and the CK team can see your meal logs, estimated nutrition and
+            meal photos so they can support you. It is never shown to other members.
+          </p>
         </Card>
       ) : null}
     </>

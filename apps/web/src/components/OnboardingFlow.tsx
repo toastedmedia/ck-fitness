@@ -389,9 +389,9 @@ export function OnboardingFlow({ initial }: { initial: Data }) {
               onChange={(e) => set("coachAccess", e.target.checked)}
             />
             <span>
-              I agree that my CK coach can see my answers, check-ins, weight and
-              measurements so they can support me. I can turn this off any time in
-              Profile.
+              I understand my CK coach and the CK team can see what I enter in the app
+              (answers, check-ins, weight, measurements, activity, meals and photos) so
+              they can support me.
             </span>
           </label>
           {errors.coachAccess ? (

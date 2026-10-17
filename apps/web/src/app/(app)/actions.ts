@@ -456,29 +456,6 @@ export async function updateProfileName(formData: FormData): Promise<void> {
   redirect("/profile?saved=name");
 }
 
-/** What her CK coach may see. Withdrawing records also withdraws photos. Takes effect immediately. */
-export async function setSharing(formData: FormData): Promise<void> {
-  const { supabase, user, profile } = await getContext();
-  const records = formData.get("records") === "on";
-  const photos = records && formData.get("photos") === "on";
-  const now = new Date().toISOString();
-  const sharing = {
-    coach_access_at: records ? (profile?.coach_access_at ?? now) : null,
-    photo_coach_access_at: photos ? (profile?.photo_coach_access_at ?? now) : null,
-  };
-  const { error } = await supabase
-    .from("profiles")
-    .update({ ...sharing, sharing_decided_at: profile?.sharing_decided_at ?? now })
-    .eq("user_id", user.id);
-  if (error) {
-    // The newest database change may not be applied yet; save the choice without it.
-    await supabase.from("profiles").update(sharing).eq("user_id", user.id);
-  }
-  await track(user.id, records ? "sharing_on" : "sharing_off", { photos });
-  refresh();
-  redirect("/profile?saved=sharing");
-}
-
 /** Switch between kg/cm and lb/in. Stored values never change; only what she sees and types. */
 export async function setUnits(formData: FormData): Promise<void> {
   const { supabase, user } = await getContext();

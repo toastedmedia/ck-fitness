@@ -75,3 +75,9 @@ export function nextLifecycleEmail(i: LifecycleInput): LifecycleKey | null {
   }
   return null;
 }
+
+/** The weekly check-in reminder (in-app and email) waits until an account is nearly a week old. */
+export const CHECKIN_MIN_ACCOUNT_DAYS = 6;
+export function checkinNudgeAllowed(createdAtMs: number, nowMs: number): boolean {
+  return nowMs - createdAtMs >= CHECKIN_MIN_ACCOUNT_DAYS * 86_400_000;
+}

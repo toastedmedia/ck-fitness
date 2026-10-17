@@ -7,6 +7,7 @@ import {
   approxKcal,
   grams,
   itemsTotal,
+  scaleItem,
 } from "@ck/core";
 import { Button, Cap, Card } from "@/components/app/ui";
 
@@ -182,6 +183,45 @@ export function MealEditor({
           </div>
         </Card>
       ))}
+      <Card>
+        <Cap>Portion size</Cap>
+        <p className="mt-1 text-[11px] text-muted">
+          Ate more or less than shown? Scale every item at once.
+        </p>
+        <div className="mt-2 grid grid-cols-5 gap-1.5">
+          {[0.5, 0.75, 1.25, 1.5, 2].map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() =>
+                setItems((s) =>
+                  s.map((i) => {
+                    const sc = scaleItem(
+                      {
+                        calories: num(i.calories),
+                        protein: num(i.protein),
+                        carbs: num(i.carbs),
+                        fat: num(i.fat),
+                      },
+                      f,
+                    );
+                    return {
+                      ...i,
+                      calories: String(sc.calories),
+                      protein: String(sc.protein),
+                      carbs: String(sc.carbs),
+                      fat: String(sc.fat),
+                    };
+                  }),
+                )
+              }
+              className="min-h-11 rounded-xl border-2 border-line text-xs font-bold text-brand"
+            >
+              ×{f}
+            </button>
+          ))}
+        </div>
+      </Card>
       <Button
         type="button"
         variant="ghost"
@@ -231,16 +271,9 @@ export function MealEditor({
             />
           </label>
         </div>
-        <label className="mt-3 flex min-h-11 items-center gap-2 text-xs">
-          <input
-            type="checkbox"
-            name="share"
-            value="on"
-            defaultChecked={initial.share ?? true}
-            className="size-5 accent-brand"
-          />
-          Share this meal with my CK coach (if my nutrition sharing is on)
-        </label>
+        <p className="mt-3 text-[11px] text-muted">
+          Your CK coach can see your meals and photos so they can support you.
+        </p>
       </Card>
 
       <Button>{confirmLabel}</Button>

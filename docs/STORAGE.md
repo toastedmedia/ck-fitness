@@ -51,7 +51,6 @@ First 10 GB per month is free. Re-check Cloudflare pricing before launch.
 
 Not used any more. The `stream_uid` column stays in the database (unused) so nothing is lost.
 
-
 ## CK Nutrition: meal photos and the AI scanner (built, hidden until the owners enable it)
 
 - Private Supabase bucket `meal-photos` (created by SQL 0026; never public; photos open only through short-lived signed links; staff can open a photo only when the member shares nutrition with the coach).

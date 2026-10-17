@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { nextLifecycleEmail, type LifecycleInput } from "./lifecycle";
+import {
+  checkinNudgeAllowed,
+  nextLifecycleEmail,
+  type LifecycleInput,
+} from "./lifecycle";
 
 const D = 24 * 3_600_000;
 const now = Date.UTC(2026, 10, 20, 12);
@@ -80,5 +84,14 @@ describe("after onboarding", () => {
         sent: { quiet_7: now - 3 * D },
       }),
     ).toBeNull();
+  });
+});
+
+describe("weekly check-in reminder timing", () => {
+  it("waits until the account is nearly a week old", () => {
+    expect(checkinNudgeAllowed(now - 1 * D, now)).toBe(false);
+    expect(checkinNudgeAllowed(now - 5 * D, now)).toBe(false);
+    expect(checkinNudgeAllowed(now - 6 * D, now)).toBe(true);
+    expect(checkinNudgeAllowed(now - 40 * D, now)).toBe(true);
   });
 });
