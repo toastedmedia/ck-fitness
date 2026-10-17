@@ -24,6 +24,10 @@ const TABLES = [
   "memberships",
   "support_requests",
   "notifications",
+  "nutrition_profiles",
+  "meal_logs",
+  "meal_items",
+  "meal_scans",
 ];
 
 /** Gives a member a copy of her own data. Row-level security guarantees it is only hers. */

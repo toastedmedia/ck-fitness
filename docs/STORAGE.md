@@ -50,3 +50,10 @@ First 10 GB per month is free. Re-check Cloudflare pricing before launch.
 ## Old: Cloudflare Stream
 
 Not used any more. The `stream_uid` column stays in the database (unused) so nothing is lost.
+
+
+## CK Nutrition: meal photos and the AI scanner (built, hidden until the owners enable it)
+
+- Private Supabase bucket `meal-photos` (created by SQL 0026; never public; photos open only through short-lived signed links; staff can open a photo only when the member shares nutrition with the coach).
+- Vercel env vars (server only, never in the browser): `OPENAI_API_KEY`, and optionally `OPENAI_NUTRITION_MODEL` (default `gpt-4o-mini`; change the model here without a code change). Without the key, AI scanning is hidden and members can still log meals manually.
+- Turn the feature on for members by setting `nutrition_tracker_enabled` to `true` in `apps/web/src/lib/flags.ts` and deploying. Do this only after Apple approves iOS 1.0. Until then owners/admins can open `/nutrition` to test.

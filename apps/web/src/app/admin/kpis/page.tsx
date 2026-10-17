@@ -28,6 +28,18 @@ export default async function AdminKpis({
   const { db } = await requireStaff(OPS);
   const now = new Date();
   const since30 = new Date(now.getTime() - 30 * 86_400_000).toISOString();
+  const scanCount = async (days: number) =>
+    count(
+      db
+        .from("meal_scans")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", new Date(now.getTime() - days * 86_400_000).toISOString()),
+    );
+  const scans = {
+    today: await scanCount(1),
+    week: await scanCount(7),
+    month: await scanCount(30),
+  };
   const since7 = new Date(now.getTime() - 7 * 86_400_000).toISOString();
   const today = dayKey(now);
 
@@ -226,6 +238,17 @@ export default async function AdminKpis({
             <BarChart key={t.title} {...t} />
           ))}
         </div>
+      </Panel>
+      <Panel title="AI meal scans (Nutrition)">
+        <div className="grid grid-cols-3 gap-3">
+          <Tile value={scans.today} label="Last 24 hours" />
+          <Tile value={scans.week} label="Last 7 days" />
+          <Tile value={scans.month} label="Last 30 days" />
+        </div>
+        <p className="mt-2 text-xs text-muted">
+          Each scan is one paid AI call. Members are limited per day; manual logging is
+          unlimited.
+        </p>
       </Panel>
       <Panel title="Video cost guard">
         <div className="grid gap-3 md:grid-cols-[auto_1fr]">

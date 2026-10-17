@@ -70,6 +70,11 @@ export async function saveTargets(formData: FormData): Promise<void> {
     calories = v.ok ? v.value.calories : 0;
     protein = v.ok ? v.value.protein : 0;
   }
+  const { data: had } = await supabase
+    .from("nutrition_profiles")
+    .select("user_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
   const { error } = await supabase.from("nutrition_profiles").upsert(
     {
       user_id: user.id,
@@ -82,7 +87,9 @@ export async function saveTargets(formData: FormData): Promise<void> {
     { onConflict: "user_id" },
   );
   if (error) back("error=save");
-  await track(user.id, "nutrition_setup_completed", { source });
+  await track(user.id, had ? "nutrition_target_changed" : "nutrition_setup_completed", {
+    source,
+  });
   revalidatePath("/nutrition");
   redirect("/nutrition");
 }
@@ -327,4 +334,16 @@ export async function scanMeal(input: {
     model: result.model,
     scansLeft: Math.max(0, SCAN_LIMIT_PER_DAY - used - 1),
   };
+}
+
+/** Share (or stop sharing) nutrition logs and meal photos with the CK coach. */
+export async function setNutritionSharing(formData: FormData): Promise<void> {
+  const { supabase, user } = await gate();
+  const share = formData.get("share") === "on";
+  await supabase
+    .from("nutrition_profiles")
+    .update({ share_with_coach: share })
+    .eq("user_id", user.id);
+  revalidatePath("/nutrition/setup");
+  redirect("/nutrition/setup?saved=sharing");
 }

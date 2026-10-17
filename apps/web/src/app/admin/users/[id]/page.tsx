@@ -14,6 +14,7 @@ import { QuickMessage } from "@/components/admin/QuickMessage";
 import { ABtn, Flash, H1, Panel, Status, Table, aInput, td } from "@/components/admin/ui";
 import { audit, SUPPORT, requireStaff } from "@/lib/admin";
 import { listInvoices } from "@/lib/stripe";
+import { NutritionTab } from "./nutrition";
 import { ActivityTab, GiveAccess, MemberTags, ProgramsTab } from "./sections";
 import {
   addClientNote,
@@ -35,6 +36,7 @@ const TABS = [
   ["programs", "Trainings"],
   ["activity", "Activity"],
   ["photos", "Photos"],
+  ["nutrition", "Nutrition"],
   ["notes", "Notes"],
 ] as const;
 const SENSITIVE = new Set([
@@ -42,6 +44,7 @@ const SENSITIVE = new Set([
   "checkins",
   "progress",
   "photos",
+  "nutrition",
   "activity",
 ]);
 const label = (v: unknown) =>
@@ -60,6 +63,7 @@ export default async function AdminClient({
     saved?: string;
     error?: string;
     edit?: string;
+    meal?: string;
   }>;
 }) {
   const { id } = await params;
@@ -178,6 +182,22 @@ export default async function AdminClient({
           units={units}
           photosShared={photosShared}
           kind={sp.kind ?? "all"}
+        />
+      </>
+    );
+  }
+
+  if (tab === "nutrition" && open) {
+    return (
+      <>
+        {head}
+        <NutritionTab
+          supabase={supabase}
+          me={me}
+          id={id}
+          tz={p.timezone ?? "America/Vancouver"}
+          firstName={p.first_name ?? "This member"}
+          mealId={sp.meal}
         />
       </>
     );

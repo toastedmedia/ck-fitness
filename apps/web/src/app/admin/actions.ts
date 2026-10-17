@@ -8,6 +8,7 @@ import {
   renderCampaign,
   validBannerLink,
   isDiet,
+  validateTargets,
   needsSafetyGuidance,
   NUTRITION,
   MAX_BULK_ACCESS,
@@ -1825,4 +1826,46 @@ export async function resendConfirmation(userId: string): Promise<void> {
   const ok = await resendConfirmationEmail(db, data.user.email);
   await audit(supabase, user.id, "client.resend_confirmation", userId, { ok });
   redirect(`/admin/users/${userId}?${ok ? "sent=confirm" : "error=confirm"}`);
+}
+
+/* ------------------------------------------------------------ nutrition targets */
+/** A coach/admin adjusts a member's daily targets, only where the member shares nutrition. Audited. */
+export async function adjustNutritionTarget(
+  userId: string,
+  formData: FormData,
+): Promise<void> {
+  const { supabase, user, db } = await requireStaff(["owner", "admin", "coach"]);
+  const back = (q: string) => redirect(`/admin/users/${userId}?tab=nutrition&${q}`);
+  // Read with the staff member's own session: the database only returns it when sharing allows.
+  const { data: before } = await supabase
+    .from("nutrition_profiles")
+    .select("daily_calorie_target,daily_protein_target")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!before) back("error=notshared");
+  const v = validateTargets({
+    calories: formData.get("calories"),
+    protein: formData.get("protein"),
+  });
+  if (!v.ok) back("error=answers");
+  if (!v.ok) return;
+  await db
+    .from("nutrition_profiles")
+    .update({
+      daily_calorie_target: v.value.calories,
+      daily_protein_target: v.value.protein,
+      target_source: "coach",
+    })
+    .eq("user_id", userId);
+  await audit(supabase, user.id, "nutrition.target_change", userId, {
+    before,
+    after: v.value,
+  });
+  await notifyUser(userId, {
+    kind: "coach",
+    title: "Your CK coach updated your nutrition target",
+    body: `${v.value.calories} kcal and ${v.value.protein}g protein a day.`,
+    link: "/nutrition",
+  });
+  back("saved=1");
 }

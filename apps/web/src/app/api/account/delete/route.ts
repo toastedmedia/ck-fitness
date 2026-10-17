@@ -65,6 +65,14 @@ export async function POST(request: NextRequest) {
     await admin.storage
       .from("community-media")
       .remove(files.map((f) => `${user.id}/${f.name}`));
+  // Meal photos (private) are files too: remove them along with the account.
+  const { data: meals } = await admin.storage
+    .from("meal-photos")
+    .list(user.id, { limit: 1000 });
+  if (meals?.length)
+    await admin.storage
+      .from("meal-photos")
+      .remove(meals.map((f) => `${user.id}/${f.name}`));
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (!error) await track(null, "account_deleted");
   if (error)

@@ -20,7 +20,7 @@ import {
   nutritionGate,
   type NutritionProfileRow,
 } from "@/lib/nutrition";
-import { saveTargets } from "../actions";
+import { saveTargets, setNutritionSharing } from "../actions";
 
 export const metadata: Metadata = { title: "Nutrition targets" };
 
@@ -113,6 +113,7 @@ export default async function NutritionSetupPage({
   return (
     <>
       <h1 className="sr-only">Nutrition targets</h1>
+      {sp.saved === "sharing" ? <Flash>Sharing choice saved.</Flash> : null}
       {sp.error ? (
         <Flash tone="error">{ERRORS[sp.error] ?? decodeURIComponent(sp.error)}</Flash>
       ) : null}
@@ -248,6 +249,29 @@ export default async function NutritionSetupPage({
           </Button>
         </Card>
       </form>
+      {existing ? (
+        <Card>
+          <Cap>Sharing with your coach</Cap>
+          <form action={setNutritionSharing} className="mt-2 flex flex-col gap-2">
+            <label className="flex min-h-11 items-start gap-2 text-xs">
+              <input
+                type="checkbox"
+                name="share"
+                defaultChecked={existing.share_with_coach}
+                className="mt-0.5 size-5 shrink-0 accent-brand"
+              />
+              <span>
+                <b className="text-brand">Share my nutrition logs with my CK coach</b>
+                <br />
+                When this is on, your CK coach may view your meal logs, estimated
+                nutrition and meal photos to support your coaching. This also needs your
+                general coach sharing on in Profile. You can turn it off any time.
+              </span>
+            </label>
+            <Button variant="ghost">Save</Button>
+          </form>
+        </Card>
+      ) : null}
     </>
   );
 }
