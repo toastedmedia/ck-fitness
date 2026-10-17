@@ -12,6 +12,9 @@ const TITLES: Record<string, string> = {
   "/community/members": "Members",
   "/profile": "Profile",
   "/profile/delete": "Delete account",
+  "/nutrition": "Nutrition",
+  "/nutrition/setup": "Nutrition targets",
+  "/nutrition/log": "Log meal",
   "/membership": "Membership",
   "/notifications": "Notifications",
   "/progress/photos": "Progress photos",
@@ -26,6 +29,12 @@ type Back = { href: string; label: string } | null;
 
 /** The "back" link for detail pages, shown in the header so there is no empty row above the content. */
 function backFor(path: string): Back {
+  if (
+    path === "/nutrition/setup" ||
+    path === "/nutrition/log" ||
+    /^\/nutrition\/meal\//.test(path)
+  )
+    return { href: "/nutrition", label: "Nutrition" };
   if (path === "/profile/delete") return { href: "/profile", label: "Profile" };
   if (path === "/accountability/diet")
     return { href: "/accountability", label: "My Week" };

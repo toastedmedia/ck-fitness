@@ -20,3 +20,4 @@ export * from "./campaigns";
 export * from "./banners";
 export * from "./mealplan";
 export * from "./lifecycle";
+export * from "./nutrition";

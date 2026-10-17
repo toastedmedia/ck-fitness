@@ -1623,3 +1623,134 @@ describe("community feed: reactions, photos with approval, edits, replies, direc
     ).rejects.toThrow();
   });
 });
+
+describe("nutrition records", () => {
+  const N1 = "00000000-0000-0000-0000-000000000a01"; // shares records and nutrition
+  const N2 = "00000000-0000-0000-0000-000000000a02"; // shares records, nutrition sharing OFF
+  const N3 = "00000000-0000-0000-0000-000000000a03"; // shares nothing
+  const NCOACH = "00000000-0000-0000-0000-000000000a04";
+  const NSUPPORT = "00000000-0000-0000-0000-000000000a05";
+  const NCONTENT = "00000000-0000-0000-0000-000000000a06";
+  const mealId = (u: string) => `00000000-0000-0000-0000-0000000040${u.slice(-2)}`;
+
+  beforeAll(async () => {
+    for (const u of [N1, N2, N3, NCOACH, NSUPPORT, NCONTENT]) await addUser(db, u);
+    await db.query(
+      "insert into public.staff_roles (user_id, role) values ($1,'coach'),($2,'support'),($3,'content_manager')",
+      [NCOACH, NSUPPORT, NCONTENT],
+    );
+    await db.query(
+      "update public.profiles set coach_access_at = now() where user_id in ($1, $2)",
+      [N1, N2],
+    );
+    for (const [u, share] of [
+      [N1, true],
+      [N2, false],
+      [N3, true],
+    ] as const) {
+      await db.query(
+        "insert into public.nutrition_profiles (user_id, daily_calorie_target, daily_protein_target, share_with_coach) values ($1, 1850, 110, $2)",
+        [u, share],
+      );
+      await db.query(
+        "insert into public.meal_logs (id, user_id, meal_date, meal_type, final_calories, final_protein_g) values ($1, $2, '2026-10-16', 'lunch', 810, 46)",
+        [mealId(u), u],
+      );
+      await db.query(
+        "insert into public.meal_items (meal_log_id, user_id, name, final_calories) values ($1, $2, 'Dal', 220)",
+        [mealId(u), u],
+      );
+    }
+  });
+
+  const rows = (user: string, table: string) =>
+    asUser(
+      db,
+      user,
+      async () =>
+        (await db.query(`select user_id from public.${table}`)).rows as {
+          user_id: string;
+        }[],
+    );
+  const tables = ["nutrition_profiles", "meal_logs", "meal_items"];
+
+  it("lets a member see and change only their own nutrition", async () => {
+    for (const t of tables)
+      expect((await rows(N1, t)).map((r) => r.user_id)).toEqual([N1]);
+    await asUser(db, N1, () =>
+      db.query("update public.meal_logs set final_calories = 900 where user_id = $1", [
+        N1,
+      ]),
+    );
+    const other = await asUser(db, N1, () =>
+      db.query(
+        "update public.meal_logs set final_calories = 1 where user_id = $1 returning id",
+        [N3],
+      ),
+    );
+    expect(other.rows).toHaveLength(0);
+    await expect(
+      asUser(db, N1, () =>
+        db.query(
+          "insert into public.meal_logs (user_id, meal_date, meal_type) values ($1,'2026-10-16','lunch')",
+          [N3],
+        ),
+      ),
+    ).rejects.toThrow();
+  });
+  it("lets a coach read only members who share records AND nutrition", async () => {
+    for (const t of tables)
+      expect((await rows(NCOACH, t)).map((r) => r.user_id)).toEqual([N1]);
+  });
+  it("keeps support and content staff away from nutrition entirely", async () => {
+    for (const u of [NSUPPORT, NCONTENT])
+      for (const t of tables) expect(await rows(u, t)).toHaveLength(0);
+  });
+  it("never lets staff change a member's nutrition", async () => {
+    const r = await asUser(db, NCOACH, () =>
+      db.query(
+        "update public.meal_logs set final_calories = 1 where user_id = $1 returning id",
+        [N1],
+      ),
+    );
+    expect(r.rows).toHaveLength(0);
+    await expect(
+      asUser(db, NCOACH, () =>
+        db.query(
+          "update public.nutrition_profiles set daily_calorie_target = 1200 where user_id = $1",
+          [N1],
+        ),
+      ),
+    ).resolves.toBeDefined();
+    const t = (
+      await db.query(
+        "select daily_calorie_target from public.nutrition_profiles where user_id = $1",
+        [N1],
+      )
+    ).rows[0] as { daily_calorie_target: number };
+    expect(t.daily_calorie_target).toBe(1850);
+  });
+  it("hides a single meal the member chose not to share", async () => {
+    await db.query(
+      "update public.meal_logs set share_with_coach = false where user_id = $1",
+      [N1],
+    );
+    expect(await rows(NCOACH, "meal_logs")).toHaveLength(0);
+    expect(await rows(NCOACH, "meal_items")).toHaveLength(0);
+    await db.query(
+      "update public.meal_logs set share_with_coach = true where user_id = $1",
+      [N1],
+    );
+  });
+  it("removes everything when the account is deleted", async () => {
+    await db.query("delete from auth.users where id = $1", [N3]);
+    for (const t of [...tables, "meal_scans"]) {
+      const n = (
+        await db.query(`select count(*)::int as n from public.${t} where user_id = $1`, [
+          N3,
+        ])
+      ).rows[0] as { n: number };
+      expect(n.n).toBe(0);
+    }
+  });
+});
