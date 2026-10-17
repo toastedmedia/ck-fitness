@@ -35,6 +35,7 @@ import {
   type Audience,
   type CampaignRow,
 } from "@/lib/email/campaign";
+import { resendConfirmationEmail } from "@/lib/email/confirm";
 import { sendMemberEmail, sendRaw, emailConfigured } from "@/lib/email/send";
 import { notifyUser } from "@/lib/events";
 import { createMember, grantAccess } from "@/lib/members";
@@ -1813,4 +1814,15 @@ export async function sendCoachMessage(
   });
   await audit(supabase, user.id, "coach.message", userId, { message });
   redirect(`${back}?sent=1`);
+}
+
+/** Owner/admin/support: sends the member the sign-up confirmation email again (only if still unconfirmed). */
+export async function resendConfirmation(userId: string): Promise<void> {
+  const { supabase, user, db } = await requireStaff(SUPPORT);
+  const { data } = await db.auth.admin.getUserById(userId);
+  if (!data?.user?.email || data.user.email_confirmed_at)
+    redirect(`/admin/users/${userId}?error=confirm`);
+  const ok = await resendConfirmationEmail(db, data.user.email);
+  await audit(supabase, user.id, "client.resend_confirmation", userId, { ok });
+  redirect(`/admin/users/${userId}?${ok ? "sent=confirm" : "error=confirm"}`);
 }

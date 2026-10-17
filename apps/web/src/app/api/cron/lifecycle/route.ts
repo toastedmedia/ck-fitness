@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { LIFECYCLE_KEYS, nextLifecycleEmail, type LifecycleKey } from "@ck/core";
 import { cronGuard } from "@/lib/cron";
 import { track } from "@/lib/events";
+import { resendConfirmationEmail } from "@/lib/email/confirm";
 import { emailConfigured, sendMemberEmail } from "@/lib/email/send";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 
@@ -9,6 +10,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const MAX_PER_RUN = 120;
+const DAY = 86_400_000;
 
 /**
  * Daily: the "keep them coming back" emails. Finish-your-setup reminders (24 h, then 48 h, then 72 h
@@ -29,7 +31,12 @@ export async function GET(request: NextRequest) {
     .select("user_id,created_at,onboarding_complete,last_active_at")
     .not("terms_accepted_at", "is", null)
     .gte("created_at", new Date(now - 120 * 86_400_000).toISOString());
-  const names = [...LIFECYCLE_KEYS.map((k) => `email_${k}`), "onboarding_completed"];
+  const names = [
+    ...LIFECYCLE_KEYS.map((k) => `email_${k}`),
+    "email_confirm_resend_1",
+    "email_confirm_resend_2",
+    "onboarding_completed",
+  ];
   const { data: events } = await db
     .from("analytics_events")
     .select("user_id,event_name,created_at")
@@ -71,6 +78,28 @@ export async function GET(request: NextRequest) {
       lastActiveAt: p.last_active_at ? new Date(p.last_active_at).getTime() : null,
       sent: sentBy.get(p.user_id) ?? {},
     };
+    // Never confirmed their email: they cannot log in, so resend the confirmation instead (24 h, then 72 h later).
+    const confirmSent = sentBy.get(p.user_id) as Record<string, number> | undefined;
+    if (
+      !p.onboarding_complete &&
+      now - input.signupAt >= DAY &&
+      now - input.signupAt <= 14 * DAY
+    ) {
+      const c1 = confirmSent?.confirm_resend_1;
+      const c2 = confirmSent?.confirm_resend_2;
+      if (c2 === undefined && (c1 === undefined || now - c1 >= 3 * DAY)) {
+        const { data: u0 } = await db.auth.admin.getUserById(p.user_id);
+        if (u0?.user && !u0.user.email_confirmed_at && u0.user.email) {
+          await track(
+            p.user_id,
+            c1 === undefined ? "email_confirm_resend_1" : "email_confirm_resend_2",
+          );
+          await resendConfirmationEmail(db, u0.user.email);
+          sent++;
+          continue;
+        }
+      }
+    }
     // Only look up workouts when it changes the answer.
     let key = nextLifecycleEmail(input);
     if (key === null || key.startsWith("start_") || key.startsWith("quiet_")) {

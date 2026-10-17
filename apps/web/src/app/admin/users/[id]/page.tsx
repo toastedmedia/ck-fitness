@@ -21,6 +21,7 @@ import {
   setMembership,
   setStaffRole,
   updateClientContact,
+  resendConfirmation,
   updateQuestionnaire,
 } from "../../actions";
 
@@ -108,6 +109,8 @@ export default async function AdminClient({
     role: "Only an owner can change staff roles.",
     notshared: "This member has not shared their records with the coach.",
     answers: "Choose an answer for each question.",
+    confirm:
+      "Could not send a confirmation email (already confirmed, or the email service refused).",
     lastowner: "There must always be at least one owner.",
     email: "That email could not be changed.",
     name: "Please enter a first and last name.",
@@ -201,6 +204,10 @@ export default async function AdminClient({
 
   /* --------------------------------------------------------- overview */
   if (tab === "overview") {
+    const { data: authUser } = await db.auth.admin.getUserById(id);
+    const confirmedAt = authUser?.user
+      ? (authUser.user.email_confirmed_at ?? null)
+      : undefined;
     const [
       { data: m },
       { data: risk },
@@ -274,6 +281,17 @@ export default async function AdminClient({
     return (
       <>
         {head}
+        {confirmedAt === null ? (
+          <Panel title="Email not confirmed">
+            <p className="text-sm">
+              This person signed up but never confirmed their email, so they cannot log in
+              yet.
+            </p>
+            <form action={resendConfirmation.bind(null, id)} className="mt-2">
+              <ABtn variant="primary">Resend confirmation email</ABtn>
+            </form>
+          </Panel>
+        ) : null}
         {canSeeRecords ? (
           <Panel title="Send a quick message">
             <p className="text-xs text-muted">
