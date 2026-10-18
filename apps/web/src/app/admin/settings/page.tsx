@@ -186,7 +186,7 @@ export default async function AdminSettings({
         <Panel title="Nutrition testers">
           <label className={lab}>
             Emails that can use Nutrition before it is switched on for everyone (one per
-            line). chanveerkaur5310@gmail.com is always included.
+            line). Leave empty to keep it hidden from all members.
             <textarea
               name="nutrition_testers"
               rows={4}

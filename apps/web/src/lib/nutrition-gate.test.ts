@@ -27,7 +27,11 @@ vi.mock("@/lib/app", () => ({
     user: { email: state.email },
     supabase: {
       from: () => ({
-        select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }),
+        select: () => ({
+          eq: () => ({
+            maybeSingle: async () => ({ data: { value: ["tester@example.com"] } }),
+          }),
+        }),
       }),
     },
   }),
@@ -76,7 +80,7 @@ describe("nutritionGate", () => {
     expect((await gate()).allowed).toBe(true);
   });
   it("shows Nutrition to the tester list before the flag is on, even without a membership", async () => {
-    state.email = "ChanveerKaur5310@gmail.com";
+    state.email = "Tester@Example.com";
     const g = await gate();
     expect(g.allowed).toBe(true);
     expect(g.tester).toBe(true);

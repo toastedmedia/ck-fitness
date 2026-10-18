@@ -312,18 +312,17 @@ describe("nutrition nudges", () => {
 });
 
 describe("tester list", () => {
-  it("always includes the owners' default tester and cleans the list", () => {
-    expect(parseTesters(null)).toEqual(["chanveerkaur5310@gmail.com"]);
+  it("is empty unless the owners list someone, and cleans the list", () => {
+    expect(parseTesters(null)).toEqual([]);
     expect(parseTesters("A@x.com, bad\n a@X.com ;b@y.org")).toEqual([
-      "chanveerkaur5310@gmail.com",
       "a@x.com",
       "b@y.org",
     ]);
     expect(parseTesters(["Z@z.com", 5])).toContain("z@z.com");
   });
   it("matches emails case-insensitively", () => {
-    const t = parseTesters(null);
-    expect(isTester("ChanveerKaur5310@Gmail.com", t)).toBe(true);
+    const t = parseTesters("Tester@Example.com");
+    expect(isTester("tester@EXAMPLE.com", t)).toBe(true);
     expect(isTester("someone@else.com", t)).toBe(false);
     expect(isTester(null, t)).toBe(false);
   });

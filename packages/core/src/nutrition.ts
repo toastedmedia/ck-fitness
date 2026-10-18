@@ -466,8 +466,8 @@ export function nutritionNudge(i: NudgeInput): Nudge | null {
 }
 
 /* ------------------------------------------------------------ tester access */
-/** Members who see Nutrition before it is switched on for everyone (owner-managed, plus these defaults). */
-export const DEFAULT_NUTRITION_TESTERS = ["chanveerkaur5310@gmail.com"];
+/** Members who see Nutrition before it is switched on for everyone: only those the owners list in Admin -> Settings. */
+export const DEFAULT_NUTRITION_TESTERS: string[] = [];
 
 /** Reads the admin-edited list (a JSON array, or one email per line) and adds the defaults. */
 export function parseTesters(value: unknown): string[] {
