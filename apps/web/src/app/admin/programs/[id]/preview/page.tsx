@@ -78,7 +78,8 @@ export default async function Preview({
       </Panel>
       {((sections ?? []) as { id: string; title: string; section_type?: string }[]).map(
         (s) =>
-          s.section_type === "phase" ? (
+          s.section_type === "phase" &&
+          !(lessons ?? []).some((l: { section_id: string }) => l.section_id === s.id) ? (
             <h2
               key={s.id}
               className="rounded-xl bg-brand px-3 py-2 text-sm font-bold text-on-brand"

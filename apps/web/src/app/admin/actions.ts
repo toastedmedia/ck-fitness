@@ -202,12 +202,11 @@ export async function moveLesson(
   redirect(`/admin/programs/${programId}?lesson=${lessonId}`);
 }
 
-export async function moveSection(
+/** Sections in order, where a "phase" that still holds lessons counts as a normal section, not a heading. */
+async function sectionRefs(
+  supabase: Awaited<ReturnType<typeof requireStaff>>["supabase"],
   programId: string,
-  sectionId: string,
-  dir: "up" | "down",
-): Promise<void> {
-  const { supabase } = await requireStaff(CONTENT);
+) {
   const { data } = await supabase
     .from("program_sections")
     .select("id,section_type")
@@ -215,6 +214,25 @@ export async function moveSection(
     .order("order_index")
     .order("id");
   const rows = (data ?? []) as { id: string; section_type: string }[];
+  const ids = rows.map((r) => r.id);
+  const { data: withLessons } = ids.length
+    ? await supabase.from("lessons").select("section_id").in("section_id", ids)
+    : { data: [] as { section_id: string }[] };
+  const has = new Set(
+    (withLessons ?? []).map((l: { section_id: string }) => l.section_id),
+  );
+  return rows.map((r) =>
+    r.section_type === "phase" && has.has(r.id) ? { ...r, section_type: "week" } : r,
+  );
+}
+
+export async function moveSection(
+  programId: string,
+  sectionId: string,
+  dir: "up" | "down",
+): Promise<void> {
+  const { supabase } = await requireStaff(CONTENT);
+  const rows = await sectionRefs(supabase, programId);
   const me = rows.find((r) => r.id === sectionId);
   if (me?.section_type === "phase") {
     // A phase moves together with the weeks and modules under it, swapping with the next phase.
@@ -388,13 +406,7 @@ export async function addSection(programId: string, formData: FormData): Promise
   const type = ["phase", "week", "module"].includes(str(formData, "section_type"))
     ? str(formData, "section_type")
     : "week";
-  const { data: existing } = await supabase
-    .from("program_sections")
-    .select("id,section_type")
-    .eq("program_id", programId)
-    .order("order_index")
-    .order("id");
-  const rows = (existing ?? []) as { id: string; section_type: string }[];
+  const rows = await sectionRefs(supabase, programId);
   const { data: made } = await supabase
     .from("program_sections")
     .insert({

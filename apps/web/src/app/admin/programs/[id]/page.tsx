@@ -142,12 +142,15 @@ export default async function EditProgram({
         }).format(new Date(iso))
       : "-";
   const lessonsOf = (sid: string) => all.filter((l) => l.section_id === sid);
+  // A "phase" that still holds lessons (older trainings were built that way) is shown as a normal
+  // section so its lessons stay visible; only an empty phase is a heading.
+  const isHeading = (x: { id: string; section_type: string }) =>
+    x.section_type === "phase" && lessonsOf(x.id).length === 0;
   const KIND: Record<string, string> = { phase: "Phase", week: "Week", module: "Module" };
   const kindOf = (t: string) => KIND[t] ?? "Week";
   const weeksIn = (phaseIdx: number) => {
     let n = 0;
-    for (let i = phaseIdx + 1; i < secs.length && secs[i].section_type !== "phase"; i++)
-      n++;
+    for (let i = phaseIdx + 1; i < secs.length && !isHeading(secs[i]); i++) n++;
     return n;
   };
   const row = (active: boolean) =>
@@ -236,12 +239,11 @@ export default async function EditProgram({
             ))}
             <div className="mx-2 my-2 border-t border-line" />
             {secs.map((s, si) => {
-              const isPhase = s.section_type === "phase";
+              const isPhase = isHeading(s);
               const kind = kindOf(s.section_type);
-              const inside =
-                !isPhase && secs.slice(0, si).some((x) => x.section_type === "phase");
+              const inside = !isPhase && secs.slice(0, si).some((x) => isHeading(x));
               const phaseIdxs = secs
-                .map((x, i) => (x.section_type === "phase" ? i : -1))
+                .map((x, i) => (isHeading(x) ? i : -1))
                 .filter((i) => i >= 0);
               if (isPhase)
                 return (
@@ -487,11 +489,11 @@ export default async function EditProgram({
                     <option value="phase">Phase (groups weeks)</option>
                     <option value="module">Module (a topic of lessons)</option>
                   </select>
-                  {secs.some((x) => x.section_type === "phase") ? (
+                  {secs.some((x) => isHeading(x)) ? (
                     <select name="phase" className={aInput} aria-label="Put it in phase">
                       <option value="">At the end</option>
                       {secs
-                        .filter((x) => x.section_type === "phase")
+                        .filter((x) => isHeading(x))
                         .map((x) => (
                           <option key={x.id} value={x.id}>
                             Inside phase: {x.title}
@@ -1001,7 +1003,7 @@ export default async function EditProgram({
                   role="alert"
                   className="mb-3 flex flex-wrap items-center gap-2 rounded-xl bg-[#f6dcd7] p-3 text-sm font-bold text-danger"
                 >
-                  {selWeek.section_type === "phase"
+                  {isHeading(selWeek)
                     ? "Delete this phase heading? The weeks under it are kept."
                     : `Delete this ${kindOf(selWeek.section_type).toLowerCase()} and all ${lessonsOf(selWeek.id).length} of its lessons?`}
                   <form action={deleteSection.bind(null, id, selWeek.id)}>
@@ -1055,9 +1057,17 @@ export default async function EditProgram({
                 </label>
                 {canEdit ? <ABtn variant="primary">Save</ABtn> : null}
               </AjaxForm>
+              {selWeek.section_type === "phase" && lessonsOf(selWeek.id).length > 0 ? (
+                <p className="mt-2 rounded-xl bg-page p-3 text-xs">
+                  This section is typed <b>Phase</b> but still holds{" "}
+                  {lessonsOf(selWeek.id).length} lessons, so they are shown here and
+                  members can see them. Change Type to <b>Week</b> to keep it as a normal
+                  week, or move its lessons into a week and then change it to a Phase.
+                </p>
+              ) : null}
               {canEdit ? (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {selWeek.section_type === "phase" ? (
+                  {isHeading(selWeek) ? (
                     <form
                       action={addSection.bind(null, id)}
                       className="flex flex-wrap gap-2"

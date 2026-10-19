@@ -228,7 +228,7 @@ export default async function ProgramPage({
 
       <div className="flex flex-col gap-3">
         {outline.map((s) =>
-          s.section_type === "phase" ? (
+          s.section_type === "phase" && s.lessons.length === 0 ? (
             <h2
               key={s.id}
               className="mt-2 rounded-xl bg-brand px-3 py-2 text-[13px] font-bold text-on-brand"
