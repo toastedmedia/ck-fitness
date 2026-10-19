@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ABtn, Flash, H1, Panel, Status, Tile, aInput } from "@/components/admin/ui";
+import { ActionMenu as Menu } from "@/components/admin/ActionMenu";
 import { AjaxForm } from "@/components/admin/AjaxForm";
 import { FilePick } from "@/components/admin/FilePick";
 import { ImageInput } from "@/components/admin/ImageInput";
@@ -1157,21 +1158,6 @@ export default async function EditProgram({
   );
 }
 
-function Menu({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <details className="relative">
-      <summary
-        aria-label={label}
-        className="grid size-9 cursor-pointer list-none place-items-center rounded-lg text-lg text-muted hover:bg-page [&::-webkit-details-marker]:hidden"
-      >
-        ⋯
-      </summary>
-      <div className="absolute right-0 top-9 z-20 flex min-w-40 flex-col rounded-xl border border-line bg-surface p-1 shadow-lg">
-        {children}
-      </div>
-    </details>
-  );
-}
 const mi =
   "flex min-h-10 w-full items-center rounded-lg px-3 text-left text-sm font-bold text-brand hover:bg-page";
 

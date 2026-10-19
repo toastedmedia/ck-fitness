@@ -98,13 +98,15 @@ export function OutlineDnd({
           el: overSection,
         };
       }
-      if (next) e.preventDefault();
+      if (next) {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+      }
       target = next;
       mark(next);
     };
-    const onDrop = async (e: DragEvent) => {
+    const commit = async () => {
       if (!drag || !target) return;
-      e.preventDefault();
       const d = drag;
       const tg = target;
       drag = null;
@@ -148,18 +150,41 @@ export function OutlineDnd({
       }
       window.setTimeout(() => setMsg(""), 2500);
     };
+    const onDrop = (e: DragEvent) => {
+      if (!drag || !target) return;
+      e.preventDefault();
+      void commit();
+    };
+    // Some browsers refuse the drop event even over a valid spot; if the pointer was over one when the
+    // drag ended, save it anyway.
     const onEnd = () => {
+      if (drag && target) {
+        void commit();
+        return;
+      }
       drag = null;
       target = null;
       clear();
     };
 
     el.addEventListener("dragstart", onStart);
+    // Leaving the outline cancels the pending drop spot, so dragging out and releasing does nothing.
+    const onLeave = (e: DragEvent) => {
+      const to = e.relatedTarget as Node | null;
+      if (!to || !el.contains(to)) {
+        target = null;
+        clear();
+      }
+    };
+    el.addEventListener("dragleave", onLeave);
+    el.addEventListener("dragenter", onOver);
     el.addEventListener("dragover", onOver);
     el.addEventListener("drop", onDrop);
     el.addEventListener("dragend", onEnd);
     return () => {
       el.removeEventListener("dragstart", onStart);
+      el.removeEventListener("dragleave", onLeave);
+      el.removeEventListener("dragenter", onOver);
       el.removeEventListener("dragover", onOver);
       el.removeEventListener("drop", onDrop);
       el.removeEventListener("dragend", onEnd);
