@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ABtn, Flash, H1, Panel, Status, Tile, aInput } from "@/components/admin/ui";
+import { AjaxForm } from "@/components/admin/AjaxForm";
 import { FilePick } from "@/components/admin/FilePick";
 import { ImageInput } from "@/components/admin/ImageInput";
 import { OutlineDnd } from "@/components/admin/OutlineDnd";
@@ -140,6 +141,14 @@ export default async function EditProgram({
         }).format(new Date(iso))
       : "-";
   const lessonsOf = (sid: string) => all.filter((l) => l.section_id === sid);
+  const KIND: Record<string, string> = { phase: "Phase", week: "Week", module: "Module" };
+  const kindOf = (t: string) => KIND[t] ?? "Week";
+  const weeksIn = (phaseIdx: number) => {
+    let n = 0;
+    for (let i = phaseIdx + 1; i < secs.length && secs[i].section_type !== "phase"; i++)
+      n++;
+    return n;
+  };
   const row = (active: boolean) =>
     `relative flex items-center gap-1 rounded-xl hover:bg-page ${active ? "bg-page" : ""}`;
 
@@ -225,144 +234,241 @@ export default async function EditProgram({
               </Link>
             ))}
             <div className="mx-2 my-2 border-t border-line" />
-            {secs.map((s, si) => (
-              <details
-                key={s.id}
-                open
-                className="relative mt-1"
-                data-section={s.id}
-                draggable={canEdit}
-              >
-                <summary
-                  className={`flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-xl px-2 pr-12 text-sm font-bold text-brand hover:bg-page [&::-webkit-details-marker]:hidden ${view === "week" && selWeek?.id === s.id ? "bg-page" : ""}`}
-                >
-                  {canEdit ? (
-                    <span
-                      aria-hidden="true"
-                      className="cursor-grab select-none text-muted"
-                    >
-                      ⋮⋮
-                    </span>
-                  ) : null}
-                  <span aria-hidden="true" className="text-muted">
-                    ▾
-                  </span>
-                  <span className="min-w-0 flex-1 truncate">{s.title}</span>
-                  {s.published ? null : <Status tone="warn">Hidden</Status>}
-                  <span className="rounded-full bg-page px-2 text-[11px] text-muted">
-                    {lessonsOf(s.id).length}
-                  </span>
-                </summary>
-                {canEdit ? (
-                  <div className="absolute right-1 top-1">
-                    <Menu label={`Actions for ${s.title}`}>
-                      <Link href={`/admin/programs/${id}?week=${s.id}`} className={mi}>
-                        Edit week
-                      </Link>
-                      <form action={duplicateSection.bind(null, id, s.id)}>
-                        <button className={mi}>Clone week</button>
-                      </form>
-                      {si > 0 ? (
-                        <form action={moveSection.bind(null, id, s.id, "up")}>
-                          <button className={mi}>Move up</button>
-                        </form>
-                      ) : null}
-                      {si < secs.length - 1 ? (
-                        <form action={moveSection.bind(null, id, s.id, "down")}>
-                          <button className={mi}>Move down</button>
-                        </form>
-                      ) : null}
-                      <Link
-                        href={`/admin/programs/${id}?week=${s.id}&confirm=delete`}
-                        className={`${mi} text-danger`}
-                      >
-                        Delete
-                      </Link>
-                    </Menu>
-                  </div>
-                ) : null}
-                <div className="ml-3 flex flex-col gap-px border-l-2 border-line pl-2">
-                  {lessonsOf(s.id).map((l, li, arr) => (
+            {secs.map((s, si) => {
+              const isPhase = s.section_type === "phase";
+              const kind = kindOf(s.section_type);
+              const inside =
+                !isPhase && secs.slice(0, si).some((x) => x.section_type === "phase");
+              const phaseIdxs = secs
+                .map((x, i) => (x.section_type === "phase" ? i : -1))
+                .filter((i) => i >= 0);
+              if (isPhase)
+                return (
+                  <div
+                    key={s.id}
+                    className="relative mt-3"
+                    data-section={s.id}
+                    data-type="phase"
+                  >
                     <div
-                      key={String(l.id)}
-                      className={row(selLesson?.id === l.id)}
-                      data-lesson={String(l.id)}
-                      draggable={canEdit}
+                      className={`flex min-h-11 items-center gap-2 rounded-xl bg-brand px-2 pr-12 text-sm font-bold text-on-brand ${view === "week" && selWeek?.id === s.id ? "ring-2 ring-accent" : ""}`}
                     >
-                      {canEdit ? (
-                        <span
-                          aria-hidden="true"
-                          className="cursor-grab select-none pl-1 text-muted"
-                        >
-                          ⋮⋮
-                        </span>
-                      ) : null}
+                      <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] uppercase tracking-wider text-on-accent">
+                        Phase
+                      </span>
                       <Link
-                        href={`/admin/programs/${id}?lesson=${l.id}`}
-                        className={`min-h-10 min-w-0 flex-1 truncate px-2 py-2.5 text-sm ${selLesson?.id === l.id ? "font-bold text-accent-strong" : "text-brand"}`}
-                        title={String(l.title)}
+                        href={`/admin/programs/${id}?week=${s.id}`}
+                        className="min-w-0 flex-1 truncate"
                         draggable={false}
                       >
-                        {String(l.title)}
+                        {s.title}
                       </Link>
-                      <Status tone={l.published ? "ok" : "warn"}>
-                        {l.published ? "Published" : "Draft"}
-                      </Status>
-                      {canEdit ? (
-                        <Menu label={`Actions for ${l.title}`}>
+                      {s.published ? null : <Status tone="warn">Hidden</Status>}
+                      <span className="rounded-full bg-white/15 px-2 text-[11px]">
+                        {weeksIn(si)} {weeksIn(si) === 1 ? "week" : "weeks"}
+                      </span>
+                    </div>
+                    {canEdit ? (
+                      <div className="absolute right-1 top-1">
+                        <Menu label={`Actions for ${s.title}`}>
                           <Link
-                            href={`/admin/programs/${id}?lesson=${l.id}`}
+                            href={`/admin/programs/${id}?week=${s.id}`}
                             className={mi}
                           >
-                            Edit
+                            Edit phase
                           </Link>
-                          <form action={duplicateLesson.bind(null, id, String(l.id))}>
-                            <button className={mi}>Clone</button>
-                          </form>
-                          {li > 0 ? (
-                            <form
-                              action={moveLesson.bind(null, id, s.id, String(l.id), "up")}
-                            >
-                              <button className={mi}>Move up</button>
+                          {phaseIdxs.some((i) => i < si) ? (
+                            <form action={moveSection.bind(null, id, s.id, "up")}>
+                              <button className={mi}>Move phase up</button>
                             </form>
                           ) : null}
-                          {li < arr.length - 1 ? (
-                            <form
-                              action={moveLesson.bind(
-                                null,
-                                id,
-                                s.id,
-                                String(l.id),
-                                "down",
-                              )}
-                            >
-                              <button className={mi}>Move down</button>
+                          {phaseIdxs.some((i) => i > si) ? (
+                            <form action={moveSection.bind(null, id, s.id, "down")}>
+                              <button className={mi}>Move phase down</button>
                             </form>
                           ) : null}
                           <Link
-                            href={`/admin/programs/${id}?lesson=${l.id}&confirm=delete`}
+                            href={`/admin/programs/${id}?week=${s.id}&confirm=delete`}
                             className={`${mi} text-danger`}
                           >
-                            Delete
+                            Delete phase
                           </Link>
                         </Menu>
-                      ) : null}
-                    </div>
-                  ))}
+                      </div>
+                    ) : null}
+                    {canEdit ? (
+                      <details className="ml-3 mt-1 rounded-xl border border-dashed border-line p-2">
+                        <summary className="min-h-10 cursor-pointer list-none text-sm font-bold text-accent-strong [&::-webkit-details-marker]:hidden">
+                          + Add a week to this phase
+                        </summary>
+                        <form
+                          action={addSection.bind(null, id)}
+                          className="mt-2 flex gap-2"
+                        >
+                          <input type="hidden" name="section_type" value="week" />
+                          <input type="hidden" name="phase" value={s.id} />
+                          <input
+                            name="title"
+                            required
+                            className={aInput}
+                            placeholder="Week 1"
+                            aria-label="Week title"
+                          />
+                          <ABtn variant="primary">Add</ABtn>
+                        </form>
+                      </details>
+                    ) : null}
+                  </div>
+                );
+              return (
+                <details
+                  key={s.id}
+                  open
+                  className={`relative mt-1 ${inside ? "ml-3" : ""}`}
+                  data-type={s.section_type}
+                  data-section={s.id}
+                  draggable={canEdit}
+                >
+                  <summary
+                    className={`flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-xl px-2 pr-12 text-sm font-bold text-brand hover:bg-page [&::-webkit-details-marker]:hidden ${view === "week" && selWeek?.id === s.id ? "bg-page" : ""}`}
+                  >
+                    {canEdit ? (
+                      <span
+                        aria-hidden="true"
+                        className="cursor-grab select-none text-muted"
+                      >
+                        ⋮⋮
+                      </span>
+                    ) : null}
+                    <span aria-hidden="true" className="text-muted">
+                      ▾
+                    </span>
+                    <span className="min-w-0 flex-1 truncate">{s.title}</span>
+                    <span className="rounded-full border border-line px-1.5 text-[10px] uppercase tracking-wider text-muted">
+                      {kind}
+                    </span>
+                    {s.published ? null : <Status tone="warn">Hidden</Status>}
+                    <span className="rounded-full bg-page px-2 text-[11px] text-muted">
+                      {lessonsOf(s.id).length}
+                    </span>
+                  </summary>
                   {canEdit ? (
-                    <form action={createLesson.bind(null, id, s.id)}>
-                      <button className="my-1 min-h-10 w-full rounded-xl border border-dashed border-line px-3 text-left text-sm font-bold text-accent-strong hover:bg-page">
-                        + Add lesson
-                      </button>
-                    </form>
+                    <div className="absolute right-1 top-1">
+                      <Menu label={`Actions for ${s.title}`}>
+                        <Link href={`/admin/programs/${id}?week=${s.id}`} className={mi}>
+                          Edit {kind.toLowerCase()}
+                        </Link>
+                        <form action={duplicateSection.bind(null, id, s.id)}>
+                          <button className={mi}>Clone {kind.toLowerCase()}</button>
+                        </form>
+                        {si > 0 ? (
+                          <form action={moveSection.bind(null, id, s.id, "up")}>
+                            <button className={mi}>Move up</button>
+                          </form>
+                        ) : null}
+                        {si < secs.length - 1 ? (
+                          <form action={moveSection.bind(null, id, s.id, "down")}>
+                            <button className={mi}>Move down</button>
+                          </form>
+                        ) : null}
+                        <Link
+                          href={`/admin/programs/${id}?week=${s.id}&confirm=delete`}
+                          className={`${mi} text-danger`}
+                        >
+                          Delete
+                        </Link>
+                      </Menu>
+                    </div>
                   ) : null}
-                </div>
-              </details>
-            ))}
+                  <div className="ml-3 flex flex-col gap-px border-l-2 border-line pl-2">
+                    {lessonsOf(s.id).map((l, li, arr) => (
+                      <div
+                        key={String(l.id)}
+                        className={row(selLesson?.id === l.id)}
+                        data-lesson={String(l.id)}
+                        draggable={canEdit}
+                      >
+                        {canEdit ? (
+                          <span
+                            aria-hidden="true"
+                            className="cursor-grab select-none pl-1 text-muted"
+                          >
+                            ⋮⋮
+                          </span>
+                        ) : null}
+                        <Link
+                          href={`/admin/programs/${id}?lesson=${l.id}`}
+                          className={`min-h-10 min-w-0 flex-1 truncate px-2 py-2.5 text-sm ${selLesson?.id === l.id ? "font-bold text-accent-strong" : "text-brand"}`}
+                          title={String(l.title)}
+                          draggable={false}
+                        >
+                          {String(l.title)}
+                        </Link>
+                        <Status tone={l.published ? "ok" : "warn"}>
+                          {l.published ? "Published" : "Draft"}
+                        </Status>
+                        {canEdit ? (
+                          <Menu label={`Actions for ${l.title}`}>
+                            <Link
+                              href={`/admin/programs/${id}?lesson=${l.id}`}
+                              className={mi}
+                            >
+                              Edit
+                            </Link>
+                            <form action={duplicateLesson.bind(null, id, String(l.id))}>
+                              <button className={mi}>Clone</button>
+                            </form>
+                            {li > 0 ? (
+                              <form
+                                action={moveLesson.bind(
+                                  null,
+                                  id,
+                                  s.id,
+                                  String(l.id),
+                                  "up",
+                                )}
+                              >
+                                <button className={mi}>Move up</button>
+                              </form>
+                            ) : null}
+                            {li < arr.length - 1 ? (
+                              <form
+                                action={moveLesson.bind(
+                                  null,
+                                  id,
+                                  s.id,
+                                  String(l.id),
+                                  "down",
+                                )}
+                              >
+                                <button className={mi}>Move down</button>
+                              </form>
+                            ) : null}
+                            <Link
+                              href={`/admin/programs/${id}?lesson=${l.id}&confirm=delete`}
+                              className={`${mi} text-danger`}
+                            >
+                              Delete
+                            </Link>
+                          </Menu>
+                        ) : null}
+                      </div>
+                    ))}
+                    {canEdit ? (
+                      <form action={createLesson.bind(null, id, s.id)}>
+                        <button className="my-1 min-h-10 w-full rounded-xl border border-dashed border-line px-3 text-left text-sm font-bold text-accent-strong hover:bg-page">
+                          + Add lesson
+                        </button>
+                      </form>
+                    ) : null}
+                  </div>
+                </details>
+              );
+            })}
             {canEdit ? (
               <details className="mt-2 rounded-xl border border-dashed border-line p-2">
                 <summary className="min-h-10 cursor-pointer list-none text-sm font-bold text-accent-strong [&::-webkit-details-marker]:hidden">
-                  + Add week, phase or module
+                  + Add a phase, week or module
                 </summary>
                 <form
                   action={addSection.bind(null, id)}
@@ -376,10 +482,22 @@ export default async function EditProgram({
                     aria-label="Title"
                   />
                   <select name="section_type" className={aInput} aria-label="Type">
-                    <option value="week">Week</option>
-                    <option value="phase">Phase</option>
-                    <option value="module">Module</option>
+                    <option value="week">Week (holds lessons)</option>
+                    <option value="phase">Phase (groups weeks)</option>
+                    <option value="module">Module (a topic of lessons)</option>
                   </select>
+                  {secs.some((x) => x.section_type === "phase") ? (
+                    <select name="phase" className={aInput} aria-label="Put it in phase">
+                      <option value="">At the end</option>
+                      {secs
+                        .filter((x) => x.section_type === "phase")
+                        .map((x) => (
+                          <option key={x.id} value={x.id}>
+                            Inside phase: {x.title}
+                          </option>
+                        ))}
+                    </select>
+                  ) : null}
                   <ABtn variant="primary">Add</ABtn>
                 </form>
               </details>
@@ -419,8 +537,45 @@ export default async function EditProgram({
                 ) : null}
               </Panel>
 
+              <Panel title="How a training is organised">
+                <div className="grid gap-3 text-sm md:grid-cols-2">
+                  <ul className="flex flex-col gap-2">
+                    <li>
+                      <b className="text-brand">Phase</b> groups several weeks, for
+                      example &quot;Phase 1: Foundation&quot;. It has no lessons of its
+                      own. The weeks listed under it belong to it.
+                    </li>
+                    <li>
+                      <b className="text-brand">Week</b> is one week of the plan. It holds
+                      the daily workouts and lessons.
+                    </li>
+                    <li>
+                      <b className="text-brand">Module</b> is a topic block of lessons
+                      that is not tied to a calendar week, for example &quot;Nutrition
+                      basics&quot;.
+                    </li>
+                    <li>
+                      <b className="text-brand">Lesson</b> is one workout, video or guide.
+                    </li>
+                  </ul>
+                  <div className="rounded-xl bg-page p-3 text-xs">
+                    <p className="font-bold text-brand">Example</p>
+                    <p className="mt-1 font-bold">PHASE 1: Foundation</p>
+                    <p className="ml-3">Week 1 → Day 1, Day 2, Day 3</p>
+                    <p className="ml-3">Week 2 → Day 1, Day 2, Day 3</p>
+                    <p className="mt-1 font-bold">PHASE 2: Build</p>
+                    <p className="ml-3">Week 3 → Day 1, Day 2, Day 3</p>
+                    <p className="mt-2 text-muted">
+                      Add the phase first, then use &quot;+ Add a week to this
+                      phase&quot;. Drag a week to move it between phases. To hide a whole
+                      phase from members, hide each week in it.
+                    </p>
+                  </div>
+                </div>
+              </Panel>
+
               <Panel title="Details">
-                <form
+                <AjaxForm
                   action={updateProgram.bind(null, id)}
                   className="grid gap-3 md:grid-cols-2"
                   encType="multipart/form-data"
@@ -567,14 +722,14 @@ export default async function EditProgram({
                       <ABtn variant="primary">Save details</ABtn>
                     </div>
                   ) : null}
-                </form>
+                </AjaxForm>
               </Panel>
             </>
           ) : null}
 
           {view === "settings" ? (
             <Panel title="Instructor and learning experience">
-              <form
+              <AjaxForm
                 action={updateProgramSettings.bind(null, id)}
                 className="grid gap-3 md:grid-cols-2"
                 encType="multipart/form-data"
@@ -680,7 +835,7 @@ export default async function EditProgram({
                     </button>
                   </div>
                 ) : null}
-              </form>
+              </AjaxForm>
             </Panel>
           ) : null}
 
@@ -839,13 +994,15 @@ export default async function EditProgram({
           ) : null}
 
           {view === "week" && selWeek ? (
-            <Panel title="Edit week">
+            <Panel title={`Edit ${kindOf(selWeek.section_type).toLowerCase()}`}>
               {sp.confirm === "delete" && canEdit ? (
                 <div
                   role="alert"
                   className="mb-3 flex flex-wrap items-center gap-2 rounded-xl bg-[#f6dcd7] p-3 text-sm font-bold text-danger"
                 >
-                  Delete this week and all {lessonsOf(selWeek.id).length} of its lessons?
+                  {selWeek.section_type === "phase"
+                    ? "Delete this phase heading? The weeks under it are kept."
+                    : `Delete this ${kindOf(selWeek.section_type).toLowerCase()} and all ${lessonsOf(selWeek.id).length} of its lessons?`}
                   <form action={deleteSection.bind(null, id, selWeek.id)}>
                     <ABtn variant="danger">Yes, delete</ABtn>
                   </form>
@@ -857,13 +1014,25 @@ export default async function EditProgram({
                   </Link>
                 </div>
               ) : null}
-              <form
+              <AjaxForm
                 action={updateSection.bind(null, id, selWeek.id)}
                 className="flex flex-wrap items-end gap-2"
               >
                 <label className={`${lab} min-w-48 flex-1`}>
                   Title
                   <input name="title" defaultValue={selWeek.title} className={aInput} />
+                </label>
+                <label className={`${lab} w-40`}>
+                  Type
+                  <select
+                    name="section_type"
+                    defaultValue={selWeek.section_type}
+                    className={aInput}
+                  >
+                    <option value="week">Week</option>
+                    <option value="phase">Phase</option>
+                    <option value="module">Module</option>
+                  </select>
                 </label>
                 <label className={`${lab} w-24`}>
                   Order
@@ -883,21 +1052,43 @@ export default async function EditProgram({
                   />
                   Visible to members
                 </label>
-                {canEdit ? <ABtn variant="primary">Save week</ABtn> : null}
-              </form>
+                {canEdit ? <ABtn variant="primary">Save</ABtn> : null}
+              </AjaxForm>
               {canEdit ? (
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <form action={duplicateSection.bind(null, id, selWeek.id)}>
-                    <ABtn variant="ghost">Clone week</ABtn>
-                  </form>
-                  <form action={createLesson.bind(null, id, selWeek.id)}>
-                    <ABtn variant="ghost">Add lesson</ABtn>
-                  </form>
+                  {selWeek.section_type === "phase" ? (
+                    <form
+                      action={addSection.bind(null, id)}
+                      className="flex flex-wrap gap-2"
+                    >
+                      <input type="hidden" name="section_type" value="week" />
+                      <input type="hidden" name="phase" value={selWeek.id} />
+                      <input
+                        name="title"
+                        required
+                        className={`${aInput} w-48`}
+                        placeholder="Week title"
+                        aria-label="Week title"
+                      />
+                      <ABtn variant="ghost">Add a week to this phase</ABtn>
+                    </form>
+                  ) : (
+                    <>
+                      <form action={duplicateSection.bind(null, id, selWeek.id)}>
+                        <ABtn variant="ghost">
+                          Clone {kindOf(selWeek.section_type).toLowerCase()}
+                        </ABtn>
+                      </form>
+                      <form action={createLesson.bind(null, id, selWeek.id)}>
+                        <ABtn variant="ghost">Add lesson</ABtn>
+                      </form>
+                    </>
+                  )}
                   <Link
                     href={`/admin/programs/${id}?week=${selWeek.id}&confirm=delete`}
                     className="inline-flex min-h-10 items-center rounded-xl border-2 border-danger px-4 text-sm font-bold text-danger"
                   >
-                    Delete week
+                    Delete {kindOf(selWeek.section_type).toLowerCase()}
                   </Link>
                 </div>
               ) : null}
@@ -1000,7 +1191,7 @@ function LessonForm({
   const thumbId = `thumb-${lid}`;
   const thumb = lesson.thumbnail_path ? coverUrl(String(lesson.thumbnail_path)) : null;
   return (
-    <form
+    <AjaxForm
       action={saveLesson.bind(null, programId, sectionId, lid)}
       className="grid gap-3 md:grid-cols-2"
       encType="multipart/form-data"
@@ -1139,6 +1330,6 @@ function LessonForm({
           )}
         </div>
       ) : null}
-    </form>
+    </AjaxForm>
   );
 }

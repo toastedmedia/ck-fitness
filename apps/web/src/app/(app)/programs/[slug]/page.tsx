@@ -227,54 +227,65 @@ export default async function ProgramPage({
       ) : null}
 
       <div className="flex flex-col gap-3">
-        {outline.map((s) => (
-          <Card key={s.id}>
-            <h2 className="text-[13px] font-bold text-brand">{s.title}</h2>
-            <ol className="mt-2 flex flex-col divide-y divide-line">
-              {s.lessons.map((l) => {
-                const open = canAccess(viewer, l.effective_access);
-                const isDone = doneSet.has(l.id);
-                const inner = (
-                  <>
-                    <span
-                      aria-hidden="true"
-                      className={`grid size-5 shrink-0 place-items-center rounded-full border-2 text-[10px] ${isDone ? "border-success bg-success text-white" : "border-line text-muted"}`}
-                    >
-                      {isDone ? "✓" : open ? "" : "🔒"}
-                    </span>
-                    <span className="min-w-0 flex-1 text-xs font-semibold">
-                      {l.title}
-                    </span>
-                    {l.duration_minutes ? (
-                      <span className="text-[10.5px] text-muted">
-                        {l.duration_minutes} min
+        {outline.map((s) =>
+          s.section_type === "phase" ? (
+            <h2
+              key={s.id}
+              className="mt-2 rounded-xl bg-brand px-3 py-2 text-[13px] font-bold text-on-brand"
+            >
+              {s.title}
+            </h2>
+          ) : (
+            <Card key={s.id}>
+              <h2 className="text-[13px] font-bold text-brand">{s.title}</h2>
+              <ol className="mt-2 flex flex-col divide-y divide-line">
+                {s.lessons.map((l) => {
+                  const open = canAccess(viewer, l.effective_access);
+                  const isDone = doneSet.has(l.id);
+                  const inner = (
+                    <>
+                      <span
+                        aria-hidden="true"
+                        className={`grid size-5 shrink-0 place-items-center rounded-full border-2 text-[10px] ${isDone ? "border-success bg-success text-white" : "border-line text-muted"}`}
+                      >
+                        {isDone ? "✓" : open ? "" : "🔒"}
                       </span>
-                    ) : null}
-                    {!open ? <span className="sr-only">Locked, members only</span> : null}
-                  </>
-                );
-                return (
-                  <li key={l.id}>
-                    {open && enr ? (
-                      <Link
-                        href={`/programs/${program.slug}/${l.id}`}
-                        className="flex min-h-11 items-center gap-2"
-                      >
-                        {inner}
-                      </Link>
-                    ) : (
-                      <div
-                        className={`flex min-h-11 items-center gap-2 ${open ? "" : "opacity-60"}`}
-                      >
-                        {inner}
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ol>
-          </Card>
-        ))}
+                      <span className="min-w-0 flex-1 text-xs font-semibold">
+                        {l.title}
+                      </span>
+                      {l.duration_minutes ? (
+                        <span className="text-[10.5px] text-muted">
+                          {l.duration_minutes} min
+                        </span>
+                      ) : null}
+                      {!open ? (
+                        <span className="sr-only">Locked, members only</span>
+                      ) : null}
+                    </>
+                  );
+                  return (
+                    <li key={l.id}>
+                      {open && enr ? (
+                        <Link
+                          href={`/programs/${program.slug}/${l.id}`}
+                          className="flex min-h-11 items-center gap-2"
+                        >
+                          {inner}
+                        </Link>
+                      ) : (
+                        <div
+                          className={`flex min-h-11 items-center gap-2 ${open ? "" : "opacity-60"}`}
+                        >
+                          {inner}
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+            </Card>
+          ),
+        )}
         {outline.length === 0 ? (
           <p className="text-xs text-muted">Content is being added. Check back soon.</p>
         ) : null}

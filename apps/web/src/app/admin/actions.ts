@@ -8,6 +8,8 @@ import {
   renderCampaign,
   validBannerLink,
   isDiet,
+  insertIndex,
+  movePhase,
   parseTesters,
   validateTargets,
   needsSafetyGuidance,
@@ -47,8 +49,14 @@ import {
   removeTag as untagMembers,
 } from "@/lib/member-tags";
 import { releaseVideo } from "@/lib/r2";
+import type { AjaxResult } from "@/lib/ajax";
 import { isInternalPath } from "@/lib/same-origin";
 
+/** Admin saves sent from the page (without reloading it) get the address back instead of being redirected. */
+function exit(formData: FormData, url: string): AjaxResult {
+  if (formData.get("_ajax") === "1") return { url };
+  redirect(url);
+}
 const str = (f: FormData, k: string, max = 500) =>
   String(f.get(k) ?? "")
     .trim()
@@ -88,7 +96,10 @@ export async function createProgram(formData: FormData): Promise<void> {
   redirect(`/admin/programs/${data.id}`);
 }
 
-export async function updateProgram(id: string, formData: FormData): Promise<void> {
+export async function updateProgram(
+  id: string,
+  formData: FormData,
+): Promise<AjaxResult | void> {
   const { supabase, user } = await requireStaff(CONTENT);
   const level = str(formData, "access_level");
   const patch: Record<string, unknown> = {
@@ -110,18 +121,18 @@ export async function updateProgram(id: string, formData: FormData): Promise<voi
       !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
       file.size > 2_097_152
     )
-      redirect(`/admin/programs/${id}?error=cover`);
+      return exit(formData, `/admin/programs/${id}?error=cover`);
     const ext =
       file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
     const path = `${id}/${Date.now()}.${ext}`;
     const { error } = await supabase.storage
       .from("program-thumbnails")
       .upload(path, file, { contentType: file.type });
-    if (error) redirect(`/admin/programs/${id}?error=cover`);
+    if (error) return exit(formData, `/admin/programs/${id}?error=cover`);
     patch.cover_path = path;
   }
   const { error } = await supabase.from("programs").update(patch).eq("id", id);
-  if (error) redirect(`/admin/programs/${id}?error=save`);
+  if (error) return exit(formData, `/admin/programs/${id}?error=save`);
 
   const tagIds = formData.getAll("tags").map(String);
   await supabase.from("program_tag_map").delete().eq("program_id", id);
@@ -133,7 +144,7 @@ export async function updateProgram(id: string, formData: FormData): Promise<voi
     access_level: patch.access_level,
   });
   revalidatePath("/programs");
-  redirect(`/admin/programs/${id}?saved=1`);
+  return exit(formData, `/admin/programs/${id}?saved=1`);
 }
 
 /** Deletes a thumbnail file only when no lesson uses it any more (cloned lessons share files). */
@@ -197,11 +208,39 @@ export async function moveSection(
   dir: "up" | "down",
 ): Promise<void> {
   const { supabase } = await requireStaff(CONTENT);
-  await moveWithin(supabase, "program_sections", "program_id", programId, sectionId, dir);
+  const { data } = await supabase
+    .from("program_sections")
+    .select("id,section_type")
+    .eq("program_id", programId)
+    .order("order_index")
+    .order("id");
+  const rows = (data ?? []) as { id: string; section_type: string }[];
+  const me = rows.find((r) => r.id === sectionId);
+  if (me?.section_type === "phase") {
+    // A phase moves together with the weeks and modules under it, swapping with the next phase.
+    const order = movePhase(rows, sectionId, dir);
+    if (order)
+      await Promise.all(
+        order.map((x, n) =>
+          supabase
+            .from("program_sections")
+            .update({ order_index: n + 1 })
+            .eq("id", x),
+        ),
+      );
+  } else {
+    await moveWithin(
+      supabase,
+      "program_sections",
+      "program_id",
+      programId,
+      sectionId,
+      dir,
+    );
+  }
   redirect(`/admin/programs/${programId}?week=${sectionId}`);
 }
 
-/** Adds an empty draft lesson at the end of a week and opens it. */
 export async function createLesson(programId: string, sectionId: string): Promise<void> {
   const { supabase, user } = await requireStaff(CONTENT);
   const { data: last } = await supabase
@@ -279,7 +318,7 @@ export async function duplicateSection(
 export async function updateProgramSettings(
   programId: string,
   formData: FormData,
-): Promise<void> {
+): Promise<AjaxResult | void> {
   const { supabase, user } = await requireStaff(CONTENT);
   const patch: Record<string, unknown> = {
     instructor_name: str(formData, "instructor_name", 120) || null,
@@ -302,23 +341,23 @@ export async function updateProgramSettings(
       !["image/jpeg", "image/png", "image/webp"].includes(photo.type) ||
       photo.size > 2_097_152
     )
-      redirect(`${back}&error=cover`);
+      return exit(formData, `${back}&error=cover`);
     const ext =
       photo.type === "image/png" ? "png" : photo.type === "image/webp" ? "webp" : "jpg";
     const path = `programs/${programId}/instructor-${Date.now()}.${ext}`;
     const { error } = await supabase.storage
       .from("program-thumbnails")
       .upload(path, photo, { contentType: photo.type });
-    if (error) redirect(`${back}&error=cover`);
+    if (error) return exit(formData, `${back}&error=cover`);
     patch.instructor_photo_path = path;
   } else if (wipe) patch.instructor_photo_path = null;
   const { error } = await supabase.from("programs").update(patch).eq("id", programId);
-  if (error) redirect(`${back}&error=save`);
+  if (error) return exit(formData, `${back}&error=save`);
   if ("instructor_photo_path" in patch && cur?.instructor_photo_path)
     await supabase.storage.from("program-thumbnails").remove([cur.instructor_photo_path]);
   await audit(supabase, user.id, "program.settings", programId);
   revalidatePath("/programs");
-  redirect(`${back}&saved=1`);
+  return exit(formData, `${back}&saved=1`);
 }
 
 /** Copies the three learning-experience switches to every program. */
@@ -346,28 +385,42 @@ export async function addSection(programId: string, formData: FormData): Promise
   const { supabase, user } = await requireStaff(CONTENT);
   const title = str(formData, "title", 120);
   if (!title) redirect(`/admin/programs/${programId}?error=section`);
-  const { data: last } = await supabase
-    .from("program_sections")
-    .select("order_index")
-    .eq("program_id", programId)
-    .order("order_index", { ascending: false })
-    .limit(1)
-    .maybeSingle();
   const type = ["phase", "week", "module"].includes(str(formData, "section_type"))
     ? str(formData, "section_type")
     : "week";
+  const { data: existing } = await supabase
+    .from("program_sections")
+    .select("id,section_type")
+    .eq("program_id", programId)
+    .order("order_index")
+    .order("id");
+  const rows = (existing ?? []) as { id: string; section_type: string }[];
   const { data: made } = await supabase
     .from("program_sections")
     .insert({
       program_id: programId,
       title,
       section_type: type,
-      order_index: (last?.order_index ?? 0) + 1,
+      order_index: rows.length + 1,
       published: false,
     })
     .select("id")
     .single();
-  await audit(supabase, user.id, "section.add", programId, { title });
+  if (made) {
+    // A week or module can be placed inside a phase: it goes after that phase's last item.
+    const ids = rows.map((r) => r.id);
+    const at = insertIndex(rows, type, str(formData, "phase"));
+    ids.splice(at, 0, made.id);
+    await Promise.all(
+      ids.map((x, n) =>
+        supabase
+          .from("program_sections")
+          .update({ order_index: n + 1 })
+          .eq("id", x),
+      ),
+    );
+  }
+  await audit(supabase, user.id, "section.add", programId, { title, type });
   redirect(`/admin/programs/${programId}?${made ? `week=${made.id}&` : ""}saved=1`);
 }
 
@@ -375,18 +428,21 @@ export async function updateSection(
   programId: string,
   sectionId: string,
   formData: FormData,
-): Promise<void> {
+): Promise<AjaxResult | void> {
   const { supabase, user } = await requireStaff(CONTENT);
   await supabase
     .from("program_sections")
     .update({
       title: str(formData, "title", 120),
+      ...(["phase", "week", "module"].includes(str(formData, "section_type"))
+        ? { section_type: str(formData, "section_type") }
+        : {}),
       order_index: int(formData, "order_index"),
       published: formData.get("published") === "on",
     })
     .eq("id", sectionId);
   await audit(supabase, user.id, "section.update", sectionId);
-  redirect(`/admin/programs/${programId}?week=${sectionId}&saved=1`);
+  return exit(formData, `/admin/programs/${programId}?week=${sectionId}&saved=1`);
 }
 
 export async function deleteSection(programId: string, sectionId: string): Promise<void> {
@@ -410,7 +466,7 @@ export async function saveLesson(
   sectionId: string,
   lessonId: string,
   formData: FormData,
-): Promise<void> {
+): Promise<AjaxResult | void> {
   const { supabase, user, db } = await requireStaff(CONTENT);
   const override = str(formData, "access_override");
   const row: Record<string, unknown> = {
@@ -432,7 +488,7 @@ export async function saveLesson(
   else if (lessonId === "new") row.published = false;
   const back = (q: string) =>
     `/admin/programs/${programId}?${lessonId !== "new" ? `lesson=${lessonId}&` : ""}${q}`;
-  if (!row.title) redirect(back("error=lesson"));
+  if (!row.title) return exit(formData, back("error=lesson"));
   let id = lessonId;
   if (lessonId === "new") {
     const { data, error } = await supabase
@@ -440,11 +496,11 @@ export async function saveLesson(
       .insert(row)
       .select("id")
       .single();
-    if (error || !data) redirect(`/admin/programs/${programId}?error=save`);
+    if (error || !data) return exit(formData, `/admin/programs/${programId}?error=save`);
     id = data.id;
   } else {
     const { error } = await supabase.from("lessons").update(row).eq("id", lessonId);
-    if (error) redirect(back("error=save"));
+    if (error) return exit(formData, back("error=save"));
   }
   const file = formData.get("resource");
   if (file instanceof File && file.size > 0) {
@@ -452,12 +508,13 @@ export async function saveLesson(
       !["application/pdf", "image/jpeg", "image/png", "image/webp"].includes(file.type) ||
       file.size > 4_194_304
     )
-      redirect(`/admin/programs/${programId}?lesson=${id}&error=resource`);
+      return exit(formData, `/admin/programs/${programId}?lesson=${id}&error=resource`);
     const path = `${id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
     const { error } = await supabase.storage
       .from("program-resources")
       .upload(path, file, { contentType: file.type });
-    if (error) redirect(`/admin/programs/${programId}?lesson=${id}&error=resource`);
+    if (error)
+      return exit(formData, `/admin/programs/${programId}?lesson=${id}&error=resource`);
     await supabase.from("lessons").update({ resource_path: path }).eq("id", id);
   }
   const thumb = formData.get("thumbnail");
@@ -474,14 +531,15 @@ export async function saveLesson(
         !["image/jpeg", "image/png", "image/webp"].includes(thumb.type) ||
         thumb.size > 2_097_152
       )
-        redirect(`/admin/programs/${programId}?lesson=${id}&error=cover`);
+        return exit(formData, `/admin/programs/${programId}?lesson=${id}&error=cover`);
       const ext =
         thumb.type === "image/png" ? "png" : thumb.type === "image/webp" ? "webp" : "jpg";
       next = `lessons/${id}/${Date.now()}.${ext}`;
       const { error } = await supabase.storage
         .from("program-thumbnails")
         .upload(next, thumb, { contentType: thumb.type });
-      if (error) redirect(`/admin/programs/${programId}?lesson=${id}&error=cover`);
+      if (error)
+        return exit(formData, `/admin/programs/${programId}?lesson=${id}&error=cover`);
     }
     await supabase.from("lessons").update({ thumbnail_path: next }).eq("id", id);
     await releaseThumbnail(supabase, db, cur?.thumbnail_path);
@@ -494,7 +552,8 @@ export async function saveLesson(
     { title: row.title },
   );
   revalidatePath("/programs");
-  redirect(
+  return exit(
+    formData,
     `/admin/programs/${programId}?lesson=${id}&${intent === "publish" ? "lpub=1" : intent === "unpublish" ? "lunpub=1" : "saved=1"}`,
   );
 }

@@ -80,7 +80,11 @@ function Memory() {
   useEffect(() => {
     const onSubmit = (e: Event) => {
       const form = e.target;
-      if (!(form instanceof HTMLFormElement) || form.method.toLowerCase() === "get")
+      if (
+        !(form instanceof HTMLFormElement) ||
+        form.method.toLowerCase() === "get" ||
+        form.hasAttribute("data-ajax")
+      )
         return;
       const fields: Saved["fields"] = [];
       for (const el of Array.from(form.elements)) {

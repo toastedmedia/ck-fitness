@@ -82,7 +82,7 @@ export function OutlineDnd({
             after: e.clientY > r.top + r.height / 2,
             el: overLesson,
           };
-        } else if (!overLesson && overSection) {
+        } else if (!overLesson && overSection && overSection.dataset.type !== "phase") {
           next = {
             type: "section-end",
             id: overSection.dataset.section as string,

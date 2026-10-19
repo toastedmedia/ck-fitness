@@ -31,7 +31,7 @@ export default async function Preview({
   if (!p) notFound();
   const { data: sections } = await supabase
     .from("program_sections")
-    .select("id,title")
+    .select("id,title,section_type")
     .eq("program_id", id)
     .order("order_index");
   const ids = (sections ?? []).map((s: { id: string }) => s.id);
@@ -76,39 +76,49 @@ export default async function Preview({
           </div>
         ) : null}
       </Panel>
-      {((sections ?? []) as { id: string; title: string }[]).map((s) => (
-        <Panel key={s.id} title={s.title}>
-          <ul className="flex flex-col divide-y divide-line text-sm">
-            {(
-              (lessons ?? []) as {
-                title: string;
-                section_id: string;
-                access_override: AccessLevel | null;
-                duration_minutes: number | null;
-                published: boolean;
-              }[]
-            )
-              .filter((l) => l.section_id === s.id)
-              .map((l) => (
-                <li key={l.title} className="flex items-center justify-between py-2">
-                  <span>
-                    {canAccess(
-                      viewer,
-                      l.access_override ?? (p.access_level as AccessLevel),
-                    )
-                      ? ""
-                      : "🔒 "}
-                    {l.title}
-                    {!l.published ? " (hidden)" : ""}
-                  </span>
-                  <span className="text-muted">
-                    {l.duration_minutes ? `${l.duration_minutes} min` : ""}
-                  </span>
-                </li>
-              ))}
-          </ul>
-        </Panel>
-      ))}
+      {((sections ?? []) as { id: string; title: string; section_type?: string }[]).map(
+        (s) =>
+          s.section_type === "phase" ? (
+            <h2
+              key={s.id}
+              className="rounded-xl bg-brand px-3 py-2 text-sm font-bold text-on-brand"
+            >
+              {s.title}
+            </h2>
+          ) : (
+            <Panel key={s.id} title={s.title}>
+              <ul className="flex flex-col divide-y divide-line text-sm">
+                {(
+                  (lessons ?? []) as {
+                    title: string;
+                    section_id: string;
+                    access_override: AccessLevel | null;
+                    duration_minutes: number | null;
+                    published: boolean;
+                  }[]
+                )
+                  .filter((l) => l.section_id === s.id)
+                  .map((l) => (
+                    <li key={l.title} className="flex items-center justify-between py-2">
+                      <span>
+                        {canAccess(
+                          viewer,
+                          l.access_override ?? (p.access_level as AccessLevel),
+                        )
+                          ? ""
+                          : "🔒 "}
+                        {l.title}
+                        {!l.published ? " (hidden)" : ""}
+                      </span>
+                      <span className="text-muted">
+                        {l.duration_minutes ? `${l.duration_minutes} min` : ""}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            </Panel>
+          ),
+      )}
     </>
   );
 }
