@@ -191,6 +191,13 @@ export function OutlineDnd({
     };
   }, [enabled, programId, router]);
 
+  const toggleAll = (open: boolean) =>
+    root.current
+      ?.querySelectorAll<HTMLDetailsElement>("details[data-type]")
+      .forEach((d) => {
+        d.open = open;
+      });
+
   return (
     <div ref={root}>
       {enabled ? (
@@ -199,6 +206,22 @@ export function OutlineDnd({
             "Drag the ⋮⋮ handle to reorder weeks or lessons. Drop a lesson on another week to move it."}
         </p>
       ) : null}
+      <div className="flex gap-3 px-2 pb-1 text-[11px] font-bold text-accent-strong">
+        <button
+          type="button"
+          onClick={() => toggleAll(true)}
+          className="min-h-8 underline underline-offset-2"
+        >
+          Expand all
+        </button>
+        <button
+          type="button"
+          onClick={() => toggleAll(false)}
+          className="min-h-8 underline underline-offset-2"
+        >
+          Collapse all
+        </button>
+      </div>
       {children}
     </div>
   );

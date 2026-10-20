@@ -326,7 +326,7 @@ export default async function EditProgram({
               return (
                 <details
                   key={s.id}
-                  open
+                  open={selWeek?.id === s.id}
                   className={`relative mt-1 ${inside ? "ml-3" : ""}`}
                   data-type={s.section_type}
                   data-section={s.id}
