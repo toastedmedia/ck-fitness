@@ -9,7 +9,7 @@ export interface PublishCheck {
     level: string | null;
     duration_label: string | null;
   };
-  sections: { id: string; title: string }[];
+  sections: { id: string; title: string; section_type?: string }[];
   lessons: {
     title: string;
     section_id: string;
@@ -40,6 +40,9 @@ export function validateForPublish({
       );
   }
   for (const s of sections) {
+    // A phase is a heading that groups weeks; it holds no lessons of its own.
+    if (s.section_type === "phase" && !lessons.some((l) => l.section_id === s.id))
+      continue;
     if (!lessons.some((l) => l.section_id === s.id))
       problems.push(`"${s.title}" has no lessons yet.`);
   }

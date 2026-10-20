@@ -124,3 +124,31 @@ describe("KPIs", () => {
     expect(videoMinutesPerMember(100, 0)).toBeNull();
   });
 });
+
+describe("publish check and phases", () => {
+  const program = {
+    title: "T",
+    short_description: "S",
+    access_level: "member" as const,
+    level: "beginner",
+    duration_label: null,
+  };
+  it("does not ask an empty phase heading for lessons, but still asks an empty week", () => {
+    const sections = [
+      { id: "p", title: "Phase 1", section_type: "phase" },
+      { id: "w", title: "Week 1", section_type: "week" },
+      { id: "e", title: "Week 2", section_type: "week" },
+    ];
+    const lessons = [
+      {
+        title: "Day 1",
+        section_id: "w",
+        video_key: "k",
+        instructions: "",
+        published: true,
+      },
+    ];
+    const problems = validateForPublish({ program, sections, lessons });
+    expect(problems).toEqual(['"Week 2" has no lessons yet.']);
+  });
+});

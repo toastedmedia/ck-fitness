@@ -623,7 +623,7 @@ export async function publishProgram(id: string, formData: FormData): Promise<vo
   if (!p) redirect("/admin/programs");
   const { data: sections } = await supabase
     .from("program_sections")
-    .select("id,title")
+    .select("id,title,section_type")
     .eq("program_id", id);
   const { data: lessons } = await supabase
     .from("lessons")
@@ -1937,4 +1937,55 @@ export async function adjustNutritionTarget(
     link: "/nutrition",
   });
   back("saved=1");
+}
+
+/** Publishes (or moves to draft) every lesson in one week or module. Publishing also makes the week visible. */
+export async function setSectionPublished(
+  programId: string,
+  sectionId: string,
+  on: boolean,
+): Promise<void> {
+  const { supabase, user } = await requireStaff(CONTENT);
+  const { data } = await supabase
+    .from("lessons")
+    .select("id,video_key,instructions,published")
+    .eq("section_id", sectionId);
+  const ids: string[] = [];
+  let skipped = 0;
+  for (const l of (data ?? []) as {
+    id: string;
+    video_key: string | null;
+    instructions: string | null;
+    published: boolean;
+  }[]) {
+    if (on) {
+      // Same rule as a single lesson: it needs a video or written instructions to go live.
+      if (!l.video_key && !String(l.instructions ?? "").trim()) {
+        skipped++;
+        continue;
+      }
+      if (l.published) continue;
+    } else if (!l.published) continue;
+    ids.push(l.id);
+  }
+  if (ids.length) await supabase.from("lessons").update({ published: on }).in("id", ids);
+  if (on)
+    await supabase
+      .from("program_sections")
+      .update({ published: true })
+      .eq("id", sectionId);
+  await audit(
+    supabase,
+    user.id,
+    on ? "section.publish_all" : "section.draft_all",
+    sectionId,
+    {
+      changed: ids.length,
+      skipped,
+    },
+  );
+  revalidatePath("/programs");
+  redirect(
+    `/admin/programs/${programId}?week=${sectionId}&${on ? "allpub" : "alldraft"}=${ids.length}&skip=${skipped}`,
+  );
 }

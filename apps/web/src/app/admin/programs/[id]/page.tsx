@@ -30,6 +30,7 @@ import {
   updateProgram,
   updateProgramSettings,
   updateSection,
+  setSectionPublished,
 } from "../../actions";
 
 export const metadata: Metadata = { title: "Edit training" };
@@ -187,6 +188,21 @@ export default async function EditProgram({
       ) : null}
       {sp.lunpub ? (
         <Flash>Moved to draft. Members no longer see this lesson.</Flash>
+      ) : null}
+      {sp.allpub ? (
+        <Flash>
+          Published {sp.allpub} lesson{sp.allpub === "1" ? "" : "s"}. The week is now
+          visible to members.
+          {sp.skip && sp.skip !== "0"
+            ? ` ${sp.skip} lesson${sp.skip === "1" ? " was" : "s were"} left as draft because ${sp.skip === "1" ? "it has" : "they have"} no video or written instructions yet.`
+            : ""}
+        </Flash>
+      ) : null}
+      {sp.alldraft ? (
+        <Flash>
+          Moved {sp.alldraft} lesson{sp.alldraft === "1" ? "" : "s"} to draft. Members no
+          longer see them.
+        </Flash>
       ) : null}
       {sp.granted ? (
         <Flash>
@@ -363,6 +379,12 @@ export default async function EditProgram({
                         </Link>
                         <form action={duplicateSection.bind(null, id, s.id)}>
                           <button className={mi}>Clone {kind.toLowerCase()}</button>
+                        </form>
+                        <form action={setSectionPublished.bind(null, id, s.id, true)}>
+                          <button className={mi}>Publish all lessons</button>
+                        </form>
+                        <form action={setSectionPublished.bind(null, id, s.id, false)}>
+                          <button className={mi}>Move all to draft</button>
                         </form>
                         {si > 0 ? (
                           <form action={moveSection.bind(null, id, s.id, "up")}>
@@ -1092,6 +1114,14 @@ export default async function EditProgram({
                       </form>
                       <form action={createLesson.bind(null, id, selWeek.id)}>
                         <ABtn variant="ghost">Add lesson</ABtn>
+                      </form>
+                      <form action={setSectionPublished.bind(null, id, selWeek.id, true)}>
+                        <ABtn variant="ghost">Publish all lessons</ABtn>
+                      </form>
+                      <form
+                        action={setSectionPublished.bind(null, id, selWeek.id, false)}
+                      >
+                        <ABtn variant="ghost">Move all to draft</ABtn>
                       </form>
                     </>
                   )}
