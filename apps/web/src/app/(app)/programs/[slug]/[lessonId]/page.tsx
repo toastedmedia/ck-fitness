@@ -163,30 +163,33 @@ export default async function LessonPage({
         )}
       </div>
 
-      <Card>
-        <Cap>I cannot do this today</Cap>
-        <p className="mt-1 text-xs text-muted">
-          That is okay. Choose what works for you.
-        </p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {planned ? (
-            <ActionButton run={recoverWorkout.bind(null, planned.id, "reschedule")}>
-              Reschedule
-            </ActionButton>
-          ) : null}
-          {planned ? (
-            <ActionButton run={recoverWorkout.bind(null, planned.id, "skip")}>
-              Skip with a note
-            </ActionButton>
-          ) : null}
-          <Link
-            href="/accountability/help"
-            className="inline-flex min-h-11 items-center px-2 text-xs font-bold text-brand underline underline-offset-4"
-          >
-            Talk to CK
-          </Link>
-        </div>
-      </Card>
+      {/* Only for a workout that is on her plan: otherwise there is nothing to move or skip. */}
+      {planned ? (
+        <Card>
+          <Cap>I cannot do this today</Cap>
+          <p className="mt-1 text-xs text-muted">
+            That is okay. Choose what works for you.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {planned ? (
+              <ActionButton run={recoverWorkout.bind(null, planned.id, "reschedule")}>
+                Reschedule
+              </ActionButton>
+            ) : null}
+            {planned ? (
+              <ActionButton run={recoverWorkout.bind(null, planned.id, "skip")}>
+                Skip with a note
+              </ActionButton>
+            ) : null}
+            <Link
+              href="/accountability/help"
+              className="inline-flex min-h-11 items-center px-2 text-xs font-bold text-brand underline underline-offset-4"
+            >
+              Talk to CK
+            </Link>
+          </div>
+        </Card>
+      ) : null}
     </>
   );
 }
