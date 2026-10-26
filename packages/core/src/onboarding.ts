@@ -68,7 +68,6 @@ export interface SafetyInput {
   weeklyCommitment: number;
   acknowledged: boolean;
   /** Agreed to share her answers and progress with her CK coach. */
-  coachAccess: boolean;
 }
 
 export function ageFromBirthDate(birthDate: string, now: Date = new Date()): number {
@@ -219,9 +218,6 @@ export function validateSafety(raw: Record<string, unknown>): Result<SafetyInput
   if (pregnancy !== "yes" && pregnancy !== "no" && pregnancy !== "prefer_not_to_say")
     errors.pregnancyContext = "Please choose an option.";
   if (raw.acknowledged !== true) errors.acknowledged = "Please confirm to continue.";
-  if (raw.coachAccess !== true)
-    errors.coachAccess =
-      "Please confirm that your CK coach can see what you enter so they can support you.";
   if (Object.keys(errors).length) return { ok: false, errors };
   return {
     ok: true,
@@ -231,7 +227,6 @@ export function validateSafety(raw: Record<string, unknown>): Result<SafetyInput
       startingReason: text(raw.startingReason, 500),
       weeklyCommitment,
       acknowledged: true,
-      coachAccess: true,
     },
   };
 }

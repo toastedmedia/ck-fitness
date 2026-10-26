@@ -376,7 +376,7 @@ export default async function HomePage({
         daysSince={weigh.daysSince}
         showForm={sp.log === "weight"}
       />
-      <BMIWidget bmi={bmi} hidden={Boolean(profile?.hide_bmi)} />
+      <BMIWidget bmi={bmi} />
 
       <WeeklyProgress
         week={week}

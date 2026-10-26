@@ -111,7 +111,7 @@ export default async function DevHome({
           daysSince={4}
           showForm={false}
         />
-        <BMIWidget bmi={23.8} hidden={false} />
+        <BMIWidget bmi={23.8} />
         <WeeklyProgress
           week={week}
           completed={calm ? 2 : 1}

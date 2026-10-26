@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { Nav } from "@/components/app/Nav";
+import { ScrollTop } from "@/components/app/ScrollTop";
 import { TopActions } from "@/components/app/TopActions";
 import { getContext } from "@/lib/app";
 import { track } from "@/lib/events";
@@ -30,6 +31,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-dvh pb-24 md:pb-8 md:pl-56">
       <Nav />
+      <ScrollTop />
       <main
         id="main"
         className="mx-auto flex max-w-xl flex-col gap-3 px-4 pt-6 md:max-w-2xl md:pt-10"

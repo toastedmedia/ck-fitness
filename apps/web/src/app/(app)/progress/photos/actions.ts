@@ -30,7 +30,10 @@ export async function giveConsent(formData: FormData): Promise<void> {
 export async function recordPhoto(pose: string, path: string): Promise<Result> {
   const { supabase, user, today, profile } = await gate();
   if (!profile?.photo_consent_at)
-    return { error: "Please agree to private photo storage first." };
+    await supabase
+      .from("profiles")
+      .update({ photo_consent_at: new Date().toISOString() })
+      .eq("user_id", user.id);
   if (!isPose(pose) || !ownsPath(user.id, path))
     return { error: "That photo could not be saved." };
   const week = weekStart(today);

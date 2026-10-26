@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   addDays,
-  bmiLabel,
-  bmiTypicalRangeKg,
   calcBmi,
   weekStart,
   asUnits,
@@ -17,7 +15,7 @@ import { Button, Cap, Card, Flash } from "@/components/app/ui";
 import { MealPlanCard } from "@/components/home/MealPlanCard";
 import { getContext } from "@/lib/app";
 import { flags } from "@/lib/flags";
-import { logMeasurements, toggleBmi } from "../actions";
+import { logMeasurements } from "../actions";
 
 export const metadata: Metadata = { title: "Progress" };
 
@@ -116,7 +114,6 @@ export default async function ProgressPage({
   const height = Number(ob?.height_cm ?? 0) || null;
   const lastW = w.length ? Number(w[w.length - 1].weight_kg) : null;
   const bmi = height && lastW ? calcBmi(lastW, height) : null;
-  const typical = bmiTypicalRangeKg(height ?? 170);
 
   return (
     <>
@@ -142,60 +139,12 @@ export default async function ProgressPage({
       </Card>
 
       <Card>
-        <div className="flex items-start justify-between gap-2">
-          <Cap>BMI</Cap>
-          <form action={toggleBmi}>
-            <button className="min-h-10 px-1 text-[11px] font-bold text-brand underline underline-offset-4">
-              {profile?.hide_bmi ? "Show" : "Hide"}
-            </button>
-          </form>
-        </div>
-        {profile?.hide_bmi ? (
-          <p className="text-xs text-muted">Hidden. You can show it any time.</p>
-        ) : bmi === null || !height ? (
-          <p className="text-xs text-muted">
-            {height
-              ? "Log a weight to see your BMI."
-              : "Add your height in your profile answers to see your BMI."}
-          </p>
+        <Cap>BMI</Cap>
+        {bmi === null ? (
+          <p className="mt-1 text-xs text-muted">Log a weight to see your BMI.</p>
         ) : (
-          <>
-            <p className="mt-1 text-2xl font-extrabold text-brand tabular-nums">
-              {bmi}{" "}
-              <span className="text-sm font-semibold text-muted">
-                · {bmiLabel(bmi).replace("range", "Range")}
-              </span>
-            </p>
-            <div
-              role="img"
-              aria-label={`BMI ${bmi} on a scale from 15 to 40`}
-              className="relative mt-2 h-2 w-full overflow-hidden rounded-full bg-page"
-            >
-              <div
-                aria-hidden="true"
-                className="absolute inset-y-0 bg-success-soft"
-                style={{
-                  left: `${((18.5 - 15) / 25) * 100}%`,
-                  width: `${((24.9 - 18.5) / 25) * 100}%`,
-                }}
-              />
-              <div
-                aria-hidden="true"
-                className="absolute -top-0.5 h-3 w-1.5 rounded bg-brand"
-                style={{ left: `${Math.min(97, Math.max(0, ((bmi - 15) / 25) * 100))}%` }}
-              />
-            </div>
-            <p className="mt-2 text-xs">
-              For your height, a BMI of 18.5 to 24.9 is about{" "}
-              {displayWeight(typical.low, units)} to {displayWeight(typical.high, units)}{" "}
-              {weightUnit(units)}.
-            </p>
-          </>
+          <p className="mt-1 text-3xl font-extrabold text-brand tabular-nums">{bmi}</p>
         )}
-        <p className="mt-1 text-[10.5px] text-muted">
-          Information only. Not a diagnosis. BMI does not account for muscle, bone or body
-          shape.
-        </p>
       </Card>
 
       <Card>
@@ -275,7 +224,7 @@ export default async function ProgressPage({
         <Card>
           <Cap>Progress photos</Cap>
           <p className="mt-1 text-xs text-muted">
-            Optional weekly photos. Private to you.
+            Weekly photos so you and your coach can see your progress.
           </p>
           <Link
             href="/progress/photos"

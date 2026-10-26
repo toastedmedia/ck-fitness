@@ -7,10 +7,9 @@ import {
   mealPlanBlocks,
   type DietKey,
 } from "@ck/core";
-import { Button, Card, Cap } from "@/components/app/ui";
+import { Card, Cap } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
 import { nutritionAccess } from "@/lib/nutrition";
-import { setDietPref } from "./actions";
 
 export const metadata: Metadata = { title: "Meal plan" };
 
@@ -24,7 +23,12 @@ interface Plan {
   published: boolean;
 }
 
-export default async function DietPage() {
+export default async function DietPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ diet?: string }>;
+}) {
+  const sp = await searchParams;
   const ctx = await getContext();
   const { supabase, user, today } = ctx;
   const nutritionOn = (await nutritionAccess(ctx)).allowed;
@@ -43,26 +47,15 @@ export default async function DietPage() {
   ]);
   const all = (plans ?? []) as Plan[];
   const chosen = effectiveDiet(pref?.diet, ob?.nutrition_preference);
-  const diet: DietKey = chosen ?? "vegetarian";
+  // Both plans are one tap away; she starts on the one that matches her sign-up answer.
+  const diet: DietKey =
+    sp.diet === "vegetarian" || sp.diet === "non_vegetarian"
+      ? sp.diet
+      : (chosen ?? "vegetarian");
   const plan = currentPlan(all, diet, today);
   const earlier = all
     .filter((p) => p.diet === diet && p.starts_on <= today && p.id !== plan?.id)
     .slice(0, 6);
-  const picker = (current: DietKey | null) => (
-    <form action={setDietPref} className="mt-2 grid grid-cols-2 gap-2">
-      {(Object.keys(DIET_LABELS) as DietKey[]).map((d) => (
-        <Button
-          key={d}
-          name="diet"
-          value={d}
-          variant={d === current ? "primary" : "ghost"}
-          aria-pressed={d === current}
-        >
-          {DIET_LABELS[d]}
-        </Button>
-      ))}
-    </form>
-  );
   return (
     <>
       <h1 className="sr-only">Meal plan</h1>
@@ -74,20 +67,20 @@ export default async function DietPage() {
           Log a meal from this plan
         </Link>
       ) : null}
-      {chosen ? (
-        <details className="px-1 text-xs text-muted">
-          <summary className="min-h-10 cursor-pointer py-2">
-            Showing the {DIET_LABELS[diet].toLowerCase()} plan, based on your answers.
-            Change?
-          </summary>
-          {picker(diet)}
-        </details>
-      ) : (
-        <Card>
-          <Cap>Which plan do you want?</Cap>
-          {picker(null)}
-        </Card>
-      )}
+      <div className="grid grid-cols-2 gap-2">
+        {(Object.keys(DIET_LABELS) as DietKey[]).map((d) => (
+          <Link
+            key={d}
+            href={`/accountability/diet?diet=${d}`}
+            replace
+            scroll={false}
+            aria-current={d === diet ? "true" : undefined}
+            className={`inline-flex min-h-11 items-center justify-center rounded-button px-3 text-xs font-bold ${d === diet ? "bg-brand text-on-brand" : "border-2 border-line text-brand"}`}
+          >
+            {DIET_LABELS[d]}
+          </Link>
+        ))}
+      </div>
       {plan ? (
         <Card>
           <Cap>{DIET_LABELS[diet]} plan</Cap>
@@ -155,10 +148,6 @@ export default async function DietPage() {
           </details>
         </Card>
       ) : null}
-      <p className="text-center text-xs text-muted">
-        General guidance from your coach, not medical advice. Talk to your doctor if you
-        have a health condition or allergy.
-      </p>
     </>
   );
 }

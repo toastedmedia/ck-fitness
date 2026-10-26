@@ -137,7 +137,7 @@ export function OnboardingFlow({ initial }: { initial: Data }) {
       const res = await saveOnboardingStep(step, payload);
       if (!res.ok) return setErrors(res.errors);
       setErrors({});
-      if (step === 5) return router.push("/home");
+      if (step === 5) return router.push("/progress/photos?start=1");
       setStep(step + 1);
       window.scrollTo({ top: 0 });
     });
@@ -379,24 +379,6 @@ export function OnboardingFlow({ initial }: { initial: Data }) {
           {errors.acknowledged ? (
             <p role="alert" className="text-sm font-semibold text-danger">
               {errors.acknowledged}
-            </p>
-          ) : null}
-          <label className="flex min-h-12 items-start gap-3">
-            <input
-              type="checkbox"
-              className="mt-1 size-5 accent-brand"
-              checked={data.coachAccess === true}
-              onChange={(e) => set("coachAccess", e.target.checked)}
-            />
-            <span>
-              I understand my CK coach and the CK team can see what I enter in the app
-              (answers, check-ins, weight, measurements, activity, meals and photos) so
-              they can support me.
-            </span>
-          </label>
-          {errors.coachAccess ? (
-            <p role="alert" className="text-sm font-semibold text-danger">
-              {errors.coachAccess}
             </p>
           ) : null}
         </>

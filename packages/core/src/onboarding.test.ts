@@ -118,22 +118,13 @@ describe("phone and coach sharing", () => {
     );
     expect(!bad.ok && bad.errors.phone).toBeDefined();
   });
-  it("requires agreement to share progress with the coach", () => {
+  it("does not ask the member to agree to coach visibility again (the sign-up terms cover it)", () => {
     const r = validateSafety({
       pregnancyContext: "no",
       weeklyCommitment: 3,
       acknowledged: true,
-      coachAccess: false,
     });
-    expect(!r.ok && r.errors.coachAccess).toMatch(/CK coach/);
-    expect(
-      validateSafety({
-        pregnancyContext: "no",
-        weeklyCommitment: 3,
-        acknowledged: true,
-        coachAccess: true,
-      }).ok,
-    ).toBe(true);
+    expect(r.ok).toBe(true);
   });
 });
 

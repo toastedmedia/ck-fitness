@@ -65,7 +65,10 @@ export function SignupForm({ refCode }: { refCode?: string }) {
       />
       <label className="flex min-h-12 items-start gap-3">
         <input type="checkbox" name="adult" className="mt-1 size-5 accent-brand" />
-        <span>I am 18 or older and agree to the Terms and Privacy Policy.</span>
+        <span>
+          I am 18 or older and agree to the Terms and Privacy Policy, including that my CK
+          coach and the CK team can see what I enter in the app.
+        </span>
       </label>
       <Feedback state={state} />
       <SubmitButton>Create account</SubmitButton>

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { POSES } from "@ck/core";
 import { PhotoUploader } from "@/components/app/PhotoUploader";
 import { Button, Cap, Card, Flash } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
 import { flags } from "@/lib/flags";
-import { deleteAllPhotos, deletePhoto, giveConsent } from "./actions";
+import { deleteAllPhotos, deletePhoto } from "./actions";
 
 export const metadata: Metadata = { title: "Progress photos" };
 
@@ -13,21 +14,18 @@ export const metadata: Metadata = { title: "Progress photos" };
 export default async function PhotosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ deleted?: string }>;
+  searchParams: Promise<{ deleted?: string; start?: string }>;
 }) {
   if (!flags.progressPhotos) notFound();
   const sp = await searchParams;
-  const { supabase, user, profile } = await getContext();
-  const consented = Boolean(profile?.photo_consent_at);
+  const { supabase, user } = await getContext();
 
-  const { data } = consented
-    ? await supabase
-        .from("progress_photos")
-        .select("id,pose,week_start,storage_path")
-        .eq("user_id", user.id)
-        .order("week_start", { ascending: false })
-        .limit(48)
-    : { data: [] };
+  const { data } = await supabase
+    .from("progress_photos")
+    .select("id,pose,week_start,storage_path")
+    .eq("user_id", user.id)
+    .order("week_start", { ascending: false })
+    .limit(48);
   const photos = (data ?? []) as {
     id: string;
     pose: string;
@@ -48,32 +46,35 @@ export default async function PhotosPage({
       <h1 className="sr-only">Progress photos</h1>
       {sp.deleted ? <Flash>All your photos were deleted.</Flash> : null}
 
-      {!consented ? (
-        <Card>
-          <Cap>Before you start</Cap>
-          <ul className="mt-2 flex flex-col gap-1.5 text-xs">
-            <li>Photos are optional and never shown to other members.</li>
-            <li>
-              Your CK coach and the CK team can see your progress photos so they can
-              support you. Support and content staff cannot.
-            </li>
-            <li>They are stored securely and shown through short-lived links.</li>
-            <li>You can delete any photo, or all of them, at any time.</li>
-          </ul>
-          <form action={giveConsent} className="mt-3 flex flex-col gap-3">
-            <Button variant="primary" className="min-h-12 w-full">
-              I understand, turn on photos
-            </Button>
-          </form>
+      {sp.start ? (
+        <Card className="bg-page">
+          <Cap>Highly recommended</Cap>
+          <h2 className="mt-1 text-[15px] font-bold text-brand">
+            Add your starting photos
+          </h2>
+          <p className="mt-1 text-xs">
+            Your coach uses your photos to track your results from day one. Take a front,
+            side and back photo in the same spot with the same light.
+          </p>
+          <Link
+            href="/home"
+            className="mt-2 inline-flex min-h-11 items-center text-xs font-bold text-brand underline underline-offset-4"
+          >
+            Skip for now
+          </Link>
         </Card>
-      ) : (
+      ) : null}
+      {
         <>
           <Card>
             <Cap>This week&apos;s photos</Cap>
             <p className="mb-3 mt-1 text-xs text-muted">
               Front, side, back and arms raised. Same spot, same light, once a week.
             </p>
-            <PhotoUploader userId={user.id} />
+            <PhotoUploader
+              userId={user.id}
+              afterSaveHref={sp.start ? "/home" : undefined}
+            />
           </Card>
           {weeks.map((week) => (
             <Card key={week}>
@@ -118,7 +119,7 @@ export default async function PhotosPage({
           <Card className="border-[#e8bdb6]">
             <Cap>Delete everything</Cap>
             <p className="mt-1 text-xs text-muted">
-              Removes every photo and turns photos off. This cannot be undone.
+              Removes every photo. This cannot be undone.
             </p>
             <form action={deleteAllPhotos} className="mt-2">
               <button className="min-h-11 rounded-button border-2 border-danger px-4 text-xs font-bold text-danger">
@@ -127,7 +128,7 @@ export default async function PhotosPage({
             </form>
           </Card>
         </>
-      )}
+      }
     </>
   );
 }

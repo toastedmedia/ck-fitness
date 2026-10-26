@@ -3,12 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Paywall } from "@/components/app/Paywall";
 import { VideoPlayer } from "@/components/app/VideoPlayer";
-import { ActionButton } from "@/components/app/ActionButton";
 import { Button, Cap, Card, Pill } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
 import { track } from "@/lib/events";
 import { coverUrl, fetchProgramBySlug, getProgramOutline } from "@/lib/programs";
-import { recoverWorkout } from "../../../actions";
 import { completeLesson } from "../../actions";
 
 export const metadata: Metadata = { title: "Lesson" };
@@ -23,7 +21,7 @@ export default async function LessonPage({
   const { slug, lessonId } = await params;
   const sp = await searchParams;
   const ctx = await getContext();
-  const { supabase, user, today } = ctx;
+  const { supabase, user } = ctx;
 
   const program = await fetchProgramBySlug<{
     id: string;
@@ -68,22 +66,12 @@ export default async function LessonPage({
     );
   }
 
-  const [{ data: prog }, { data: planned }] = await Promise.all([
-    supabase
-      .from("lesson_progress")
-      .select("playback_seconds,completed_at")
-      .eq("user_id", user.id)
-      .eq("lesson_id", lessonId)
-      .maybeSingle(),
-    supabase
-      .from("scheduled_actions")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("action_type", "workout")
-      .eq("scheduled_for", today)
-      .eq("status", "planned")
-      .maybeSingle(),
-  ]);
+  const { data: prog } = await supabase
+    .from("lesson_progress")
+    .select("playback_seconds,completed_at")
+    .eq("user_id", user.id)
+    .eq("lesson_id", lessonId)
+    .maybeSingle();
 
   if (!prog) await track(user.id, "lesson_started", { lesson: lessonId });
 
@@ -162,34 +150,6 @@ export default async function LessonPage({
           <span />
         )}
       </div>
-
-      {/* Only for a workout that is on her plan: otherwise there is nothing to move or skip. */}
-      {planned ? (
-        <Card>
-          <Cap>I cannot do this today</Cap>
-          <p className="mt-1 text-xs text-muted">
-            That is okay. Choose what works for you.
-          </p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {planned ? (
-              <ActionButton run={recoverWorkout.bind(null, planned.id, "reschedule")}>
-                Reschedule
-              </ActionButton>
-            ) : null}
-            {planned ? (
-              <ActionButton run={recoverWorkout.bind(null, planned.id, "skip")}>
-                Skip with a note
-              </ActionButton>
-            ) : null}
-            <Link
-              href="/accountability/help"
-              className="inline-flex min-h-11 items-center px-2 text-xs font-bold text-brand underline underline-offset-4"
-            >
-              Talk to CK
-            </Link>
-          </div>
-        </Card>
-      ) : null}
     </>
   );
 }

@@ -147,7 +147,7 @@ export default async function SummaryPage({
         <Card>
           <Cap>Weekly photos</Cap>
           <p className="mt-1 text-xs text-muted">
-            Optional. Front, side, back and arms raised, once a week. Private to you.
+            Front, side, back and arms raised, once a week.
           </p>
           <Link
             href="/progress/photos"

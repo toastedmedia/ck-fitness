@@ -1,15 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { MAX_PHOTO_BYTES, photoPath, POSES, type Pose } from "@ck/core";
 import { recordPhoto } from "@/app/(app)/progress/photos/actions";
 import { compressPhoto } from "@/lib/image-compress";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
-/** Picks up to four photos, shrinks them on her phone, and sends them straight to private storage. */
-export function PhotoUploader({ userId }: { userId: string }) {
+/** Picks up to four photos, shrinks them on her phone, and uploads them. */
+export function PhotoUploader({
+  userId,
+  afterSaveHref,
+}: {
+  userId: string;
+  afterSaveHref?: string;
+}) {
+  const router = useRouter();
   const [files, setFiles] = useState<Partial<Record<Pose, File>>>({});
-  const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: "ok" | "bad"; text: string }>();
   const chosen = Object.keys(files).length;
@@ -37,11 +44,11 @@ export function PhotoUploader({ userId }: { userId: string }) {
         saved++;
       }
       setFiles({});
-      setAgree(false);
       setMessage({
         tone: "ok",
-        text: `Saved ${saved} photo${saved === 1 ? "" : "s"} privately.`,
+        text: `Saved ${saved} photo${saved === 1 ? "" : "s"}.`,
       });
+      if (afterSaveHref) router.push(afterSaveHref);
     } catch (e) {
       setMessage({ tone: "bad", text: (e as Error).message });
     } finally {
@@ -73,21 +80,9 @@ export function PhotoUploader({ userId }: { userId: string }) {
           </label>
         ))}
       </div>
-      <label className="flex min-h-12 items-start gap-3 text-xs">
-        <input
-          type="checkbox"
-          checked={agree}
-          onChange={(e) => setAgree(e.target.checked)}
-          className="mt-0.5 size-5 accent-brand"
-        />
-        <span>
-          I choose to save these photos. They are private to me, and I can delete them at
-          any time.
-        </span>
-      </label>
       <button
         type="button"
-        disabled={busy || chosen === 0 || !agree}
+        disabled={busy || chosen === 0}
         onClick={save}
         className="min-h-12 rounded-button bg-brand text-sm font-bold text-on-brand disabled:opacity-50"
       >
