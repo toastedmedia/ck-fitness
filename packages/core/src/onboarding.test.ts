@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ageFromBirthDate,
   bmiLabel,
+  bmiTypicalRangeKg,
   calcBmi,
   needsSafetyGuidance,
   validateAbout,
@@ -133,5 +134,12 @@ describe("phone and coach sharing", () => {
         coachAccess: true,
       }).ok,
     ).toBe(true);
+  });
+});
+
+describe("BMI typical range", () => {
+  it("gives the weights that match a BMI of 18.5 to 24.9", () => {
+    expect(bmiTypicalRangeKg(170)).toEqual({ low: 53.5, high: 72 });
+    expect(calcBmi(72, 170)).toBe(24.9);
   });
 });

@@ -242,3 +242,12 @@ export function needsSafetyGuidance(
 ): boolean {
   return s.limitations.length > 0 || s.pregnancyContext === "yes";
 }
+
+/** The weight range (kg) that gives a BMI of 18.5 to 24.9 at this height. Information only. */
+export function bmiTypicalRangeKg(heightCm: number): { low: number; high: number } {
+  const m = heightCm / 100;
+  return {
+    low: Math.round(18.5 * m * m * 10) / 10,
+    high: Math.round(24.9 * m * m * 10) / 10,
+  };
+}
