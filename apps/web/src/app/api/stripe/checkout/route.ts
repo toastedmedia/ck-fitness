@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { flags } from "@/lib/flags";
 import { isSameOrigin } from "@/lib/same-origin";
 import { track } from "@/lib/events";
 import { stripeClient } from "@/lib/stripe";
@@ -10,6 +11,8 @@ export const dynamic = "force-dynamic";
 export async function POST(request: NextRequest) {
   if (!isSameOrigin(request))
     return NextResponse.json({ error: "Bad request." }, { status: 403 });
+  if (!flags.selfServeMembership)
+    return NextResponse.redirect(new URL("/membership", request.url), { status: 303 });
   const supabase = await createServerSupabase();
   const {
     data: { user },

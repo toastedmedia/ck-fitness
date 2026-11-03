@@ -3,6 +3,7 @@ import { Paywall } from "@/components/app/Paywall";
 import { Button, Card, Cap, Flash, Pill } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
 import { track } from "@/lib/events";
+import { flags } from "@/lib/flags";
 import { isNativeApp } from "@/lib/native";
 import { getViewer } from "@/lib/viewer";
 
@@ -93,7 +94,7 @@ export default async function MembershipPage({
             </Flash>
           ) : null}
           <Paywall price={priceText} showCta={false} />
-          {native ? null : (
+          {native || !flags.selfServeMembership ? null : (
             <>
               <form action="/api/stripe/checkout" method="post">
                 <Button variant="gold" className="min-h-12 w-full">

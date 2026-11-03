@@ -13,4 +13,9 @@ export const flags = {
   /** While Apple Health is not ready, show a small "Coming in Phase 2" card. Set false to hide it entirely. */
   show_apple_health_preview: true,
   progressPhotos: true,
+  /**
+   * Members buying CK Membership by themselves (Stripe checkout on the website). OFF: paid trainings are
+   * included for studio clients and switched on by CK staff (Admin -> Give access). Existing subscribers keep access.
+   */
+  selfServeMembership: false,
 } as const;

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Cap, Card } from "@/components/app/ui";
+import { flags } from "@/lib/flags";
 import { isNativeApp } from "@/lib/native";
 
 /** Only benefits that exist today are listed. Billing terms are never hidden. */
@@ -10,7 +11,7 @@ export async function Paywall({
   price: string;
   showCta?: boolean;
 }) {
-  if (await isNativeApp()) {
+  if ((await isNativeApp()) || !flags.selfServeMembership) {
     return (
       <Card className="bg-page">
         <Cap>CK Membership</Cap>
@@ -18,8 +19,9 @@ export async function Paywall({
           This one is for CK members
         </h2>
         <p className="mt-1 text-xs">
-          If you are already a member, make sure you are signed in with your member email.
-          Questions? Contact support from Profile.
+          Member trainings are included for CK studio clients, and your coach switches them
+          on for you. Already training with us? Make sure you are signed in with your member
+          email. Questions? Contact support from Profile.
         </p>
       </Card>
     );
