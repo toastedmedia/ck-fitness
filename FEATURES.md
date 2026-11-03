@@ -12,7 +12,7 @@ Status of accounts, decisions and the change log is in `CLAUDE.md`. App name for
 5. **Every day:** open Home, do Today's Workout (watch the video, Mark complete), log water, steps and weight, and do the 15-second daily check-in. Their Today's CK Score fills as they go.
 6. **Every week:** on Monday morning they get the weekly check-in reminder; they look back at the week, set next week's target and days. Progress shows weight, BMI, workouts, water, measurements and photos.
 7. **Stay supported:** meal plans (vegetarian or non-vegetarian), the community, notifications, and "Talk to a real person" for the coach. If they miss a workout, Home offers Do it today, Move on or Need help.
-8. **Upgrade (web only):** paid CK Membership is bought on the website, then the account unlocks automatically. Nothing in the iPhone app shows prices or buy buttons.
+8. **Member trainings (since 2026-11-03):** members cannot buy them. CK staff switch on the Member Library for active in-person studio clients (Admin -> Give access) as a complimentary value-add while they train with the studio. Self-serve website purchase is off (`flags.selfServeMembership`); the owners plan to make it paid later. Nothing in the app shows prices or buy buttons.
 
 ## Free vs CK Membership
 
@@ -29,7 +29,7 @@ Status of accounts, decisions and the change log is in `CLAUDE.md`. App name for
 | Community (posts, reactions, comments, members directory) | ✅ by default (owners can switch it to paid members only in Admin -> Community) | ✅ |
 | Notifications, support requests, "Talk to a real person", referral card (web), data download, delete account | ✅ | ✅ |
 | **CK Nutrition + AI Meal Scanner** (calorie and protein targets, photo meal estimates, history) | 🙈 hidden | 🙈 hidden until the owners switch it on after Apple approves; then paid members only |
-| Where it is bought | n/a | website only (Stripe checkout, billing portal, cancel any time; access runs to the end of the paid period; failed renewals keep access 3 days) |
+| Where it is bought | n/a | NOT purchasable for now (given by CK staff to studio clients). Planned later: website only (Stripe checkout, billing portal, cancel any time; access runs to the end of the paid period; failed renewals keep access 3 days) |
 | Inside the iPhone app | no prices, no buy buttons, no billing links; locked items say "Available with CK Membership" | the account unlocks by itself after buying on the website; owners can also give access by hand |
 
 ## Members (mobile-first web app / PWA and iPhone app)
