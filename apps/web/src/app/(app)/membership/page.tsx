@@ -77,7 +77,7 @@ export default async function MembershipPage({
                   ? `Renews on ${fmt(endsAt, tz)}.`
                   : "No renewal date. Managed by CK."}
           </p>
-          {!native && (!premium || endsAt) ? (
+          {!native && endsAt ? (
             <form action="/api/stripe/portal" method="post" className="mt-3">
               <Button variant="primary" className="w-full">
                 {state === "grace" ? "Update payment method" : "Manage billing or cancel"}
