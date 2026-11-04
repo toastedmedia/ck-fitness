@@ -24,7 +24,9 @@ test.describe("public pages", () => {
 
   test("nothing scrolls sideways on the welcome page", async ({ page }) => {
     await page.goto("/");
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
     expect(overflow).toBeLessThanOrEqual(0);
   });
 

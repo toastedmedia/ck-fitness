@@ -11,6 +11,12 @@ import {
   startUpload,
   videoKey,
 } from "@/lib/r2";
+import {
+  jobConfigured,
+  renditionStatus,
+  setRendition,
+  startRenditionJob,
+} from "@/lib/hls";
 import { isSameOrigin } from "@/lib/same-origin";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -50,6 +56,7 @@ export async function POST(request: NextRequest) {
 
   const b = (await request.json().catch(() => ({}))) as {
     op?: string;
+    all?: boolean;
     lessonId?: string;
     fileName?: string;
     contentType?: string;
@@ -98,6 +105,10 @@ export async function POST(request: NextRequest) {
         if (error) return err("The video uploaded but could not be attached.", 500);
         if (old && old !== b.key) await releaseVideo(createAdminSupabase(), old);
         await audit(supabase, user.id, "lesson.video_attached", b.lessonId);
+        // Make the streaming versions in the background (GitHub job). Until they are ready,
+        // members get the original file, exactly as before.
+        if (await startRenditionJob(b.key))
+          await setRendition(createAdminSupabase(), b.key as string, "queued");
         return NextResponse.json({ ok: true });
       }
       case "abort": {
@@ -108,6 +119,27 @@ export async function POST(request: NextRequest) {
         const k = lesson.video_key as string | null;
         if (!k) return err("This lesson has no video yet.", 404);
         return NextResponse.json({ url: await playbackLink(k, 3600) });
+      }
+      case "stream-status": {
+        const k = lesson.video_key as string | null;
+        return NextResponse.json({
+          status: await renditionStatus(createAdminSupabase(), k),
+          canStart: jobConfigured(),
+        });
+      }
+      case "stream-start": {
+        // One lesson's video, or (all: true) every video that is not ready yet.
+        const all = b.all === true;
+        const k = lesson.video_key as string | null;
+        if (!all && !k) return err("This lesson has no video yet.", 404);
+        if (!(await startRenditionJob(all ? undefined : (k as string))))
+          return err(
+            "Could not start the job. Check GITHUB_ACTIONS_TOKEN in Vercel, or run it from GitHub -> Actions -> Video streaming versions.",
+            503,
+          );
+        if (!all) await setRendition(createAdminSupabase(), k as string, "queued");
+        await audit(supabase, user.id, "lesson.video_stream_start", b.lessonId);
+        return NextResponse.json({ ok: true });
       }
       case "remove": {
         const old = lesson.video_key as string | null;

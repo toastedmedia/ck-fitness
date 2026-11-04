@@ -7,6 +7,10 @@ import { useEffect, useRef, useState } from "react";
 /**
  * Plays a lesson video. Nothing loads until she taps Play, so nothing is fetched unless it is
  * watched. A fresh signed link is requested at that moment, and her position is saved as she watches.
+ * When the video has streaming versions (HLS), the player picks the quality that suits her
+ * connection and switches as it changes, instead of stopping to buffer. iPhone, iPad and Safari
+ * play HLS themselves; other browsers use hls.js (loaded only then). If streaming fails, it falls
+ * back to the original file from the same position.
  */
 export function VideoPlayer({
   lessonId,
@@ -26,7 +30,7 @@ export function VideoPlayer({
   nextHref?: string;
 }) {
   const router = useRouter();
-  const [src, setSrc] = useState<string>();
+  const [media, setMedia] = useState<{ src: string; hls?: string }>();
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
@@ -39,12 +43,61 @@ export function VideoPlayer({
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ lessonId }),
     });
-    const body = (await res.json().catch(() => ({}))) as { src?: string; error?: string };
+    const body = (await res.json().catch(() => ({}))) as {
+      src?: string;
+      hls?: string;
+      error?: string;
+    };
     setLoading(false);
     if (!res.ok || !body.src)
       return setError(body.error ?? "We could not start the video. Please try again.");
-    setSrc(body.src);
+    setMedia({ src: body.src, hls: body.hls });
   }
+
+  // Attach the video: streaming when available, otherwise (or if streaming fails) the original.
+  useEffect(() => {
+    const el = video.current;
+    if (!media || !el) return;
+    let stopped = false;
+    let detach = () => {};
+    const playOriginal = () => {
+      if (stopped || el.src === media.src) return;
+      const at = el.currentTime;
+      detach();
+      el.src = media.src;
+      el.addEventListener(
+        "loadedmetadata",
+        () => {
+          if (at > 1) el.currentTime = at;
+          void el.play().catch(() => undefined);
+        },
+        { once: true },
+      );
+    };
+    if (!media.hls) el.src = media.src;
+    else if (el.canPlayType("application/vnd.apple.mpegurl")) {
+      el.src = media.hls;
+      el.addEventListener("error", playOriginal, { once: true });
+    } else {
+      void import("hls.js")
+        .then(({ default: Hls }) => {
+          if (stopped) return;
+          if (!Hls.isSupported()) return playOriginal();
+          const hls = new Hls({ capLevelToPlayerSize: true });
+          hls.on(Hls.Events.ERROR, (_e, d) => {
+            if (d.fatal) playOriginal();
+          });
+          hls.loadSource(media.hls as string);
+          hls.attachMedia(el);
+          detach = () => hls.destroy();
+        })
+        .catch(playOriginal);
+    }
+    return () => {
+      stopped = true;
+      detach();
+    };
+  }, [media]);
 
   useEffect(() => {
     if (autoStart && hasVideo) void play();
@@ -53,7 +106,7 @@ export function VideoPlayer({
 
   useEffect(() => {
     const el = video.current;
-    if (!src || !el) return;
+    if (!media || !el) return;
     let lastSent = 0;
     let lastTime = -1;
     let pending = 0; // seconds genuinely watched since the last update
@@ -71,7 +124,11 @@ export function VideoPlayer({
       });
       firstUpdate = false;
     };
+    let started = false;
     const onMeta = () => {
+      // Only the first load: switching to the original after a streaming error keeps her place.
+      if (started) return;
+      started = true;
       if (startSeconds > 5 && el.duration > startSeconds + 5)
         el.currentTime = startSeconds;
       void el.play().catch(() => undefined);
@@ -109,7 +166,7 @@ export function VideoPlayer({
       el.removeEventListener("pause", send);
       el.removeEventListener("ended", onEnded);
     };
-  }, [src, lessonId, startSeconds, nextHref, router]);
+  }, [media, lessonId, startSeconds, nextHref, router]);
 
   // No video for this lesson: show just the picture (no text on top), or nothing at all.
   if (!hasVideo) {
@@ -121,12 +178,11 @@ export function VideoPlayer({
       />
     ) : null;
   }
-  if (src) {
+  if (media) {
     return (
       <div className="aspect-video overflow-hidden rounded-card bg-brand">
         <video
           ref={video}
-          src={src}
           poster={poster ?? undefined}
           controls
           playsInline

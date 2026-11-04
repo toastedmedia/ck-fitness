@@ -16,23 +16,24 @@ Status of accounts, decisions and the change log is in `CLAUDE.md`. App name for
 
 ## Free vs CK Membership
 
-| | **Free (account)** | **CK Membership ($31.49 CAD per month, GST included)** |
-| --- | --- | --- |
-| Download and sign up | ✅ | ✅ |
-| Trainings marked **Free** (the two free programs) | ✅ | ✅ |
-| Trainings marked **Member** (the Member Library) | locked | ✅ unlocked |
-| Coaching-level trainings (**coach-only** access) | locked | for premium members and staff |
-| Home, Today's CK Score, water, steps, weigh-in, BMI | ✅ | ✅ |
-| Daily and weekly check-ins, My Week, accountability, streaks, milestones | ✅ | ✅ |
-| Progress (weight, BMI, workouts, water, measurements, check-in history) and weekly progress photos | ✅ | ✅ |
-| Meal plans (vegetarian and non-vegetarian, announced by email and notification) | ✅ | ✅ |
-| Community (posts, reactions, comments, members directory) | ✅ by default (owners can switch it to paid members only in Admin -> Community) | ✅ |
-| Notifications, support requests, "Talk to a real person", referral card (web), data download, delete account | ✅ | ✅ |
-| **CK Nutrition + AI Meal Scanner** (calorie and protein targets, photo meal estimates, history) | 🙈 hidden | 🙈 hidden until the owners switch it on after Apple approves; then paid members only |
-| Where it is bought | n/a | NOT purchasable for now (given by CK staff to studio clients). Planned later: website only (Stripe checkout, billing portal, cancel any time; access runs to the end of the paid period; failed renewals keep access 3 days) |
-| Inside the iPhone app | no prices, no buy buttons, no billing links; locked items say "Available with CK Membership" | the account unlocks by itself after buying on the website; owners can also give access by hand |
+|                                                                                                              | **Free (account)**                                                                           | **CK Membership ($31.49 CAD per month, GST included)**                                                                                                                                                                       |
+| ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Download and sign up                                                                                         | ✅                                                                                           | ✅                                                                                                                                                                                                                           |
+| Trainings marked **Free** (the two free programs)                                                            | ✅                                                                                           | ✅                                                                                                                                                                                                                           |
+| Trainings marked **Member** (the Member Library)                                                             | locked                                                                                       | ✅ unlocked                                                                                                                                                                                                                  |
+| Coaching-level trainings (**coach-only** access)                                                             | locked                                                                                       | for premium members and staff                                                                                                                                                                                                |
+| Home, Today's CK Score, water, steps, weigh-in, BMI                                                          | ✅                                                                                           | ✅                                                                                                                                                                                                                           |
+| Daily and weekly check-ins, My Week, accountability, streaks, milestones                                     | ✅                                                                                           | ✅                                                                                                                                                                                                                           |
+| Progress (weight, BMI, workouts, water, measurements, check-in history) and weekly progress photos           | ✅                                                                                           | ✅                                                                                                                                                                                                                           |
+| Meal plans (vegetarian and non-vegetarian, announced by email and notification)                              | ✅                                                                                           | ✅                                                                                                                                                                                                                           |
+| Community (posts, reactions, comments, members directory)                                                    | ✅ by default (owners can switch it to paid members only in Admin -> Community)              | ✅                                                                                                                                                                                                                           |
+| Notifications, support requests, "Talk to a real person", referral card (web), data download, delete account | ✅                                                                                           | ✅                                                                                                                                                                                                                           |
+| **CK Nutrition + AI Meal Scanner** (calorie and protein targets, photo meal estimates, history)              | 🙈 hidden                                                                                    | 🙈 hidden until the owners switch it on after Apple approves; then paid members only                                                                                                                                         |
+| Where it is bought                                                                                           | n/a                                                                                          | NOT purchasable for now (given by CK staff to studio clients). Planned later: website only (Stripe checkout, billing portal, cancel any time; access runs to the end of the paid period; failed renewals keep access 3 days) |
+| Inside the iPhone app                                                                                        | no prices, no buy buttons, no billing links; locked items say "Available with CK Membership" | the account unlocks by itself after buying on the website; owners can also give access by hand                                                                                                                               |
 
 ## Members (mobile-first web app / PWA and iPhone app)
+
 - ✅ **Navigation:** bottom bar = Home, Trainings, Progress, Accountability, Community. Top right of every page = notifications bell + avatar menu (Profile, Membership, Help and support, Log out). Every page or tab change starts at the very top.
 - ✅ Welcome, sign up, log in (returns to the page you were heading for), forgot/reset password, log out, delete account (its own page: type DELETE, confirmation on the welcome screen)
 - ✅ Email confirmation and reset emails (Resend + Supabase SMTP are live, branded templates)
@@ -52,11 +53,13 @@ Status of accounts, decisions and the change log is in `CLAUDE.md`. App name for
 - 🔌 Web push notifications (switches on when the three VAPID variables are in Vercel; per-device button in Profile). ⏳ Native iPhone push (next, ships as 1.0.1, together with email links opening the app)
 
 ## Automatic messages and reminders (members)
+
 - 🔌 **Emails** (Resend; each optional email has a one-click unsubscribe; billing and support emails always send): welcome (after the questionnaire), **weekly check-in reminder (Monday 9 am local time)**, we-miss-you (3 quiet days), membership started / payment problem / ended, support received / replied, new meal plan, **finish-your-setup reminders** (24 h, then +48 h, then +72 h), **start-your-first-training** nudges, and **motivation after 7 and 14 quiet days**. Unconfirmed sign-ups get the confirmation email resent. Imported or added members are never emailed these
 - ✅ In-app notifications: workout and weekly reminders (follow Profile switches), coach messages, announcements, meal-plan announcements, community activity
 - ✅ Marketing emails (offers, diet plans, winter promos) only go to members who turned on Email and Offers and news
 
 ## Admin portal (`/admin`, menu grouped: Overview, People, Content, Community, Messages, Money, System)
+
 - ✅ **Dashboard, KPIs** (9 launch KPIs, 30-day trend charts, video cost guard, AI meal scans), **Billing** (subscriptions, revenue estimate, Stripe invoices once connected)
 - ✅ **Users:** search, filters, tags, bulk select (add or remove tag, give access to a training for up to 100, download selected CSV), contacts CSV, **+ Add member**, **Import CSV** (optional tag and training)
 - ✅ **Client record:** Overview (editable contact details, plan, Stripe link, invoices, **quick message to the member**, tags, **Resend confirmation email**, "Email not confirmed" notice), Questionnaire (everything, plus **Edit answers**: food preference, pregnancy, limitations), Check-ins, Progress, Trainings (access, stage, furthest point, time watched), Activity (full timeline of every action and account change), Photos, **Nutrition**, private Notes. Owners, admins and coaches see everything a member enters (no member opt-out since 2026-10-17); support and content roles never; every view is audited
@@ -67,6 +70,7 @@ Status of accounts, decisions and the change log is in `CLAUDE.md`. App name for
 - ✅ Community moderation (approvals, reports, hide/restore/remove, mute, ban, pin, audience switch), Support (reply notifies member), CRM sync (Toasted Media CRM adapter with retry queue; 🔌 needs the real API), Settings (price text, referral reward, daily goals and score weights, support email, Nutrition testers), Audit log (times in Vancouver time)
 
 ## Platform
+
 - ✅ Row-level security on every table; staff access to member data enforced in the database; community safety rules in the database
 - ✅ Entitlement rules (free / member / premium, cancel-until-period-end, 3-day grace) in TypeScript and SQL
 - ✅ Cron jobs: hourly reminders, nutrition nudges, daily at-risk detection, lifecycle emails, meal-plan announcements, campaign queue (every 5 minutes), CRM sync (every 10 minutes), daily cleanup
@@ -75,10 +79,13 @@ Status of accounts, decisions and the change log is in `CLAUDE.md`. App name for
 - ✅ Automated checks: 171 core tests, 21 web tests, 79 database tests, production build (2026-10-28)
 
 ## Hidden on purpose until Apple approves iOS 1.0
+
 - 🙈 **CK Nutrition + AI Meal Scanner** (paid CK Membership): daily calorie and protein targets (conservative estimate from the questionnaire, adjustable by member or coach), take or choose a meal photo, describe it, or add it by hand; the AI (OpenAI, server only, model configurable, 10 scans a day per member) returns an estimate the member reviews, corrects, re-estimates with a note, scales by portion and confirms; live totals and remaining, meal history, log again, copy yesterday, streak, 14-day chart, weekly nutrition summary, at most one supportive reminder a day (in-app/push, never email), Home and My Week cards, coach tab with targets, meals and photos, coach list of members who stopped logging, AI consent notice, included in export and deletion. Off for every member and the review account; owners/admins can open `/nutrition` to test; tester list in Admin -> Settings is empty. To switch on: SQL 0026-0028, `OPENAI_API_KEY` in Vercel, lawyer-approved Privacy/Terms, real-iPhone test, then `nutrition_tracker_enabled = true`
 
 ## Next (me)
+
 - ⏳ Native push for the iPhone app and universal links (1.0.1, needs the Apple push key), in-app camera for meal photos, barcode scanning, Apple Health, logged-in automated tests, week description and image in the builder, Progress-page nutrition charts, Android once Google Play is set up
 
 ## Still to do before launch (owners)
+
 See `CLAUDE.md` Accounts and Pending: OpenAI key, SQL 0020/0021/0028 if missing, Stripe dashboard settings and live payment test, Settings text, support inbox, CRM token, Sentry, production Supabase, landing page, App Store page, Google Play, lawyer-approved Privacy/Terms (including who sees member records and AI/meal photos), live QA, 20-50 person beta.

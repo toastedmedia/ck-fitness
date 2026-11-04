@@ -19,9 +19,9 @@ export async function Paywall({
           This one is for CK members
         </h2>
         <p className="mt-1 text-xs">
-          Member trainings are included for CK studio clients, and your coach switches them
-          on for you. Already training with us? Make sure you are signed in with your member
-          email. Questions? Contact support from Profile.
+          Member trainings are included for CK studio clients, and your coach switches
+          them on for you. Already training with us? Make sure you are signed in with your
+          member email. Questions? Contact support from Profile.
         </p>
       </Card>
     );

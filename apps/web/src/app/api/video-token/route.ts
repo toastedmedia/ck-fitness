@@ -1,13 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { canAccess, type AccessLevel, type StaffRole } from "@ck/core";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { playlistPath, renditionStatus, signPass } from "@/lib/hls";
 import { playbackLink, r2Configured } from "@/lib/r2";
+import { createAdminSupabase } from "@/lib/supabase/admin";
 import { resolveMembership } from "@ck/core";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Issues a signed playback link (good for one long session; R2 charges nothing for viewing). Two independent checks: the database only returns
+ * Issues the playback links: `hls` (streaming in several qualities, when its versions are ready)
+ * and `src` (the original file, used until then and as the fallback). Issues a signed playback link (good for one long session; R2 charges nothing for viewing). Two independent checks: the database only returns
  * the lesson if she may see it, and the access rule is checked again here.
  */
 export async function POST(request: NextRequest) {
@@ -58,8 +61,15 @@ export async function POST(request: NextRequest) {
       { error: "Video is not available right now." },
       { status: 503 },
     );
+  const ready =
+    (await renditionStatus(createAdminSupabase(), lesson.video_key)) === "ready";
   return NextResponse.json(
-    { src: await playbackLink(lesson.video_key) },
+    {
+      src: await playbackLink(lesson.video_key),
+      hls: ready
+        ? playlistPath(lesson.id, "master.m3u8", signPass(lesson.id))
+        : undefined,
+    },
     { headers: { "cache-control": "no-store" } },
   );
 }

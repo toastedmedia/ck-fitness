@@ -1,0 +1,56 @@
+name: Video streaming versions
+
+# Makes the streaming versions (several qualities) of lesson videos so they play without buffering.
+# Started by the app after a video upload, or by hand: Actions -> Video streaming versions -> Run
+# workflow (leave the box empty to prepare every video that is not ready yet). See docs/STORAGE.md.
+on:
+  workflow_dispatch:
+    inputs:
+      video_key:
+        description: "One video (R2 key). Leave empty for every video that is not ready yet."
+        required: false
+        default: ""
+
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      keys: ${{ steps.keys.outputs.keys }}
+    steps:
+      - id: keys
+        env:
+          ONE: ${{ inputs.video_key }}
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -n "$ONE" ]; then
+            keys=$(jq -cn --arg k "$ONE" '[$k]')
+          else
+            keys=$(curl -fsS -H "authorization: Bearer $CRON_SECRET" "${APP_URL%/}/api/video-hls" | jq -c '.keys')
+          fi
+          echo "Videos to prepare: $keys"
+          echo "keys=$keys" >> "$GITHUB_OUTPUT"
+
+  convert:
+    needs: list
+    if: needs.list.outputs.keys != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        key: ${{ fromJson(needs.list.outputs.keys) }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - env:
+          VIDEO_KEY: ${{ matrix.key }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: bash scripts/video-hls.sh "$VIDEO_KEY"

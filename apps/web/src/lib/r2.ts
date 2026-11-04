@@ -4,11 +4,14 @@ import {
   CompleteMultipartUploadCommand,
   CreateMultipartUploadCommand,
   DeleteObjectCommand,
+  DeleteObjectsCommand,
   GetObjectCommand,
+  ListObjectsV2Command,
   S3Client,
   UploadPartCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { hlsPrefix } from "@ck/core";
 
 /** Cloudflare R2 (S3-compatible). Private bucket: nothing is public, every link is signed. */
 export function r2Configured(): boolean {
@@ -30,15 +33,17 @@ export function r2Missing(): string[] {
   ].filter((n) => !process.env[n]?.trim());
 }
 
+let cached: S3Client | undefined;
+/** One client per server instance: a streaming playlist signs hundreds of links at once. */
 function client() {
-  return new S3Client({
+  return (cached ??= new S3Client({
     region: "auto",
     endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
     credentials: {
       accessKeyId: process.env.R2_ACCESS_KEY_ID as string,
       secretAccessKey: process.env.R2_SECRET_ACCESS_KEY as string,
     },
-  });
+  }));
 }
 const Bucket = () => process.env.R2_BUCKET as string;
 
@@ -108,6 +113,37 @@ export function playbackLink(key: string, ttlSeconds = 6 * 3600) {
   });
 }
 
+/** Reads a small text file (a streaming playlist). Null when it does not exist. */
+export async function readText(key: string): Promise<string | null> {
+  try {
+    const r = await client().send(new GetObjectCommand({ Bucket: Bucket(), Key: key }));
+    return (await r.Body?.transformToString()) ?? null;
+  } catch (e) {
+    if ((e as { name?: string }).name === "NoSuchKey") return null;
+    throw e;
+  }
+}
+
+/** Deletes every file under a folder (a video's streaming versions). */
+export async function deletePrefix(prefix: string) {
+  let token: string | undefined;
+  do {
+    const page = await client().send(
+      new ListObjectsV2Command({
+        Bucket: Bucket(),
+        Prefix: prefix,
+        ContinuationToken: token,
+      }),
+    );
+    const keys = (page.Contents ?? []).map((o) => ({ Key: o.Key as string }));
+    if (keys.length)
+      await client().send(
+        new DeleteObjectsCommand({ Bucket: Bucket(), Delete: { Objects: keys } }),
+      );
+    token = page.IsTruncated ? page.NextContinuationToken : undefined;
+  } while (token);
+}
+
 /**
  * Deletes a video file only when no lesson uses it any more (a duplicated lesson shares the file).
  * Run this AFTER the lesson row no longer points at the key. Storage failures never block editing.
@@ -121,5 +157,10 @@ export async function releaseVideo(
     .from("lessons")
     .select("*", { count: "exact", head: true })
     .eq("video_key", key);
-  if (!count) await deleteObject(key).catch((e) => console.error("r2 delete", e.message));
+  if (count) return;
+  await deleteObject(key).catch((e) => console.error("r2 delete", e.message));
+  await deletePrefix(`${hlsPrefix(key)}/`).catch((e) =>
+    console.error("r2 hls delete", e.message),
+  );
+  await db.from("video_renditions").delete().eq("video_key", key);
 }

@@ -22,3 +22,4 @@ export * from "./mealplan";
 export * from "./lifecycle";
 export * from "./nutrition";
 export * from "./outline";
+export * from "./hls";

@@ -26,7 +26,8 @@ with need(mig, kind, tbl, col) as (values
   ('0026','table','nutrition_profiles',null),('0026','table','meal_logs',null),('0026','table','meal_items',null),('0026','table','meal_scans',null),
   ('0026','column','notification_preferences','nutrition'),
   ('0027','func_has','staff_can_view_client','staff_see_all'),
-  ('0028','column','nutrition_profiles','ai_consent_at')
+  ('0028','column','nutrition_profiles','ai_consent_at'),
+  ('0029','table','video_renditions',null)
 ), found as (
   select n.*, case n.kind
     when 'table' then exists (select 1 from information_schema.tables t where t.table_schema='public' and t.table_name=n.tbl)

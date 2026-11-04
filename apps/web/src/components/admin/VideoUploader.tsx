@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FilePick } from "@/components/admin/FilePick";
 
 const PART = 32 * 1024 * 1024; // 32 MB slices: small enough to retry quickly, R2 allows 10,000 (320 GB).
@@ -81,6 +81,37 @@ export function VideoUploader({
   const [attached, setAttached] = useState(hasVideo);
   const [pct, setPct] = useState<number | null>(null);
   const [msg, setMsg] = useState("");
+  const [stream, setStream] = useState<{ status: string | null; canStart: boolean }>();
+
+  const loadStream = useCallback(async () => {
+    try {
+      const r = await call({ op: "stream-status", lessonId });
+      setStream({
+        status: (r.status as string | null) ?? null,
+        canStart: Boolean(r.canStart),
+      });
+    } catch {
+      setStream(undefined);
+    }
+  }, [lessonId]);
+  useEffect(() => {
+    if (attached) void loadStream();
+  }, [attached, loadStream]);
+
+  async function prepare(all: boolean) {
+    setMsg("");
+    try {
+      await call({ op: "stream-start", lessonId, all });
+      setMsg(
+        all
+          ? "Started preparing every video that is not ready yet. This runs on GitHub and can take a few hours for a big library."
+          : "Started. It usually takes about as long as the video itself.",
+      );
+      await loadStream();
+    } catch (e) {
+      setMsg((e as Error).message);
+    }
+  }
 
   async function upload(file: File) {
     setMsg("");
@@ -145,7 +176,10 @@ export function VideoUploader({
       });
       store(sk, null);
       setAttached(true);
-      setMsg("Video uploaded and attached.");
+      setMsg(
+        "Video uploaded and attached. Its streaming versions are being prepared; members can already watch it.",
+      );
+      void loadStream();
     } catch (e) {
       const why = (e as Error).message;
       // An upload the storage no longer knows about cannot be resumed: forget it so the next try starts fresh.
@@ -178,10 +212,12 @@ export function VideoUploader({
       <b className="text-xs text-brand">Lesson video</b>
       <p className="mt-1 text-xs text-muted">
         {attached ? "A video is attached." : "No video yet."} Any length and any file size
-        works. Use an MP4 (H.264) so it plays on every phone. Big files upload in pieces;
-        if it pauses, choose the same file again and it continues. Keep this page open and
-        the computer awake. Tip: a 1080p export is usually 200 to 500 MB, much faster to
-        upload and to start playing on members&apos; phones.
+        works. Use an MP4 (H.264) so it plays on every phone. After upload, smaller
+        streaming versions are made automatically so it plays smoothly on any connection.
+        Big files upload in pieces; if it pauses, choose the same file again and it
+        continues. Keep this page open and the computer awake. Tip: a 1080p export is
+        usually 200 to 500 MB, much faster to upload and to start playing on members&apos;
+        phones.
       </p>
       {canEdit ? (
         <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -203,6 +239,38 @@ export function VideoUploader({
               className="min-h-9 rounded-xl border-2 border-danger px-3 text-xs font-bold text-danger"
             >
               Remove video
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      {attached && stream ? (
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+          <span>
+            <b className="text-brand">Smooth streaming:</b>{" "}
+            {stream.status === "ready"
+              ? "Ready. Members get the quality that suits their connection."
+              : stream.status === "queued" || stream.status === "processing"
+                ? "Being prepared (usually about as long as the video). Members can watch meanwhile."
+                : stream.status === "failed"
+                  ? "Could not be prepared. Members still get the original video."
+                  : "Not prepared yet. Members get the original video, which may buffer."}
+          </span>
+          {canEdit && stream.canStart && stream.status !== "ready" ? (
+            <button
+              type="button"
+              onClick={() => prepare(false)}
+              className="min-h-9 rounded-xl border-2 border-brand px-3 font-bold text-brand"
+            >
+              {stream.status === "failed" ? "Try again" : "Prepare now"}
+            </button>
+          ) : null}
+          {canEdit && stream.canStart ? (
+            <button
+              type="button"
+              onClick={() => prepare(true)}
+              className="min-h-9 rounded-xl border-2 border-line px-3 font-bold text-brand"
+            >
+              Prepare all videos
             </button>
           ) : null}
         </div>
