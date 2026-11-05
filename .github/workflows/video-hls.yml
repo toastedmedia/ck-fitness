@@ -23,11 +23,23 @@ jobs:
           ONE: ${{ inputs.video_key }}
           APP_URL: ${{ secrets.APP_URL }}
           VIDEO_JOB_SECRET: ${{ secrets.VIDEO_JOB_SECRET }}
+        shell: bash
         run: |
+          set -euo pipefail
           if [ -n "$ONE" ]; then
             keys=$(jq -cn --arg k "$ONE" '[$k]')
           else
-            keys=$(curl -fsS -H "authorization: Bearer $VIDEO_JOB_SECRET" "${APP_URL%/}/api/video-hls" | jq -c '.keys')
+            if [ -z "${APP_URL:-}" ] || [ -z "${VIDEO_JOB_SECRET:-}" ]; then
+              echo "::error::The GitHub secrets APP_URL and VIDEO_JOB_SECRET must both be set."
+              exit 1
+            fi
+            code=$(curl -sS -L -o reply.json -w '%{http_code}' \
+              -H "authorization: Bearer $VIDEO_JOB_SECRET" "${APP_URL%/}/api/video-hls")
+            if [ "$code" != "200" ]; then
+              echo "::error::The app answered $code: $(head -c 300 reply.json). 401 = VIDEO_JOB_SECRET is not the same in GitHub and Vercel, or Vercel was not redeployed after adding it. 503 = run SQL 0029. 404 = APP_URL is wrong (use https://app.chardikalafitness.com)."
+              exit 1
+            fi
+            keys=$(jq -c '.keys // []' reply.json)
           fi
           echo "Videos to prepare: $keys"
           echo "keys=$keys" >> "$GITHUB_OUTPUT"
