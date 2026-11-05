@@ -58,13 +58,17 @@ iPhone/iPad/Safari/AirPlay play it natively; other browsers use hls.js. Deleting
 **One-time setup (owners):**
 
 1. Supabase SQL Editor: run migration `0029` (`supabase/migrations/20261104000029_video_streaming.sql`).
-2. GitHub -> `toastedmedia/ck-fitness` -> Settings -> Secrets and variables -> Actions -> **New repository secret**, add:
-   `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` (same values as in Vercel),
-   `CRON_SECRET` (same value as in Vercel) and `APP_URL` = `https://app.chardikalafitness.com`.
-3. GitHub -> your profile -> Settings -> Developer settings -> **Fine-grained tokens** -> Generate: resource owner
+2. Make the job's own secret: in Terminal run `openssl rand -base64 32 | pbcopy` (copies a random value without
+   showing it). Paste it in Vercel (Production) as `VIDEO_JOB_SECRET` and redeploy, and in GitHub as below.
+3. GitHub -> `toastedmedia/ck-fitness` -> Settings -> Secrets and variables -> Actions -> **New repository secret**, add:
+   `VIDEO_JOB_SECRET` (same value as in Vercel), `APP_URL` = `https://app.chardikalafitness.com`, `R2_BUCKET` (Vercel, eye
+   icon), `R2_ACCOUNT_ID` (Cloudflare -> R2 overview), and `R2_ACCESS_KEY_ID` + `R2_SECRET_ACCESS_KEY` from a **new** R2 API
+   token for GitHub (Cloudflare -> R2 -> Manage API tokens -> Object Read & Write, only the video bucket). The R2 keys and
+   `CRON_SECRET` in Vercel are marked Sensitive and cannot be shown again; `CRON_SECRET` is not needed here.
+4. GitHub -> your profile -> Settings -> Developer settings -> **Fine-grained tokens** -> Generate: resource owner
    `toastedmedia`, only repository `ck-fitness`, permission **Actions: Read and write**. Add it in Vercel (Production) as
    `GITHUB_ACTIONS_TOKEN` and redeploy. (Without it everything still works, but jobs must be started by hand.)
-4. Prepare the existing library once: GitHub -> Actions -> **Video streaming versions** -> Run workflow (leave the box empty),
+5. Prepare the existing library once: GitHub -> Actions -> **Video streaming versions** -> Run workflow (leave the box empty),
    or Admin -> any lesson with a video -> **Prepare all videos**.
 
 Each lesson's video box in Admin shows "Smooth streaming: Ready / Being prepared / Not prepared yet" with Prepare now / Try again.

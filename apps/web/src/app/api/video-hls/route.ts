@@ -5,9 +5,12 @@ import { createAdminSupabase } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-/** Only the "Video streaming versions" GitHub job may call this (same secret as the crons). */
+/**
+ * Only the "Video streaming versions" GitHub job may call this. It uses its own secret,
+ * VIDEO_JOB_SECRET (same value in Vercel and in GitHub), so it never needs CRON_SECRET.
+ */
 function allowed(request: NextRequest) {
-  const s = process.env.CRON_SECRET;
+  const s = process.env.VIDEO_JOB_SECRET;
   return Boolean(s) && request.headers.get("authorization") === `Bearer ${s}`;
 }
 

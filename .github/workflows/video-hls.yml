@@ -22,12 +22,12 @@ jobs:
         env:
           ONE: ${{ inputs.video_key }}
           APP_URL: ${{ secrets.APP_URL }}
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VIDEO_JOB_SECRET: ${{ secrets.VIDEO_JOB_SECRET }}
         run: |
           if [ -n "$ONE" ]; then
             keys=$(jq -cn --arg k "$ONE" '[$k]')
           else
-            keys=$(curl -fsS -H "authorization: Bearer $CRON_SECRET" "${APP_URL%/}/api/video-hls" | jq -c '.keys')
+            keys=$(curl -fsS -H "authorization: Bearer $VIDEO_JOB_SECRET" "${APP_URL%/}/api/video-hls" | jq -c '.keys')
           fi
           echo "Videos to prepare: $keys"
           echo "keys=$keys" >> "$GITHUB_OUTPUT"
@@ -52,5 +52,5 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
           APP_URL: ${{ secrets.APP_URL }}
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VIDEO_JOB_SECRET: ${{ secrets.VIDEO_JOB_SECRET }}
         run: bash scripts/video-hls.sh "$VIDEO_KEY"
