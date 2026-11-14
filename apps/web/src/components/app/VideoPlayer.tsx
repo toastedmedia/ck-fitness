@@ -74,15 +74,22 @@ export function VideoPlayer({
         { once: true },
       );
     };
-    if (!media.hls) el.src = media.src;
-    else if (el.canPlayType("application/vnd.apple.mpegurl")) {
-      el.src = media.hls;
+    const playNative = () => {
+      el.src = media.hls as string;
       el.addEventListener("error", playOriginal, { once: true });
-    } else {
+    };
+    // Apple's own player (iPhone, iPad, Safari, the iPhone app, AirPlay) only on Apple devices:
+    // newer Chrome also says it can play HLS itself, then refuses these streams, so everyone
+    // else gets hls.js.
+    const native = Boolean(el.canPlayType("application/vnd.apple.mpegurl"));
+    const apple = /Apple/.test(navigator.vendor);
+    if (!media.hls) el.src = media.src;
+    else if (native && apple) playNative();
+    else {
       void import("hls.js")
         .then(({ default: Hls }) => {
           if (stopped) return;
-          if (!Hls.isSupported()) return playOriginal();
+          if (!Hls.isSupported()) return native ? playNative() : playOriginal();
           const hls = new Hls({ capLevelToPlayerSize: true });
           hls.on(Hls.Events.ERROR, (_e, d) => {
             if (d.fatal) playOriginal();
