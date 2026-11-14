@@ -21,7 +21,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      # Both browsers: the "phone" project emulates an iPhone, which runs in WebKit (Safari's engine).
+      - run: npx playwright install --with-deps chromium webkit
         working-directory: e2e
       - run: npx playwright test
         working-directory: e2e
