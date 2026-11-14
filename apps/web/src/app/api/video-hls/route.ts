@@ -14,10 +14,15 @@ function allowed(request: NextRequest) {
   return Boolean(s) && request.headers.get("authorization") === `Bearer ${s}`;
 }
 
-/** Videos that still need streaming versions (the job's "prepare everything" list). */
+/**
+ * Videos that still need streaming versions (the job's "prepare everything" list).
+ * `?retry=1` also returns videos left queued or processing by a stopped run, instead of
+ * waiting 6 hours for them to count as stuck. Only ready videos are skipped.
+ */
 export async function GET(request: NextRequest) {
   if (!allowed(request))
     return NextResponse.json({ error: "Not allowed." }, { status: 401 });
+  const retry = request.nextUrl.searchParams.get("retry") === "1";
   const db = createAdminSupabase();
   const [{ data: lessons }, { data: rows, error }] = await Promise.all([
     db.from("lessons").select("video_key").not("video_key", "is", null),
@@ -31,7 +36,9 @@ export async function GET(request: NextRequest) {
     ]),
   );
   const keys = [...new Set((lessons ?? []).map((l) => l.video_key as string))]
-    .filter((k) => needsRendition(known.get(k)))
+    .filter((k) =>
+      retry ? known.get(k)?.status !== "ready" : needsRendition(known.get(k)),
+    )
     // GitHub runs at most 256 jobs per run; the rest are picked up by the next run.
     .slice(0, 200);
   // Mark them so a second run started meanwhile does not do the same work.

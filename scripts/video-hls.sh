@@ -39,8 +39,9 @@ echo "Downloading $KEY"
 s3 cp "s3://${R2_BUCKET}/${KEY}" "$WORK/source"
 
 # Displayed size (phone videos often store a rotation instead of their real width and height).
-read -r W H < <(ffprobe -v error -select_streams v:0 -show_entries stream=width,height \
-  -of csv=p=0:s=' ' "$WORK/source")
+# (csv separator must be a visible character: newer ffmpeg rejects s=' ')
+IFS=x read -r W H < <(ffprobe -v error -select_streams v:0 -show_entries stream=width,height \
+  -of csv=p=0:s=x "$WORK/source" | head -1)
 ROT="$(ffprobe -v error -select_streams v:0 -show_entries stream_side_data=rotation \
   -of csv=p=0 "$WORK/source" | head -1 | tr -d ' -')"
 if [[ "$ROT" == "90" || "$ROT" == "270" ]]; then

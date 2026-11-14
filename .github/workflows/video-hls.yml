@@ -10,6 +10,10 @@ on:
         description: "One video (R2 key). Leave empty for every video that is not ready yet."
         required: false
         default: ""
+      retry_unfinished:
+        description: "Also redo videos left queued or half-done by a stopped run (normally they wait 6 hours)."
+        type: boolean
+        default: false
 
 jobs:
   list:
@@ -21,6 +25,7 @@ jobs:
       - id: keys
         env:
           ONE: ${{ inputs.video_key }}
+          RETRY: ${{ inputs.retry_unfinished }}
           APP_URL: ${{ secrets.APP_URL }}
           VIDEO_JOB_SECRET: ${{ secrets.VIDEO_JOB_SECRET }}
         shell: bash
@@ -34,7 +39,7 @@ jobs:
               exit 1
             fi
             code=$(curl -sS -L -o reply.json -w '%{http_code}' \
-              -H "authorization: Bearer $VIDEO_JOB_SECRET" "${APP_URL%/}/api/video-hls")
+              -H "authorization: Bearer $VIDEO_JOB_SECRET" "${APP_URL%/}/api/video-hls$([ "${RETRY:-false}" = "true" ] && echo '?retry=1')")
             if [ "$code" != "200" ]; then
               echo "::error::The app answered $code: $(head -c 300 reply.json). 401 = VIDEO_JOB_SECRET is not the same in GitHub and Vercel, or Vercel was not redeployed after adding it. 503 = run SQL 0029. 404 = APP_URL is wrong (use https://app.chardikalafitness.com)."
               exit 1
