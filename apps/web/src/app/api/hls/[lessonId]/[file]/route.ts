@@ -4,6 +4,7 @@ import {
   playlistUris,
   rewritePlaylist,
   safeHlsFile,
+  startFriendly,
   variantOf,
 } from "@ck/core";
 import { playlistPath, verifyPass } from "@/lib/hls";
@@ -47,10 +48,13 @@ export async function GET(
 
   let body: string;
   if (name === "master.m3u8") {
-    body = rewritePlaylist(text, (u) => {
-      const v = variantOf(u);
-      return v ? playlistPath(lessonId, `${v}.m3u8`, pass as string) : u;
-    });
+    // Mid quality first: iPhone starts with the first one listed (see startFriendly).
+    body = startFriendly(
+      rewritePlaylist(text, (u) => {
+        const v = variantOf(u);
+        return v ? playlistPath(lessonId, `${v}.m3u8`, pass as string) : u;
+      }),
+    );
   } else {
     // Pieces: one signed storage link each, valid as long as the pass.
     const dir = name.slice(0, name.indexOf("/"));

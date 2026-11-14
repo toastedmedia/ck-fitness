@@ -5,6 +5,7 @@ import {
   playlistUris,
   rewritePlaylist,
   safeHlsFile,
+  startFriendly,
   variantOf,
 } from "./hls";
 
@@ -43,6 +44,48 @@ describe("hls playlists", () => {
     expect(rewritePlaylist(master, (u) => `/api/hls/l/${variantOf(u)}.m3u8`)).toContain(
       "/api/hls/l/v1.m3u8",
     );
+  });
+
+  it("starts plays at a mid quality so weak connections do not stall at the start", () => {
+    const four = `#EXTM3U
+#EXT-X-VERSION:6
+#EXT-X-INDEPENDENT-SEGMENTS
+#EXT-X-STREAM-INF:BANDWIDTH=5720000,RESOLUTION=1920x1080
+v0/index.m3u8
+
+#EXT-X-STREAM-INF:BANDWIDTH=3220800,RESOLUTION=1280x720
+v1/index.m3u8
+
+#EXT-X-STREAM-INF:BANDWIDTH=1425600,RESOLUTION=854x480
+v2/index.m3u8
+
+#EXT-X-STREAM-INF:BANDWIDTH=875600,RESOLUTION=640x360
+v3/index.m3u8
+`;
+    const out = startFriendly(four);
+    expect(playlistUris(out)).toEqual([
+      "v2/index.m3u8",
+      "v0/index.m3u8",
+      "v1/index.m3u8",
+      "v3/index.m3u8",
+    ]);
+    expect(
+      out.startsWith("#EXTM3U\n#EXT-X-VERSION:6\n#EXT-X-INDEPENDENT-SEGMENTS\n"),
+    ).toBe(true);
+    expect(out).toContain(
+      "#EXT-X-STREAM-INF:BANDWIDTH=1425600,RESOLUTION=854x480\nv2/index.m3u8",
+    );
+    // Every quality is still there, each with its own line.
+    expect(out.match(/#EXT-X-STREAM-INF/g)).toHaveLength(4);
+    // Only big qualities: start with the smallest. One quality or odd files: unchanged.
+    expect(playlistUris(startFriendly(four, 100))[0]).toBe("v3/index.m3u8");
+    expect(startFriendly(media)).toBe(media);
+    expect(
+      startFriendly("#EXTM3U\n#EXT-X-STREAM-INF:RESOLUTION=1x1\nv0/index.m3u8\n"),
+    ).toContain("v0");
+    // Works after our links were swapped in.
+    const linked = rewritePlaylist(master, (u) => `/api/hls/l/${variantOf(u)}.m3u8?t=x`);
+    expect(playlistUris(startFriendly(linked))[0]).toBe("/api/hls/l/v1.m3u8?t=x");
   });
 
   it("only serves files from the video's own folder", () => {
