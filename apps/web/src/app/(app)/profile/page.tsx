@@ -4,6 +4,7 @@ import { PushButton } from "@/components/app/PushButton";
 import { Button, Cap, Card, Flash } from "@/components/app/ui";
 import { nutritionAccess } from "@/lib/nutrition";
 import { getContext } from "@/lib/app";
+import { flags } from "@/lib/flags";
 import { saveNotificationPrefs, setUnits, updateProfileName } from "../actions";
 
 export const metadata: Metadata = { title: "Profile" };
@@ -183,12 +184,14 @@ export default async function ProfilePage({
               />
             </>
           ) : null}
-          <Toggle
-            name="community"
-            label="Community activity"
-            hint="Comments, replies and reactions on your posts."
-            on={prefs?.community ?? true}
-          />
+          {flags.community ? (
+            <Toggle
+              name="community"
+              label="Community activity"
+              hint="Comments, replies and reactions on your posts."
+              on={prefs?.community ?? true}
+            />
+          ) : null}
           <Toggle
             name="marketing"
             label="Offers and news"

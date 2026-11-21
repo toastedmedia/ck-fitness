@@ -39,6 +39,7 @@ import { activeDays } from "@/lib/milestones";
 import { ensurePlan, ensureWeekPlanned } from "@/lib/plan";
 import { getTodayWorkout } from "@/lib/programs";
 import { flags } from "@/lib/flags";
+import { visibleNotifications } from "@/lib/notifications-filter";
 import { DIET_LABELS, bannerVisible, currentPlan, effectiveDiet } from "@ck/core";
 import { isNativeApp } from "@/lib/native";
 import { createAdminSupabase } from "@/lib/supabase/admin";
@@ -82,11 +83,14 @@ export default async function HomePage({
     workout,
     { viewer, membership },
   ] = await Promise.all([
-    supabase
-      .from("notifications")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .is("read_at", null),
+    (() => {
+      const q = supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .is("read_at", null);
+      return visibleNotifications ? q.or(visibleNotifications) : q;
+    })(),
     supabase
       .from("habit_logs")
       .select("habit_type,value")

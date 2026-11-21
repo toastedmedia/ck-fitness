@@ -2,18 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Button, Card } from "@/components/app/ui";
 import { getContext } from "@/lib/app";
+import { visibleNotifications } from "@/lib/notifications-filter";
 import { markAllRead } from "./actions";
 
 export const metadata: Metadata = { title: "Notifications" };
 
 export default async function NotificationsPage() {
   const { supabase, user, tz } = await getContext();
-  const { data } = await supabase
+  let query = supabase
     .from("notifications")
     .select("id,title,body,link,read_at,created_at")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(40);
+    .eq("user_id", user.id);
+  if (visibleNotifications) query = query.or(visibleNotifications);
+  const { data } = await query.order("created_at", { ascending: false }).limit(40);
   const items = (data ?? []) as {
     id: string;
     title: string;

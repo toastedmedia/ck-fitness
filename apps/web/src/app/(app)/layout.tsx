@@ -4,6 +4,7 @@ import { ScrollTop } from "@/components/app/ScrollTop";
 import { TopActions } from "@/components/app/TopActions";
 import { getContext } from "@/lib/app";
 import { track } from "@/lib/events";
+import { visibleNotifications } from "@/lib/notifications-filter";
 
 export const dynamic = "force-dynamic";
 
@@ -22,11 +23,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     await track(user.id, "dashboard_viewed");
   }
 
-  const { count: unread } = await supabase
+  let unreadQuery = supabase
     .from("notifications")
     .select("id", { count: "exact", head: true })
     .eq("user_id", user.id)
     .is("read_at", null);
+  if (visibleNotifications) unreadQuery = unreadQuery.or(visibleNotifications);
+  const { count: unread } = await unreadQuery;
 
   return (
     <div className="min-h-dvh pb-24 md:pb-8 md:pl-56">

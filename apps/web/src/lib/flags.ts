@@ -1,6 +1,8 @@
 /** Later-phase features stay off until their phase ships (Build Guide §1). */
 export const flags = {
-  community: true,
+  // Off since 2026-11-20 (owner decision): taken out of iOS 1.0 so Apple's review can finish.
+  // Turn back on after approval; posts and settings are kept.
+  community: false,
   aiCoach: false,
   nutrition: false,
   /**

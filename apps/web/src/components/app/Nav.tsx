@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { flags } from "@/lib/flags";
 
 const ITEMS = [
   { href: "/home", label: "Home", icon: "M3 11l9-8 9 8M5 10v10h14V10" },
@@ -23,18 +24,20 @@ const ITEMS = [
   },
 ] as const;
 
-/** Bottom bar on phones, left sidebar on larger screens. Same five items either way. */
+const SHOWN = ITEMS.filter((i) => flags.community || i.href !== "/community");
+
+/** Bottom bar on phones, left sidebar on larger screens. Same items either way (Community only when on). */
 export function Nav() {
   const path = usePathname();
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:inset-y-0 md:left-0 md:right-auto md:w-56 md:grid-cols-1 md:content-start md:gap-1 md:border-r md:border-t-0 md:p-4"
+      className={`fixed inset-x-0 bottom-0 z-40 grid ${SHOWN.length === 5 ? "grid-cols-5" : "grid-cols-4"} border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:inset-y-0 md:left-0 md:right-auto md:w-56 md:grid-cols-1 md:content-start md:gap-1 md:border-r md:border-t-0 md:p-4`}
     >
       <p className="hidden px-3 pb-4 pt-2 font-display text-xl text-brand md:block">
         Chardikala Fitness
       </p>
-      {ITEMS.map((item) => {
+      {SHOWN.map((item) => {
         const on = path === item.href || path.startsWith(`${item.href}/`);
         return (
           <Link
