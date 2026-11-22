@@ -15,7 +15,13 @@ const state = {
   claimFails: false,
   inserted: [] as Row[],
   updated: [] as Row[],
+  optedIn: [] as string[],
+  lastNudges: [] as Row[],
+  followUp: [] as Row[],
 };
+vi.mock("@/lib/followup", () => ({
+  loadFollowUpMembers: async () => ({ members: state.followUp, callsMissing: false }),
+}));
 
 /** A tiny stand-in for the Supabase client: each table answers the way the code asks. */
 function fakeDb() {
@@ -58,7 +64,16 @@ function fakeDb() {
         then: (res: (v: unknown) => void) =>
           res(
             op === "select"
-              ? { count: state.sentToday, data: [], error: null }
+              ? {
+                  count: state.sentToday,
+                  data:
+                    table === "notification_preferences"
+                      ? state.optedIn.map((user_id) => ({ user_id }))
+                      : table === "sms_messages"
+                        ? state.lastNudges
+                        : [],
+                  error: null,
+                }
               : { data: payload, error: null },
           ),
       });
@@ -71,7 +86,8 @@ vi.mock("@/lib/supabase/admin", () => ({ createAdminSupabase: () => fakeDb() }))
 const fetchMock = vi.fn<(url: string, init: RequestInit) => Promise<Response>>();
 vi.stubGlobal("fetch", fetchMock);
 
-const { readyToSend, sendTestText, sendWelcomeText, twilioSend } = await import("./sms");
+const { readyToSend, sendMissedWorkoutTexts, sendTestText, sendWelcomeText, twilioSend } =
+  await import("./sms");
 
 const on = (extra: Row = {}): Row => ({
   enabled: true,
@@ -100,6 +116,9 @@ beforeEach(() => {
     claimFails: false,
     inserted: [],
     updated: [],
+    optedIn: [],
+    lastNudges: [],
+    followUp: [],
   });
 });
 
@@ -247,5 +266,75 @@ describe("test text from Admin", () => {
       ok: false,
       error: "Run SQL 0031 in Supabase first.",
     });
+  });
+});
+
+describe("missed-workout text (daily job)", () => {
+  const NOW = new Date("2026-11-21T18:00:00Z");
+  const quiet = (userId: string, extra: Row = {}): Row => ({
+    userId,
+    name: "Priya Kaur",
+    phone: "604-555-0123",
+    paid: true,
+    joinedDay: "2026-10-01",
+    lastWorkoutDay: "2026-11-15",
+    missedLast7: 2,
+    lastReason: null,
+    lastCall: null,
+    ...extra,
+  });
+  const nudgeOn = (extra: Row = {}) =>
+    on({
+      nudge_enabled: true,
+      nudge_body: "Hi {{first_name}}, we missed you!",
+      nudge_after_days: 3,
+      nudge_every_days: 7,
+      ...extra,
+    });
+
+  it("texts only quiet members who turned on texts", async () => {
+    state.settings = nudgeOn();
+    state.followUp = [
+      quiet("yes"),
+      quiet("no-consent"),
+      quiet("active", { lastWorkoutDay: "2026-11-20" }),
+    ];
+    state.optedIn = ["yes", "active"];
+    expect(await sendMissedWorkoutTexts(undefined, NOW)).toEqual({ sent: 1, failed: 0 });
+    const form = new URLSearchParams(String(fetchMock.mock.calls[0]![1].body));
+    expect(form.get("Body")).toBe("Hi Priya, we missed you! Reply STOP to opt out.");
+    expect(state.inserted[0]).toMatchObject({
+      user_id: "yes",
+      kind: "nudge",
+      status: "sending",
+    });
+  });
+
+  it("waits a week between texts and respects the daily limit", async () => {
+    state.settings = nudgeOn();
+    state.followUp = [quiet("recent"), quiet("old")];
+    state.optedIn = ["recent", "old"];
+    state.lastNudges = [
+      { user_id: "recent", created_at: "2026-11-18T18:00:00Z" },
+      { user_id: "old", created_at: "2026-11-10T18:00:00Z" },
+    ];
+    expect(await sendMissedWorkoutTexts(undefined, NOW)).toEqual({ sent: 1, failed: 0 });
+    expect(state.inserted[0]).toMatchObject({ user_id: "old" });
+    fetchMock.mockClear();
+    state.inserted = [];
+    state.lastNudges = [];
+    state.sentToday = 100;
+    expect(await sendMissedWorkoutTexts(undefined, NOW)).toEqual({ sent: 0, failed: 0 });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("does nothing while it is off or before SQL 0032", async () => {
+    state.followUp = [quiet("yes")];
+    state.optedIn = ["yes"];
+    state.settings = nudgeOn({ nudge_enabled: false });
+    expect(await sendMissedWorkoutTexts(undefined, NOW)).toMatchObject({
+      skipped: "off",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

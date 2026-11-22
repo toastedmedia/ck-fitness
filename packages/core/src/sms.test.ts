@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  DEFAULT_NUDGE_SMS,
   DEFAULT_WELCOME_SMS,
   SMS_STOP_LINE,
   countryAllowed,
@@ -123,6 +124,39 @@ describe("Admin settings form", () => {
         messagingServiceSid: `MG${"c".repeat(32)}`,
       }).ok,
     ).toBe(true);
+  });
+
+  it("checks the missed-workout text settings", () => {
+    const r = validateSmsSettings({
+      ...base,
+      enabled: false,
+      nudgeEnabled: true,
+      nudgeBody: "We missed you, {{first_name}}!",
+      nudgeAfterDays: "4",
+      nudgeEveryDays: "10",
+    });
+    expect(r.ok && r.value).toMatchObject({
+      nudgeEnabled: true,
+      nudgeAfterDays: 4,
+      nudgeEveryDays: 10,
+    });
+    const defaults = validateSmsSettings(base);
+    expect(defaults.ok && defaults.value).toMatchObject({
+      nudgeEnabled: false,
+      nudgeBody: DEFAULT_NUDGE_SMS,
+      nudgeAfterDays: 3,
+      nudgeEveryDays: 7,
+    });
+    const err = (p: Partial<SmsSettingsInput>) => {
+      const x = validateSmsSettings({ ...base, ...p });
+      return x.ok ? "" : x.error;
+    };
+    expect(err({ nudgeAfterDays: "1" })).toMatch(/2 to 30 days/);
+    expect(err({ nudgeEveryDays: "2" })).toMatch(/3 to 60 days/);
+    expect(err({ nudgeBody: " " })).toMatch(/missed-workout message/);
+    expect(
+      err({ enabled: false, nudgeEnabled: true, authToken: "", hasSavedToken: false }),
+    ).toMatch(/To switch texts on/);
   });
 
   it("explains each mistake in plain words", () => {

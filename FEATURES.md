@@ -72,6 +72,7 @@ Chardikala Fitness & Performance (CK Fitness) is an in-person fitness and perfor
 - ✅ In-app notifications: workout and weekly reminders (follow Profile switches), coach messages, announcements, meal-plan announcements, community activity
 - ✅ Marketing emails (offers, diet plans, winter promos) only go to members who turned on Email and Offers and news
 
+- 🔌 **Missed-workout text (SMS, Twilio, built 2026-11-21, OFF until switched on):** after 3 days without a workout (adjustable), at most once a week, only to members who turned ON "Text message" in Profile: "Hi {first name}, we missed you at your workouts! Your next CK session is ready whenever you are..."
 - 🔌 **Welcome text message (SMS, Twilio):** one text when a new member finishes signing up (email confirmed, questions done): "Hi {first name}, welcome to Chardikala Fitness!..." with "Reply STOP to opt out." Built 2026-11-21, **OFF** until the owners run SQL 0031, add their Twilio keys in Admin -> Text messages and switch it on. Only Canada/US numbers by default, at most 100 texts a day, never twice to one member.
 
 ## Admin portal (`/admin`, menu grouped: Overview, People, Content, Community, Messages, Money, System)
@@ -82,7 +83,8 @@ Chardikala Fitness & Performance (CK Fitness) is an in-person fitness and perfor
 - ✅ **Accountability:** who asked for help (needs a reply), missed workouts and the reason given with a one-click friendly reply, **members who stopped logging nutrition**, at-risk members
 - ✅ **Trainings builder:** outline tree (collapsed by default, Expand all / Collapse all), editor, **Phase / Week / Module** structure (a phase groups the weeks under it), clone lesson or week, **Publish all lessons / Move all to draft for a week**, drag and drop (weeks, lessons, move a lesson to another week; Move up/down always works), per-lesson Save / Save and publish, **smooth-streaming status per video with Prepare now / Prepare all videos**, **saves in the background with a Saved pill (no page reload)**, big-video upload in 32 MB pieces that resumes after a pause, lesson thumbnails, instructor profile, autoplay and auto-complete switches, member progress dashboard with CSV, preview as Free or Member, publish checks, CSV spreadsheet import, training tags
 - ✅ **Content tools:** Home banners (rounded promo pictures with dates, audience, order), **Meal plans** (vegetarian and non-vegetarian, notify date), Announcements
-- ✅ **Text messages** (Messages group, owners/admins): Twilio Account SID, Auth Token (stored encrypted, never shown again), Twilio number or Messaging Service SID, welcome text with preview and text count, allowed countries, daily limit, on/off switch, Send a test text, log of recent texts (masked numbers)
+- ✅ **Accountability -> Call today:** members with no workout for 3+ days (or a missed planned workout this week), with tap-to-call phone numbers, days quiet, the reason they gave, the last call, and a Save call form (Talked / Voicemail / No answer / Wrong number + note); people reached rest for 7 days
+- ✅ **Text messages** (Messages group, owners/admins): missed-workout text settings (on/off, days, how often, message); Twilio Account SID, Auth Token (stored encrypted, never shown again), Twilio number or Messaging Service SID, welcome text with preview and text count, allowed countries, daily limit, on/off switch, Send a test text, log of recent texts (masked numbers)
 - ✅ **Emails:** Offers and campaigns (presets for diet plan, limited-time promo, winter offer, new training, news; live preview; test send; confirmed queued send; stop; duplicate) and Automatic emails (preview and test every email)
 - ✅ Community moderation (approvals, reports, hide/restore/remove, mute, ban, pin, audience switch), Support (reply notifies member), CRM sync (Toasted Media CRM adapter with retry queue; 🔌 needs the real API), Settings (price text, referral reward, daily goals and score weights, support email, Nutrition testers), Audit log (times in Vancouver time)
 
@@ -94,7 +96,7 @@ Chardikala Fitness & Performance (CK Fitness) is an in-person fitness and perfor
 - ✅ Cron jobs: hourly reminders, nutrition nudges, daily at-risk detection, lifecycle emails, meal-plan announcements, campaign queue (every 5 minutes), CRM sync (every 10 minutes), daily cleanup
 - ✅ GitHub Actions CI and daily live smoke tests, security headers, privacy-safe Sentry hooks (needs DSN), PWA icons, error and loading pages, accessibility fixes
 - ✅ Account deletion removes data, photos and nutrition and cancels Stripe; data download includes nutrition
-- ✅ Automated checks: 188 core tests, 34 web tests, 83 database tests, production build (2026-11-21); daily live smoke test on desktop and iPhone-sized screens (fixed 2026-11-13)
+- ✅ Automated checks: 198 core tests, 37 web tests, 86 database tests, production build (2026-11-21); daily live smoke test on desktop and iPhone-sized screens (fixed 2026-11-13)
 
 ## Hidden on purpose until Apple approves iOS 1.0
 

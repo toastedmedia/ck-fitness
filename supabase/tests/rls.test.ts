@@ -1827,3 +1827,72 @@ describe("text messages (0031)", () => {
     expect(r.rows).toHaveLength(0);
   });
 });
+
+describe("call log and missed-workout texts (0032)", () => {
+  const COACH_C = "00000000-0000-0000-0000-000000000c01";
+  const SUPPORT_C = "00000000-0000-0000-0000-000000000c02";
+  const MEMBER_C = "00000000-0000-0000-0000-000000000c03";
+  beforeAll(async () => {
+    for (const u of [COACH_C, SUPPORT_C, MEMBER_C]) await addUser(db, u);
+    await db.query(
+      "insert into public.staff_roles (user_id, role) values ($1,'coach'),($2,'support')",
+      [COACH_C, SUPPORT_C],
+    );
+  });
+
+  it("lets coaches log calls as themselves and read them; members and support cannot", async () => {
+    await asUser(db, COACH_C, async () => {
+      await db.query(
+        "insert into public.member_calls (user_id, called_by, outcome, note) values ($1, $2, 'no_answer', 'try after 5')",
+        [MEMBER_C, COACH_C],
+      );
+      await expect(
+        db.query(
+          "insert into public.member_calls (user_id, called_by, outcome) values ($1, $2, 'talked')",
+          [MEMBER_C, SUPPORT_C],
+        ),
+      ).rejects.toThrow();
+      await expect(
+        db.query(
+          "insert into public.member_calls (user_id, called_by, outcome) values ($1, $2, 'emailed')",
+          [MEMBER_C, COACH_C],
+        ),
+      ).rejects.toThrow();
+      expect((await db.query("select * from public.member_calls")).rows).toHaveLength(1);
+    });
+    for (const who of [MEMBER_C, SUPPORT_C])
+      await asUser(db, who, async () => {
+        expect((await db.query("select * from public.member_calls")).rows).toHaveLength(
+          0,
+        );
+        await expect(
+          db.query(
+            "insert into public.member_calls (user_id, called_by, outcome) values ($1, $2, 'talked')",
+            [MEMBER_C, who],
+          ),
+        ).rejects.toThrow();
+      });
+  });
+
+  it("adds the missed-workout text settings, off by default", async () => {
+    const r = await db.query<{ nudge_enabled: boolean; a: number; e: number }>(
+      "select nudge_enabled, nudge_after_days as a, nudge_every_days as e from public.sms_settings",
+    );
+    expect(r.rows[0]).toEqual({ nudge_enabled: false, a: 3, e: 7 });
+    await expect(
+      db.query("update public.sms_settings set nudge_after_days = 1 where id = 1"),
+    ).rejects.toThrow();
+    await db.query(
+      "insert into public.sms_messages (user_id, kind, to_masked, status) values ($1, 'nudge', 'x', 'sent'), ($1, 'nudge', 'x', 'sent')",
+      [MEMBER_C],
+    );
+  });
+
+  it("deletes a member's calls with her account", async () => {
+    await db.query("delete from auth.users where id = $1", [MEMBER_C]);
+    expect(
+      (await db.query("select 1 from public.member_calls where user_id = $1", [MEMBER_C]))
+        .rows,
+    ).toHaveLength(0);
+  });
+});

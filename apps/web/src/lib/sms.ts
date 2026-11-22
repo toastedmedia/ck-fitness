@@ -1,5 +1,15 @@
 import "server-only";
-import { countryAllowed, maskPhone, renderSms, toE164 } from "@ck/core";
+import {
+  DEFAULT_NUDGE_SMS,
+  countryAllowed,
+  maskPhone,
+  nudgeTextDue,
+  quietDays,
+  renderSms,
+  toE164,
+  dayKey,
+} from "@ck/core";
+import { loadFollowUpMembers } from "@/lib/followup";
 import { openSecret } from "@/lib/secret-box";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 
@@ -16,22 +26,54 @@ export type SmsSettingsRow = {
   allowed_country_codes: string[];
   daily_limit: number;
   updated_at: string | null;
+  /** Missed-workout text (SQL 0032). Defaults until it is run. */
+  nudge_enabled: boolean;
+  nudge_body: string;
+  nudge_after_days: number;
+  nudge_every_days: number;
+  /** False until SQL 0032 adds the missed-workout columns. */
+  nudge_ready: boolean;
 };
 
 const COLUMNS =
   "enabled,account_sid,auth_token_enc,auth_token_hint,from_number,messaging_service_sid,welcome_body,allowed_country_codes,daily_limit,updated_at";
+const NUDGE_COLUMNS = "nudge_enabled,nudge_body,nudge_after_days,nudge_every_days";
+const NUDGE_DEFAULTS = {
+  nudge_enabled: false,
+  nudge_body: DEFAULT_NUDGE_SMS,
+  nudge_after_days: 3,
+  nudge_every_days: 7,
+};
 
 /** The saved Twilio setup, or `missing` when SQL 0031 has not been run yet. Server only. */
 export async function loadSmsSettings(
   db: Db = createAdminSupabase(),
 ): Promise<{ row: SmsSettingsRow | null; missing: boolean }> {
+  const full = await db
+    .from("sms_settings")
+    .select(`${COLUMNS},${NUDGE_COLUMNS}`)
+    .eq("id", 1)
+    .maybeSingle();
+  if (!full.error)
+    return {
+      row: full.data
+        ? ({ ...(full.data as object), nudge_ready: true } as SmsSettingsRow)
+        : null,
+      missing: false,
+    };
+  // Before SQL 0032 the missed-workout columns do not exist yet; welcome texts keep working.
   const { data, error } = await db
     .from("sms_settings")
     .select(COLUMNS)
     .eq("id", 1)
     .maybeSingle();
   if (error) return { row: null, missing: true };
-  return { row: (data as SmsSettingsRow | null) ?? null, missing: false };
+  return {
+    row: data
+      ? ({ ...(data as object), ...NUDGE_DEFAULTS, nudge_ready: false } as SmsSettingsRow)
+      : null,
+    missing: false,
+  };
 }
 
 type Ready = {
@@ -188,4 +230,90 @@ export async function sendTestText(
     error: r.ok ? null : r.error,
   });
   return r.ok ? { ok: true } : r;
+}
+
+/**
+ * Daily: the missed-workout text. Only for members who turned ON "Text message" in Profile (their
+ * consent), with a number we can text in an allowed country, after the chosen days without a
+ * workout, at most once every `nudge_every_days`, within the shared daily limit. Never throws.
+ */
+export async function sendMissedWorkoutTexts(
+  db: Db = createAdminSupabase(),
+  now = new Date(),
+): Promise<{ sent: number; failed: number; skipped?: string }> {
+  try {
+    const { row } = await loadSmsSettings(db);
+    if (!row?.nudge_ready) return { sent: 0, failed: 0, skipped: "SQL 0032 not run" };
+    if (!row.nudge_enabled) return { sent: 0, failed: 0, skipped: "off" };
+    const cfg = readyToSend(row);
+    if ("problem" in cfg) return { sent: 0, failed: 0, skipped: cfg.problem };
+    const today = dayKey(now);
+    const [{ members }, prefs, last] = await Promise.all([
+      loadFollowUpMembers(db, today),
+      db.from("notification_preferences").select("user_id").eq("sms", true),
+      db
+        .from("sms_messages")
+        .select("user_id,created_at")
+        .eq("kind", "nudge") // failed ones count too: a bad number is not retried every day
+        .order("created_at", { ascending: false })
+        .limit(5000),
+    ]);
+    const optedIn = new Set(
+      ((prefs.data ?? []) as { user_id: string }[]).map((p) => p.user_id),
+    );
+    const lastNudge = new Map<string, string>();
+    for (const r of (last.data ?? []) as { user_id: string; created_at: string }[])
+      if (!lastNudge.has(r.user_id)) lastNudge.set(r.user_id, r.created_at);
+    let room = row.daily_limit - (await sentLastDay(db));
+    let sent = 0;
+    let failed = 0;
+    for (const m of members) {
+      if (room <= 0) break;
+      const to = toE164(m.phone);
+      const textable = Boolean(to && countryAllowed(to, row.allowed_country_codes));
+      if (
+        !nudgeTextDue({
+          optedIn: optedIn.has(m.userId),
+          textable,
+          quietDays: quietDays(m, today),
+          afterDays: row.nudge_after_days,
+          lastNudgeAt: lastNudge.get(m.userId) ?? null,
+          everyDays: row.nudge_every_days,
+          now: now.getTime(),
+        })
+      )
+        continue;
+      const { data: claim, error } = await db
+        .from("sms_messages")
+        .insert({
+          user_id: m.userId,
+          kind: "nudge",
+          to_masked: maskPhone(to!),
+          status: "sending",
+        })
+        .select("id")
+        .single();
+      if (error || !claim) continue;
+      room--;
+      const r = await twilioSend(
+        cfg,
+        to!,
+        renderSms(row.nudge_body, { firstName: m.name === "Member" ? null : m.name }),
+      );
+      await db
+        .from("sms_messages")
+        .update(
+          r.ok
+            ? { status: "sent", provider_sid: r.sid }
+            : { status: "failed", error: r.error },
+        )
+        .eq("id", (claim as { id: string }).id);
+      if (r.ok) sent++;
+      else failed++;
+    }
+    return { sent, failed };
+  } catch (e) {
+    console.error("missed-workout texts failed", e);
+    return { sent: 0, failed: 0, skipped: "error" };
+  }
 }

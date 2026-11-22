@@ -1,4 +1,4 @@
--- CK Fitness: checks that every database change (0001 to 0031; 0030 is CK Food Scan, on its own branch) is applied. Read-only, safe to run any time.
+-- CK Fitness: checks that every database change (0001 to 0032; 0030 is CK Food Scan, on its own branch) is applied. Read-only, safe to run any time.
 with need(mig, kind, tbl, col) as (values
   ('0001','table','profiles',null),('0001','table','staff_roles',null),('0001','table','app_settings',null),('0001','table','admin_audit_log',null),
   ('0002','table','onboarding_profiles',null),('0002','table','notification_preferences',null),
@@ -28,7 +28,8 @@ with need(mig, kind, tbl, col) as (values
   ('0027','func_has','staff_can_view_client','staff_see_all'),
   ('0028','column','nutrition_profiles','ai_consent_at'),
   ('0029','table','video_renditions',null),
-  ('0031','table','sms_settings',null),('0031','table','sms_messages',null)
+  ('0031','table','sms_settings',null),('0031','table','sms_messages',null),
+  ('0032','table','member_calls',null),('0032','column','sms_settings','nudge_enabled')
 ), found as (
   select n.*, case n.kind
     when 'table' then exists (select 1 from information_schema.tables t where t.table_schema='public' and t.table_name=n.tbl)

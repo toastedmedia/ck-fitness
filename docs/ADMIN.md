@@ -39,6 +39,10 @@ training or lesson Access to Member so playback requires a signed link. Keep you
 ## Daily operations
 
 - **Dashboard**: members, activity, at-risk, open help requests, billing problems.
+- **Accountability -> Call today**: who to phone (no workout for 3+ days or a missed planned workout). Tap the number to call, then
+  pick what happened (Talked, Left voicemail, No answer, Wrong number), add a short note and press **Save call**, so nobody calls the
+  same person twice. People you reached disappear for 7 days. Numbers marked "check this number" have no country code: ask the
+  member for the right one and fix it on her Admin page.
 - **Support**: reply in the app (the member is notified), set status, assign to yourself.
 - **CRM sync**: see what was sent to Toasted Media CRM, retry failures, run a sync on demand.
 - **Audit log**: who changed access, publishing, roles and settings.
@@ -55,6 +59,10 @@ sign-up questions. Off until you switch it on.
    the production Supabase project, type the Auth Token again.
 3. **Send a test text** to your own phone. Then tick "Send a welcome text..." and save.
 4. Change the message any time; `{{first_name}}` becomes her first name and "Reply STOP to opt out." is added if missing.
+
+**Missed-workout text** (same page, needs SQL 0032): tick "Text members who have not worked out for a few days", choose after how
+many days (default 3) and how often at most (default once a week), and edit the message. It goes out once a day around 10 am, and
+only to members who turned ON "Text message" in Profile (their consent); everyone else is on the Call today list.
 
 Safety: only the country codes you list are texted (1 = Canada and the US), at most the daily limit in 24 hours, never twice to the
 same member, and numbers without a country code that are not 10-digit Canadian/US numbers are skipped. The log shows the last 20

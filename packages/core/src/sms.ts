@@ -6,6 +6,8 @@
 
 export const SMS_MAX_LENGTH = 480;
 export const SMS_STOP_LINE = "Reply STOP to opt out.";
+export const DEFAULT_NUDGE_SMS =
+  "Hi {{first_name}}, we missed you at your workouts! Your next CK session is ready whenever you are: app.chardikalafitness.com";
 export const DEFAULT_WELCOME_SMS =
   "Hi {{first_name}}, welcome to Chardikala Fitness! Your account is ready. Open your trainings any time at app.chardikalafitness.com";
 
@@ -94,6 +96,11 @@ export type SmsSettingsInput = {
   countryCodes: string;
   dailyLimit: string;
   enabled: boolean;
+  /** Missed-workout text (optional fields: older forms leave them out). */
+  nudgeEnabled?: boolean;
+  nudgeBody?: string;
+  nudgeAfterDays?: string;
+  nudgeEveryDays?: string;
 };
 
 export type SmsSettingsClean = {
@@ -105,6 +112,10 @@ export type SmsSettingsClean = {
   countryCodes: string[];
   dailyLimit: number;
   enabled: boolean;
+  nudgeEnabled: boolean;
+  nudgeBody: string;
+  nudgeAfterDays: number;
+  nudgeEveryDays: number;
 };
 
 /** Checks the Admin form. Switching on needs a complete setup; saving a draft does not. */
@@ -152,11 +163,34 @@ export function validateSmsSettings(
   const limit = Math.round(Number(i.dailyLimit));
   if (!Number.isFinite(limit) || limit < 1 || limit > 5000)
     return { ok: false, error: "The daily limit must be between 1 and 5000 texts." };
-  if (i.enabled && (!sid || (!token && !i.hasSavedToken) || (!from && !mg)))
+  const nudgeBody = (i.nudgeBody ?? DEFAULT_NUDGE_SMS).trim();
+  if (!nudgeBody) return { ok: false, error: "Write the missed-workout message." };
+  if (nudgeBody.length > SMS_MAX_LENGTH)
+    return {
+      ok: false,
+      error: `Keep the missed-workout message under ${SMS_MAX_LENGTH} characters.`,
+    };
+  const after = Math.round(Number(i.nudgeAfterDays ?? 3));
+  if (!Number.isFinite(after) || after < 2 || after > 30)
+    return {
+      ok: false,
+      error: "Send the missed-workout text after 2 to 30 days without a workout.",
+    };
+  const every = Math.round(Number(i.nudgeEveryDays ?? 7));
+  if (!Number.isFinite(every) || every < 3 || every > 60)
+    return {
+      ok: false,
+      error: "Leave 3 to 60 days between missed-workout texts to the same member.",
+    };
+  const nudgeEnabled = Boolean(i.nudgeEnabled);
+  if (
+    (i.enabled || nudgeEnabled) &&
+    (!sid || (!token && !i.hasSavedToken) || (!from && !mg))
+  )
     return {
       ok: false,
       error:
-        "To switch welcome texts on, add the Account SID, the Auth Token and a Twilio phone number (or Messaging Service SID).",
+        "To switch texts on, add the Account SID, the Auth Token and a Twilio phone number (or Messaging Service SID).",
     };
   return {
     ok: true,
@@ -169,6 +203,10 @@ export function validateSmsSettings(
       countryCodes: codes,
       dailyLimit: limit,
       enabled: i.enabled,
+      nudgeEnabled,
+      nudgeBody,
+      nudgeAfterDays: after,
+      nudgeEveryDays: every,
     },
   };
 }

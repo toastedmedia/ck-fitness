@@ -24,6 +24,10 @@ export async function saveSmsSettings(formData: FormData): Promise<void> {
     countryCodes: val(formData, "country_codes", 80),
     dailyLimit: val(formData, "daily_limit", 8),
     enabled: formData.get("enabled") === "on",
+    nudgeEnabled: formData.get("nudge_enabled") === "on",
+    nudgeBody: val(formData, "nudge_body", 600) || undefined,
+    nudgeAfterDays: val(formData, "nudge_after_days", 4) || undefined,
+    nudgeEveryDays: val(formData, "nudge_every_days", 4) || undefined,
   });
   if (!r.ok) return back("error=" + encodeURIComponent(r.error));
   const v = r.value;
@@ -42,6 +46,15 @@ export async function saveSmsSettings(formData: FormData): Promise<void> {
     welcome_body: v.welcomeBody,
     allowed_country_codes: v.countryCodes,
     daily_limit: v.dailyLimit,
+    // The missed-workout columns exist only after SQL 0032.
+    ...(row?.nudge_ready
+      ? {
+          nudge_enabled: v.nudgeEnabled,
+          nudge_body: v.nudgeBody,
+          nudge_after_days: v.nudgeAfterDays,
+          nudge_every_days: v.nudgeEveryDays,
+        }
+      : {}),
     updated_at: new Date().toISOString(),
     updated_by: user.id,
   });
@@ -50,6 +63,7 @@ export async function saveSmsSettings(formData: FormData): Promise<void> {
   // Never the keys themselves.
   await audit(supabase, user.id, "sms.settings", "sms_settings", {
     enabled: v.enabled,
+    missed_workout_texts: v.nudgeEnabled,
     token_changed: Boolean(v.authToken),
     countries: v.countryCodes,
     daily_limit: v.dailyLimit,

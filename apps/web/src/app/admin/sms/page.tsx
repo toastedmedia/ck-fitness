@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DEFAULT_WELCOME_SMS, renderSms, smsSegments } from "@ck/core";
+import { DEFAULT_NUDGE_SMS, DEFAULT_WELCOME_SMS, renderSms, smsSegments } from "@ck/core";
 import { ABtn, Flash, H1, Panel, Table, aInput, td } from "@/components/admin/ui";
 import { OPS, requireStaff } from "@/lib/admin";
 import { loadSmsSettings, readyToSend } from "@/lib/sms";
@@ -43,6 +43,13 @@ export default async function AdminSms({
   const body = row?.welcome_body ?? DEFAULT_WELCOME_SMS;
   const preview = renderSms(body, { firstName: "Priya" });
   const seg = smsSegments(preview);
+  const nudgeBody = row?.nudge_body ?? DEFAULT_NUDGE_SMS;
+  const nudgePreview = renderSms(nudgeBody, { firstName: "Priya" });
+  const nudgeSeg = smsSegments(nudgePreview);
+  const { count: optedIn } = await db
+    .from("notification_preferences")
+    .select("user_id", { count: "exact", head: true })
+    .eq("sms", true);
   const { data: recent } = await db
     .from("sms_messages")
     .select("created_at,kind,to_masked,status,error")
@@ -187,6 +194,71 @@ export default async function AdminSms({
             </label>
           </div>
         </Panel>
+        <Panel title="Missed-workout text (only members who turned on texts)">
+          {row?.nudge_ready ? (
+            <>
+              <label className="flex items-center gap-2 text-sm font-bold text-brand">
+                <input
+                  type="checkbox"
+                  name="nudge_enabled"
+                  defaultChecked={row?.nudge_enabled ?? false}
+                />
+                Text members who have not worked out for a few days
+              </label>
+              <p className="mt-1 text-xs text-muted">
+                Goes out once a day at about 10 am Vancouver time, only to members who
+                turned ON &quot;Text message&quot; in Profile (their consent;{" "}
+                {optedIn ?? 0} members have it on today). Everyone else is on the Call
+                today list in Accountability.
+              </p>
+              <label className={`${lab} mt-3 block`}>
+                Message ({"{{first_name}}"} becomes her first name)
+                <textarea
+                  name="nudge_body"
+                  rows={3}
+                  maxLength={480}
+                  defaultValue={nudgeBody}
+                  className={`${aInput} mt-1 py-2 font-normal`}
+                />
+              </label>
+              <p className="mt-2 text-xs text-muted">
+                Preview (saved text): <i>{nudgePreview}</i>
+                <br />
+                {nudgeSeg.segments === 1 ? "1 text" : `${nudgeSeg.segments} texts`} per
+                member.
+              </p>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <label className={lab}>
+                  Send after this many days without a workout
+                  <input
+                    name="nudge_after_days"
+                    type="number"
+                    min={2}
+                    max={30}
+                    defaultValue={row?.nudge_after_days ?? 3}
+                    className={aInput}
+                  />
+                </label>
+                <label className={lab}>
+                  At most one every (days)
+                  <input
+                    name="nudge_every_days"
+                    type="number"
+                    min={3}
+                    max={60}
+                    defaultValue={row?.nudge_every_days ?? 7}
+                    className={aInput}
+                  />
+                </label>
+              </div>
+            </>
+          ) : (
+            <p className="text-sm">
+              Run SQL 0032 (<code>20261121000032_calls_and_nudge_texts.sql</code>) in
+              Supabase to turn this on.
+            </p>
+          )}
+        </Panel>
         <ABtn variant="primary" className="self-start">
           Save text message settings
         </ABtn>
@@ -230,7 +302,13 @@ export default async function AdminSms({
             {log.map((m, i) => (
               <tr key={i}>
                 <td className={td}>{when(m.created_at)}</td>
-                <td className={td}>{m.kind === "test" ? "Test" : "Welcome"}</td>
+                <td className={td}>
+                  {m.kind === "test"
+                    ? "Test"
+                    : m.kind === "nudge"
+                      ? "Missed workout"
+                      : "Welcome"}
+                </td>
                 <td className={td}>{m.to_masked}</td>
                 <td className={td}>
                   {m.status === "sent"

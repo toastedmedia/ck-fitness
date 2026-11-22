@@ -3,7 +3,12 @@ import Link from "next/link";
 import {
   BARRIERS,
   BARRIER_REPLIES,
+  CALL_OUTCOMES,
+  callList,
+  callOutcomeLabel,
+  formatPhone,
   isBarrier,
+  toE164,
   weekStart,
   dayKey,
   addDays,
@@ -11,16 +16,35 @@ import {
 import { Flash, H1, Panel, Status, Table, Tile, td } from "@/components/admin/ui";
 import { QuickMessage } from "@/components/admin/QuickMessage";
 import { requireStaff } from "@/lib/admin";
+import { loadFollowUpMembers } from "@/lib/followup";
+import { logCall } from "./actions";
 
 export const metadata: Metadata = { title: "Accountability" };
 
 export default async function AdminAccountability({
   searchParams,
 }: {
-  searchParams: Promise<{ sent?: string; error?: string }>;
+  searchParams: Promise<{
+    sent?: string;
+    error?: string;
+    days?: string;
+    recent?: string;
+    called?: string;
+    callerror?: string;
+  }>;
 }) {
   const sp = await searchParams;
   const { db } = await requireStaff(["owner", "admin", "coach"]);
+  const minDays = [3, 7, 14].includes(Number(sp.days)) ? Number(sp.days) : 3;
+  const includeRecent = sp.recent === "1";
+  const followUp = await loadFollowUpMembers(db);
+  const toCall = callList(followUp.members, dayKey(new Date()), {
+    minDays,
+    includeRecent,
+  });
+  const filterHref = (days: number, recent: boolean) =>
+    `/admin/accountability?days=${days}${recent ? "&recent=1" : ""}#call-today`;
+  const back = `/admin/accountability?days=${minDays}${includeRecent ? "&recent=1" : ""}`;
   const start = weekStart(dayKey(new Date()));
   const since = addDays(dayKey(new Date(), "America/Vancouver"), -7);
   const [{ data: nutProfiles }, { data: nutMeals }] = await Promise.all([
@@ -124,6 +148,10 @@ export default async function AdminAccountability({
         <Flash>Message sent. The member sees it in their notifications.</Flash>
       ) : null}
       {sp.error ? <Flash bad>Write a message first.</Flash> : null}
+      {sp.called ? <Flash>Call saved.</Flash> : null}
+      {sp.callerror ? (
+        <Flash bad>That call did not save. Pick what happened and try again.</Flash>
+      ) : null}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Tile
           value={rows.filter((r) => r.state === "at_risk_7d").length}
@@ -136,6 +164,135 @@ export default async function AdminAccountability({
         <Tile value={`${pct}%`} label="Weekly check-ins done this week" />
         <Tile value={helps.length} label="Asked for help" />
       </div>
+      <section id="call-today">
+        <Panel title={`Call today (${toCall.length})`}>
+          <p className="text-xs text-muted">
+            Members with no workout for {minDays}+ days or a missed planned workout this
+            week. Longest-quiet first, studio clients first on a tie. After you talk to
+            someone or leave a voicemail they rest for 7 days.{" "}
+            {[3, 7, 14].map((d) => (
+              <Link
+                key={d}
+                href={filterHref(d, includeRecent)}
+                className={`mr-2 underline ${d === minDays ? "font-bold text-brand" : ""}`}
+              >
+                {d}+ days
+              </Link>
+            ))}
+            <Link className="underline" href={filterHref(minDays, !includeRecent)}>
+              {includeRecent
+                ? "Hide people called this week"
+                : "Show people called this week"}
+            </Link>
+          </p>
+          {followUp.callsMissing ? (
+            <p className="mt-2 text-xs text-danger">
+              Run SQL 0032 in Supabase to save calls (the list already works).
+            </p>
+          ) : null}
+          {toCall.length === 0 ? (
+            <p className="mt-2 text-sm text-muted">Nobody to call right now.</p>
+          ) : (
+            <ul className="mt-2 divide-y divide-line">
+              {toCall.slice(0, 60).map((m) => {
+                const e164 = toE164(m.phone);
+                const reason =
+                  m.lastReason && isBarrier(m.lastReason) ? m.lastReason : null;
+                return (
+                  <li key={m.userId} className="py-3 text-sm">
+                    <p>
+                      <Link
+                        className="font-bold text-brand underline"
+                        href={`/admin/users/${m.userId}`}
+                      >
+                        {m.name}
+                      </Link>{" "}
+                      <Status tone={m.paid ? "ok" : "mute"}>
+                        {m.paid ? "Member" : "Free"}
+                      </Status>{" "}
+                      <span className="text-xs text-muted">
+                        {m.lastWorkoutDay
+                          ? `No workout for ${m.quietDays} days (last ${m.lastWorkoutDay})`
+                          : `No workout yet (joined ${m.quietDays} days ago)`}
+                        {m.missedLast7
+                          ? ` · missed ${m.missedLast7} planned this week`
+                          : ""}
+                        {reason
+                          ? ` · said: ${BARRIERS.find(([k]) => k === reason)?.[1]}`
+                          : ""}
+                      </span>
+                    </p>
+                    <p className="mt-1">
+                      {e164 ? (
+                        <a
+                          className="font-bold text-brand underline"
+                          href={`tel:${e164}`}
+                        >
+                          Call {formatPhone(e164)}
+                        </a>
+                      ) : m.phone ? (
+                        <span className="text-danger">
+                          {m.phone} (check this number: no country code)
+                        </span>
+                      ) : (
+                        <span className="text-muted">No phone number</span>
+                      )}
+                      {m.lastCall ? (
+                        <span className="ml-2 text-xs text-muted">
+                          Last call{" "}
+                          {new Date(m.lastCall.at).toLocaleDateString("en-CA", {
+                            timeZone: "America/Vancouver",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                          {m.lastCall.by ? ` by ${m.lastCall.by}` : ""}:{" "}
+                          {callOutcomeLabel(m.lastCall.outcome)}
+                          {m.lastCall.note ? ` · ${m.lastCall.note}` : ""}
+                        </span>
+                      ) : null}
+                    </p>
+                    {followUp.callsMissing ? null : (
+                      <form
+                        action={logCall.bind(null, m.userId)}
+                        className="mt-2 flex flex-wrap items-center gap-2"
+                      >
+                        <input type="hidden" name="back" value={back} />
+                        <select
+                          name="outcome"
+                          aria-label={`What happened when you called ${m.name}`}
+                          defaultValue="talked"
+                          className="min-h-9 rounded-xl border-2 border-line bg-surface px-2 text-xs"
+                        >
+                          {CALL_OUTCOMES.map(([k, label]) => (
+                            <option key={k} value={k}>
+                              {label}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          name="note"
+                          maxLength={500}
+                          aria-label={`Note about the call with ${m.name}`}
+                          placeholder="Short note (optional)"
+                          className="min-h-9 min-w-48 flex-1 rounded-xl border-2 border-line bg-surface px-2 text-xs"
+                        />
+                        <button className="min-h-9 rounded-button bg-brand px-3 text-xs font-bold text-on-brand">
+                          Save call
+                        </button>
+                      </form>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {toCall.length > 60 ? (
+            <p className="mt-2 text-xs text-muted">
+              Showing the first 60. Use 7+ or 14+ days to focus.
+            </p>
+          ) : null}
+        </Panel>
+      </section>
       <Panel title="Asked for help (needs a reply)">
         {helps.length === 0 ? (
           <p className="text-sm text-muted">No open requests.</p>
