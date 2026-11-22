@@ -36,6 +36,11 @@ Upload the video in the lesson editor (**Choose video**; big files go up in piec
 app prepares smooth-streaming versions (or press **Prepare now** in the lesson's video box; see `docs/STORAGE.md`). Set the
 training or lesson Access to Member so playback requires a signed link. Keep your own master copy of every video.
 
+**Admin -> Content -> Video streaming** shows every video in one place after you upload one or twenty, or clone a training:
+Ready, Converting now, Waiting to start, Not prepared yet, Failed (with the reason) or Stuck. The page refreshes by itself every
+30 seconds while something is converting. Use **Try again** on a failed or stuck video, or **Prepare every video that is not
+ready** at the top. A cloned lesson uses the same video file, so it appears under the same row and needs no new conversion.
+
 ## Daily operations
 
 - **Dashboard**: members, activity, at-risk, open help requests, billing problems.

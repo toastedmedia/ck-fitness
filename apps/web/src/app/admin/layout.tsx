@@ -38,6 +38,12 @@ const NAV = [
   },
   {
     group: "Content",
+    href: "/admin/videos",
+    label: "Video streaming",
+    roles: ["owner", "admin", "content_manager"],
+  },
+  {
+    group: "Content",
     href: "/admin/tags",
     label: "Training tags",
     roles: ["owner", "admin", "content_manager"],

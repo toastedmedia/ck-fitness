@@ -101,3 +101,107 @@ export function needsRendition(
   if (row.status === "ready") return false;
   return now - new Date(row.updated_at).getTime() > 6 * 3600_000;
 }
+
+/** What the Admin "Video streaming" page shows for one video file. */
+export type VideoState =
+  "failed" | "stuck" | "processing" | "queued" | "not_prepared" | "ready";
+
+export const VIDEO_STATE_LABELS: Record<VideoState, string> = {
+  failed: "Failed",
+  stuck: "Stuck (will be retried)",
+  processing: "Converting now",
+  queued: "Waiting to start",
+  not_prepared: "Not prepared yet",
+  ready: "Ready",
+};
+
+export type VideoOverviewRow = {
+  videoKey: string;
+  fileName: string;
+  uploadedAt: string | null; // from the time stamp in the storage key
+  state: VideoState;
+  updatedAt: string | null;
+  error: string | null;
+  lessons: { id: string; title: string; programId: string; programTitle: string }[];
+};
+
+/**
+ * One row per uploaded video file (clones share the file, so a cloned lesson appears under the same
+ * row), with its streaming state. Queued or converting for more than 6 hours counts as stuck: the
+ * 6-hourly job picks it up again. Problems first, then work in progress, then ready; newest first.
+ */
+export function videoOverview(
+  lessons: readonly {
+    id: string;
+    title: string;
+    program_id: string;
+    video_key: string | null;
+  }[],
+  programs: readonly { id: string; title: string }[],
+  renditions: readonly {
+    video_key: string;
+    status: RenditionStatus;
+    error?: string | null;
+    updated_at: string;
+  }[],
+  now = Date.now(),
+): { rows: VideoOverviewRow[]; counts: Record<VideoState, number> } {
+  const programTitle = new Map(programs.map((p) => [p.id, p.title]));
+  const status = new Map(renditions.map((r) => [r.video_key, r]));
+  const byKey = new Map<string, VideoOverviewRow>();
+  for (const l of lessons) {
+    if (!l.video_key) continue;
+    let row = byKey.get(l.video_key);
+    if (!row) {
+      const r = status.get(l.video_key);
+      const stale = r ? now - new Date(r.updated_at).getTime() > 6 * 3600_000 : false;
+      const state: VideoState = !r
+        ? "not_prepared"
+        : r.status === "ready"
+          ? "ready"
+          : r.status === "failed"
+            ? "failed"
+            : stale
+              ? "stuck"
+              : r.status;
+      const m = /\/(\d{12,14})-([^/]+)$/.exec(l.video_key);
+      row = {
+        videoKey: l.video_key,
+        fileName: m
+          ? m[2]!.replace(/_/g, " ")
+          : (l.video_key.split("/").pop() ?? l.video_key),
+        uploadedAt: m ? new Date(Number(m[1])).toISOString() : null,
+        state,
+        updatedAt: r?.updated_at ?? null,
+        error: state === "failed" ? (r?.error ?? null) : null,
+        lessons: [],
+      };
+      byKey.set(l.video_key, row);
+    }
+    row.lessons.push({
+      id: l.id,
+      title: l.title,
+      programId: l.program_id,
+      programTitle: programTitle.get(l.program_id) ?? "Training",
+    });
+  }
+  const order: VideoState[] = [
+    "failed",
+    "stuck",
+    "processing",
+    "queued",
+    "not_prepared",
+    "ready",
+  ];
+  const rows = [...byKey.values()].sort(
+    (a, b) =>
+      order.indexOf(a.state) - order.indexOf(b.state) ||
+      (b.uploadedAt ?? "").localeCompare(a.uploadedAt ?? ""),
+  );
+  const counts = Object.fromEntries(order.map((s) => [s, 0])) as Record<
+    VideoState,
+    number
+  >;
+  for (const r of rows) counts[r.state]++;
+  return { rows, counts };
+}

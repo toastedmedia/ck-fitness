@@ -7,6 +7,8 @@ import {
   safeHlsFile,
   startFriendly,
   variantOf,
+  VIDEO_STATE_LABELS,
+  videoOverview,
 } from "./hls";
 
 const master = `#EXTM3U
@@ -107,5 +109,76 @@ v3/index.m3u8
     expect(needsRendition({ status: "ready", updated_at: at(100) }, now)).toBe(false);
     expect(needsRendition({ status: "processing", updated_at: at(1) }, now)).toBe(false);
     expect(needsRendition({ status: "queued", updated_at: at(7) }, now)).toBe(true);
+  });
+});
+
+describe("Admin video streaming overview", () => {
+  const NOW = Date.parse("2026-11-21T20:00:00Z");
+  const k = (lesson: string, ms: number, name: string) =>
+    `lessons/${lesson}-0000-0000-0000-000000000000/${ms}-${name}`.replace(
+      /^lessons\/(.{8})/,
+      "lessons/$1",
+    );
+  const A = k("aaaaaaaa", 1792010290864, "Forearm_Plank.mp4");
+  const B = k("bbbbbbbb", 1793865994226, "Phase3-Day1.mov");
+  const C = k("cccccccc", 1794347497149, "Phase3-Day3.mp4");
+  const D = k("dddddddd", 1794300000000, "Old_job.mp4");
+  const E = k("eeeeeeee", 1794400000000, "New_upload.mp4");
+  const lessons = [
+    { id: "l1", title: "Forearm Plank", program_id: "p1", video_key: A },
+    { id: "l2", title: "Forearm Plank (copy)", program_id: "p2", video_key: A },
+    { id: "l3", title: "Day 1", program_id: "p2", video_key: B },
+    { id: "l4", title: "Day 3", program_id: "p2", video_key: C },
+    { id: "l5", title: "Old", program_id: "p2", video_key: D },
+    { id: "l6", title: "New", program_id: "p2", video_key: E },
+    { id: "l7", title: "No video", program_id: "p2", video_key: null },
+  ];
+  const programs = [
+    { id: "p1", title: "Start Here" },
+    { id: "p2", title: "12-Week" },
+  ];
+  const renditions = [
+    { video_key: A, status: "ready" as const, updated_at: "2026-11-14T00:00:00Z" },
+    { video_key: B, status: "processing" as const, updated_at: "2026-11-21T19:30:00Z" },
+    {
+      video_key: C,
+      status: "failed" as const,
+      error: "Conversion stopped.",
+      updated_at: "2026-11-21T18:00:00Z",
+    },
+    { video_key: D, status: "queued" as const, updated_at: "2026-11-21T08:00:00Z" },
+  ];
+
+  it("shows one row per video file, clones under the same row", () => {
+    const { rows } = videoOverview(lessons, programs, renditions, NOW);
+    expect(rows).toHaveLength(5);
+    const plank = rows.find((r) => r.videoKey === A)!;
+    expect(plank.lessons.map((l) => `${l.programTitle}: ${l.title}`)).toEqual([
+      "Start Here: Forearm Plank",
+      "12-Week: Forearm Plank (copy)",
+    ]);
+    expect(plank.fileName).toBe("Forearm Plank.mp4");
+    expect(plank.uploadedAt).toBe(new Date(1792010290864).toISOString());
+  });
+
+  it("puts problems first, then work in progress, then ready", () => {
+    const { rows, counts } = videoOverview(lessons, programs, renditions, NOW);
+    expect(rows.map((r) => r.state)).toEqual([
+      "failed",
+      "stuck",
+      "processing",
+      "not_prepared",
+      "ready",
+    ]);
+    expect(rows[0]!.error).toBe("Conversion stopped.");
+    expect(counts).toEqual({
+      failed: 1,
+      stuck: 1,
+      processing: 1,
+      queued: 0,
+      not_prepared: 1,
+      ready: 1,
+    });
+    expect(VIDEO_STATE_LABELS.processing).toBe("Converting now");
   });
 });
