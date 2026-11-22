@@ -1,9 +1,12 @@
 name: Video streaming versions
 
 # Makes the streaming versions (several qualities) of lesson videos so they play without buffering.
-# Started by the app after a video upload, or by hand: Actions -> Video streaming versions -> Run
-# workflow (leave the box empty to prepare every video that is not ready yet). See docs/STORAGE.md.
+# Started by the app right after a video upload (GITHUB_ACTIONS_TOKEN in Vercel), every 6 hours as a
+# safety net (prepares any video that is still not ready, so nothing is ever left as only the big
+# original), or by hand: Actions -> Video streaming versions -> Run workflow. See docs/STORAGE.md.
 on:
+  schedule:
+    - cron: "17 */6 * * *"
   workflow_dispatch:
     inputs:
       video_key:
