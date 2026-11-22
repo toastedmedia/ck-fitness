@@ -46,11 +46,11 @@ describe("call list", () => {
     expect(list[0]!.quietDays).toBe(20);
   });
 
-  it("puts studio clients first when equally quiet", () => {
+  it("puts studio clients (Members) before free accounts", () => {
     const list = callList(
       [
         m({ userId: "free", lastWorkoutDay: "2026-11-10" }),
-        m({ userId: "member", lastWorkoutDay: "2026-11-10", paid: true }),
+        m({ userId: "member", lastWorkoutDay: "2026-11-17", paid: true }),
       ],
       TODAY,
       { now: NOW },

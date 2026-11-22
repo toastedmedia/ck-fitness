@@ -16,7 +16,7 @@ export async function loadFollowUpMembers(
   const [profiles, staff, memberships, done, missed, calls] = await Promise.all([
     db
       .from("profiles")
-      .select("user_id,first_name,last_name,phone,created_at,timezone")
+      .select("user_id,first_name,last_name,email,phone,created_at,timezone")
       .eq("onboarding_complete", true),
     db.from("staff_roles").select("user_id").eq("active", true),
     db
@@ -85,6 +85,7 @@ export async function loadFollowUpMembers(
     user_id: string;
     first_name: string | null;
     last_name: string | null;
+    email: string | null;
     phone: string | null;
     created_at: string;
     timezone: string | null;
@@ -118,7 +119,8 @@ export async function loadFollowUpMembers(
       });
 
   const members = profileRows
-    .filter((p) => !staffIds.has(p.user_id))
+    // Staff and Apple's App Review demo account are never called or texted.
+    .filter((p) => !staffIds.has(p.user_id) && !/^appreview@/i.test(p.email ?? ""))
     .map((p) => ({
       userId: p.user_id,
       name: [p.first_name, p.last_name].filter(Boolean).join(" ") || "Member",

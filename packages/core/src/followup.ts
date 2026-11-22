@@ -47,7 +47,7 @@ export function quietDays(
 /**
  * The "Call today" list: members with no workout for `minDays`+ days or a missed planned workout
  * this week. Someone a coach talked to (or left a voicemail for) in the last 7 days is left out
- * unless `includeRecent`. Longest-quiet first; members (studio clients) before free accounts on a tie.
+ * unless `includeRecent`. Members (studio clients) first, then free accounts; longest-quiet first in each.
  */
 export function callList(
   members: readonly FollowUpMember[],
@@ -69,8 +69,8 @@ export function callList(
     .filter((m) => opts.includeRecent || !m.recentlyCalled)
     .sort(
       (a, b) =>
-        b.quietDays - a.quietDays ||
         Number(b.paid) - Number(a.paid) ||
+        b.quietDays - a.quietDays ||
         b.missedLast7 - a.missedLast7 ||
         a.name.localeCompare(b.name),
     );

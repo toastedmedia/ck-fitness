@@ -168,8 +168,8 @@ export default async function AdminAccountability({
         <Panel title={`Call today (${toCall.length})`}>
           <p className="text-xs text-muted">
             Members with no workout for {minDays}+ days or a missed planned workout this
-            week. Longest-quiet first, studio clients first on a tie. After you talk to
-            someone or leave a voicemail they rest for 7 days.{" "}
+            week. Members (studio clients) first, then free accounts; longest-quiet first.
+            After you talk to someone or leave a voicemail they rest for 7 days.{" "}
             {[3, 7, 14].map((d) => (
               <Link
                 key={d}
