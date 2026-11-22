@@ -53,7 +53,12 @@ How it works: after an upload the app starts the GitHub job **Video streaming ve
 `scripts/video-hls.sh`, ffmpeg). It reads the original from R2, writes the versions to R2 under `hls/<video key>/` and tells the
 app (`/api/video-hls`, table `video_renditions`). Playback: `/api/video-token` checks access and returns a link to
 `/api/hls/<lesson>/master.m3u8` with a 6-hour signed pass; each quality's playlist lists its pieces as 6-hour signed R2 links.
-iPhone/iPad/Safari/AirPlay play it natively; other browsers use hls.js. Deleting a video deletes its versions too.
+Apple devices (iPhone, iPad, Safari, the iPhone app, AirPlay) use Apple's own player; everything else (Chrome, Android, Edge)
+uses hls.js, because newer Chrome claims it can play HLS itself and then refuses these streams. Plays start at about 480p
+(the top playlist lists that quality first) and step up within seconds. Deleting a video deletes its versions too.
+
+**Status: live since 13 Nov 2026.** All secrets below are set and all 72 lesson videos were converted (5 h 46 min, none failed).
+Still optional: step 4 (`GITHUB_ACTIONS_TOKEN`), so new uploads are prepared automatically.
 
 **One-time setup (owners):**
 
@@ -70,6 +75,8 @@ iPhone/iPad/Safari/AirPlay play it natively; other browsers use hls.js. Deleting
    `GITHUB_ACTIONS_TOKEN` and redeploy. (Without it everything still works, but jobs must be started by hand.)
 5. Prepare the existing library once: GitHub -> Actions -> **Video streaming versions** -> Run workflow (leave the box empty),
    or Admin -> any lesson with a video -> **Prepare all videos**.
+   If a run was stopped half-way, run it again with **Also redo videos left queued or half-done** ticked (otherwise those wait
+   6 hours).
 
 Each lesson's video box in Admin shows "Smooth streaming: Ready / Being prepared / Not prepared yet" with Prepare now / Try again.
 A job takes roughly as long as the video (longer for 4K originals); up to 4 videos run at once.
