@@ -44,15 +44,34 @@ export default async function AdminVideos({
   const sp = await searchParams;
   const { db } = await requireStaff(CONTENT);
   const [lessons, programs, renditions] = await Promise.all([
+    // Lessons belong to a week/module (program_sections), which belongs to a training.
     db
       .from("lessons")
-      .select("id,title,program_id,video_key")
+      .select("id,title,video_key,program_sections(program_id)")
       .not("video_key", "is", null),
     db.from("programs").select("id,title"),
     db.from("video_renditions").select("video_key,status,error,updated_at"),
   ]);
+  const lessonRows = (
+    (lessons.data ?? []) as unknown as {
+      id: string;
+      title: string;
+      video_key: string | null;
+      program_sections: { program_id: string } | { program_id: string }[] | null;
+    }[]
+  ).map((l) => {
+    const sec = Array.isArray(l.program_sections)
+      ? l.program_sections[0]
+      : l.program_sections;
+    return {
+      id: l.id,
+      title: l.title,
+      video_key: l.video_key,
+      program_id: sec?.program_id ?? "",
+    };
+  });
   const { rows, counts } = videoOverview(
-    (lessons.data ?? []) as never,
+    lessonRows,
     (programs.data ?? []) as never,
     renditions.error ? [] : ((renditions.data ?? []) as never),
   );
@@ -92,6 +111,9 @@ export default async function AdminVideos({
           Could not start the job. Check GITHUB_ACTIONS_TOKEN in Vercel, or run it from
           GitHub -&gt; Actions -&gt; Video streaming versions.
         </Flash>
+      ) : null}
+      {lessons.error ? (
+        <Flash bad>Could not load the lessons. Please reload.</Flash>
       ) : null}
       {renditions.error ? (
         <Flash bad>Run SQL 0029 (video streaming) in Supabase to see the status.</Flash>
