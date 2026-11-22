@@ -57,8 +57,11 @@ Apple devices (iPhone, iPad, Safari, the iPhone app, AirPlay) use Apple's own pl
 uses hls.js, because newer Chrome claims it can play HLS itself and then refuses these streams. Plays start at about 480p
 (the top playlist lists that quality first) and step up within seconds. Deleting a video deletes its versions too.
 
-**Status: live since 13 Nov 2026.** All secrets below are set and all 72 lesson videos were converted (5 h 46 min, none failed).
-Still optional: step 4 (`GITHUB_ACTIONS_TOKEN`), so new uploads are prepared automatically.
+**Status: live and fully automatic since 21 Nov 2026.** All secrets below are set (including `GITHUB_ACTIONS_TOKEN`, a
+fine-grained token "ck video streaming": only `ck-fitness`, Actions read and write, no expiry) and all 72 lesson videos were
+converted. Every upload starts its own conversion right away; the job also runs every 6 hours on its own as a safety net and
+prepares any video that is still not ready. Nobody needs to press anything. If the token is ever deleted or replaced, put the new
+one in Vercel as `GITHUB_ACTIONS_TOKEN` and redeploy.
 
 **One-time setup (owners):**
 
