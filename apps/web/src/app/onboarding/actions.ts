@@ -1,6 +1,8 @@
 "use server";
 
+import { after } from "next/server";
 import { sendMemberEmail } from "@/lib/email/send";
+import { sendWelcomeText } from "@/lib/sms";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import {
   needsSafetyGuidance,
@@ -88,6 +90,9 @@ export async function saveOnboardingStep(
         await track(id, "email_welcome");
         await sendMemberEmail(id, "welcome");
       }
+      // One welcome text (Admin -> Text messages; off until the owners switch it on). Sent after
+      // the response so sign-up never waits for Twilio; the claim in sms_messages stops repeats.
+      after(() => sendWelcomeText(id));
     }
     return done;
   };

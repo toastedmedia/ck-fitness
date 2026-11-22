@@ -21,6 +21,8 @@ const ICONS: Record<string, string> = {
   "/admin/community": "M5 5h14v10H10l-5 4zM9 9h6",
   "/admin/emails": "M3 6h18v12H3zM3 7l9 7 9-7",
   "/admin/notifications": "M6 16V11a6 6 0 0112 0v5l2 2H4zM10 21h4",
+  "/admin/sms":
+    "M7 3h10a1 1 0 011 1v16a1 1 0 01-1 1H7a1 1 0 01-1-1V4a1 1 0 011-1zM10 18h4M9 8h6M9 11h4",
   "/admin/billing": "M3 7h18v10H3zM3 11h18M7 15h3",
   "/admin/settings":
     "M12 9a3 3 0 100 6 3 3 0 000-6zM4 12l2-1 .5-2-1-2 2-2 2 1 2-.5 1-2h3l1 2 2 .5 2-1 2 2-1 2 .5 2 2 1v3l-2 1-.5 2 1 2-2 2-2-1-2 .5-1 2h-3l-1-2-2-.5-2 1-2-2 1-2-.5-2-2-1z",

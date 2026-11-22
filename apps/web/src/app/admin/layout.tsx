@@ -72,6 +72,12 @@ const NAV = [
     label: "Announcements",
     roles: ["owner", "admin"],
   },
+  {
+    group: "Messages",
+    href: "/admin/sms",
+    label: "Text messages",
+    roles: ["owner", "admin"],
+  },
   { group: "Money", href: "/admin/billing", label: "Billing", roles: ["owner", "admin"] },
   {
     group: "System",

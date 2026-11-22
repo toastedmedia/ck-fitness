@@ -1749,3 +1749,81 @@ describe("nutrition records", () => {
     }
   });
 });
+
+describe("text messages (0031)", () => {
+  const OWNER_T = "00000000-0000-0000-0000-000000000b01";
+  const MEMBER_T = "00000000-0000-0000-0000-000000000b02";
+  beforeAll(async () => {
+    await addUser(db, OWNER_T);
+    await addUser(db, MEMBER_T);
+    await db.query(
+      "insert into public.staff_roles (user_id, role) values ($1, 'owner')",
+      [OWNER_T],
+    );
+  });
+
+  it("starts switched off with the default welcome text", async () => {
+    const r = await db.query<{ enabled: boolean; welcome_body: string; codes: string[] }>(
+      "select enabled, welcome_body, allowed_country_codes as codes from public.sms_settings",
+    );
+    expect(r.rows).toHaveLength(1);
+    expect(r.rows[0]).toMatchObject({ enabled: false, codes: ["1"] });
+    expect(r.rows[0]!.welcome_body).toMatch(/\{\{first_name\}\}/);
+  });
+
+  it("keeps the Twilio keys and the text log away from every browser session, staff included", async () => {
+    await db.query(
+      "update public.sms_settings set account_sid = $1, auth_token_enc = 'v1:x' where id = 1",
+      [`AC${"a".repeat(32)}`],
+    );
+    await db.query(
+      "insert into public.sms_messages (user_id, kind, to_masked, status) values ($1, 'welcome', '+1 ••• ••• 0123', 'sent')",
+      [MEMBER_T],
+    );
+    for (const who of [MEMBER_T, OWNER_T]) {
+      await asUser(db, who, async () => {
+        expect((await db.query("select * from public.sms_settings")).rows).toHaveLength(
+          0,
+        );
+        expect((await db.query("select * from public.sms_messages")).rows).toHaveLength(
+          0,
+        );
+        await expect(
+          db.query("update public.sms_settings set enabled = true where id = 1"),
+        ).resolves.toMatchObject({ affectedRows: 0 });
+        await expect(
+          db.query(
+            "insert into public.sms_messages (user_id, kind, to_masked, status) values ($1, 'test', 'x', 'sent')",
+            [who],
+          ),
+        ).rejects.toThrow();
+      });
+    }
+  });
+
+  it("allows only one welcome text per member and checks the keys' shape", async () => {
+    await expect(
+      db.query(
+        "insert into public.sms_messages (user_id, kind, to_masked, status) values ($1, 'welcome', 'x', 'sending')",
+        [MEMBER_T],
+      ),
+    ).rejects.toThrow();
+    await expect(
+      db.query("update public.sms_settings set account_sid = 'SK123' where id = 1"),
+    ).rejects.toThrow();
+    await expect(
+      db.query("update public.sms_settings set from_number = '6045550123' where id = 1"),
+    ).rejects.toThrow();
+    await expect(
+      db.query("insert into public.sms_settings (id) values (2)"),
+    ).rejects.toThrow();
+  });
+
+  it("deletes a member's text log with her account", async () => {
+    await db.query("delete from auth.users where id = $1", [MEMBER_T]);
+    const r = await db.query("select 1 from public.sms_messages where user_id = $1", [
+      MEMBER_T,
+    ]);
+    expect(r.rows).toHaveLength(0);
+  });
+});

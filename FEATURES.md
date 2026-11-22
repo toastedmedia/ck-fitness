@@ -72,6 +72,8 @@ Chardikala Fitness & Performance (CK Fitness) is an in-person fitness and perfor
 - ✅ In-app notifications: workout and weekly reminders (follow Profile switches), coach messages, announcements, meal-plan announcements, community activity
 - ✅ Marketing emails (offers, diet plans, winter promos) only go to members who turned on Email and Offers and news
 
+- 🔌 **Welcome text message (SMS, Twilio):** one text when a new member finishes signing up (email confirmed, questions done): "Hi {first name}, welcome to Chardikala Fitness!..." with "Reply STOP to opt out." Built 2026-11-21, **OFF** until the owners run SQL 0031, add their Twilio keys in Admin -> Text messages and switch it on. Only Canada/US numbers by default, at most 100 texts a day, never twice to one member.
+
 ## Admin portal (`/admin`, menu grouped: Overview, People, Content, Community, Messages, Money, System)
 
 - ✅ **Dashboard, KPIs** (9 launch KPIs, 30-day trend charts, video cost guard, AI meal scans), **Billing** (subscriptions, revenue estimate, Stripe invoices once connected; unused while purchase is off)
@@ -80,6 +82,7 @@ Chardikala Fitness & Performance (CK Fitness) is an in-person fitness and perfor
 - ✅ **Accountability:** who asked for help (needs a reply), missed workouts and the reason given with a one-click friendly reply, **members who stopped logging nutrition**, at-risk members
 - ✅ **Trainings builder:** outline tree (collapsed by default, Expand all / Collapse all), editor, **Phase / Week / Module** structure (a phase groups the weeks under it), clone lesson or week, **Publish all lessons / Move all to draft for a week**, drag and drop (weeks, lessons, move a lesson to another week; Move up/down always works), per-lesson Save / Save and publish, **smooth-streaming status per video with Prepare now / Prepare all videos**, **saves in the background with a Saved pill (no page reload)**, big-video upload in 32 MB pieces that resumes after a pause, lesson thumbnails, instructor profile, autoplay and auto-complete switches, member progress dashboard with CSV, preview as Free or Member, publish checks, CSV spreadsheet import, training tags
 - ✅ **Content tools:** Home banners (rounded promo pictures with dates, audience, order), **Meal plans** (vegetarian and non-vegetarian, notify date), Announcements
+- ✅ **Text messages** (Messages group, owners/admins): Twilio Account SID, Auth Token (stored encrypted, never shown again), Twilio number or Messaging Service SID, welcome text with preview and text count, allowed countries, daily limit, on/off switch, Send a test text, log of recent texts (masked numbers)
 - ✅ **Emails:** Offers and campaigns (presets for diet plan, limited-time promo, winter offer, new training, news; live preview; test send; confirmed queued send; stop; duplicate) and Automatic emails (preview and test every email)
 - ✅ Community moderation (approvals, reports, hide/restore/remove, mute, ban, pin, audience switch), Support (reply notifies member), CRM sync (Toasted Media CRM adapter with retry queue; 🔌 needs the real API), Settings (price text, referral reward, daily goals and score weights, support email, Nutrition testers), Audit log (times in Vancouver time)
 

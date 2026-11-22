@@ -23,3 +23,4 @@ export * from "./lifecycle";
 export * from "./nutrition";
 export * from "./outline";
 export * from "./hls";
+export * from "./sms";
