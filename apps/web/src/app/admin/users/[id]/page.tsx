@@ -161,14 +161,17 @@ export default async function AdminClient({
     return (
       <>
         {head}
-        {roles.includes("owner") || roles.includes("admin") ? (
-          <GiveAccess userId={id} db={db} firstName={p.first_name ?? "this member"} />
-        ) : null}
         <ProgramsTab
           ctx={ctx}
           id={id}
           shared={shared && canSeeRecords}
-          firstName={p.first_name ?? "She"}
+          firstName={p.first_name ?? "This member"}
+          canGive={roles.includes("owner") || roles.includes("admin")}
+          giveAccess={
+            roles.includes("owner") || roles.includes("admin") ? (
+              <GiveAccess userId={id} db={db} firstName={p.first_name ?? "this member"} />
+            ) : null
+          }
         />
       </>
     );

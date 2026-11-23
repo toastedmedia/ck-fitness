@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   canAccess,
   displayLength,
@@ -28,13 +29,6 @@ const when = (iso: string | null) =>
         minute: "2-digit",
       })
     : "-";
-const ACCESS_TEXT: Record<string, string> = {
-  free: "Free",
-  member: "Members",
-  premium_preview: "Premium preview",
-  coach_only: "Coaching only",
-  hidden: "Hidden",
-};
 
 /* ============================================================== PROGRAMS */
 export async function ProgramsTab({
@@ -42,11 +36,17 @@ export async function ProgramsTab({
   id,
   shared,
   firstName,
+  canGive = false,
+  giveAccess = null,
 }: {
   ctx: Ctx;
   id: string;
   shared: boolean;
   firstName: string;
+  /** Owners and admins: show Give access / Remove access buttons on each row. */
+  canGive?: boolean;
+  /** The "Give access to a training" panel, shown under the summary. */
+  giveAccess?: ReactNode;
 }) {
   const { supabase, db } = ctx;
   const { data: m } = await db
@@ -135,115 +135,173 @@ export async function ProgramsTab({
   );
   const titleOf = new Map(lessonRows.map((l) => [l.id, l.title]));
 
+  const planText =
+    entitlement === "ck_premium"
+      ? "Premium"
+      : entitlement === "ck_member"
+        ? "CK Member"
+        : "Free";
+  const rows = progs.map((p) => {
+    const forMembers = p.members_included !== false;
+    const allowed = canAccess(viewer, p.access_level, p.id, forMembers);
+    const granted = grants.includes(p.id);
+    const all = secs
+      .filter((x) => x.program_id === p.id)
+      .flatMap((x) =>
+        lessonRows
+          .filter((l) => l.section_id === x.id)
+          .sort((a, b) => a.order_index - b.order_index)
+          .map((l) => ({ ...l, section: x.title })),
+      );
+    const done = all.filter((l) => progress.get(l.id)?.completed_at).length;
+    const last = all
+      .map((l) => {
+        const pr = progress.get(l.id);
+        return pr?.last_watched_at ?? pr?.completed_at ?? pr?.started_at ?? "";
+      })
+      .filter(Boolean)
+      .sort()
+      .pop();
+    const why = granted
+      ? `Given to ${firstName} (this training only)`
+      : p.access_level === "hidden"
+        ? "Hidden from all members"
+        : !forMembers
+          ? `Selected members only; not given to ${firstName}`
+          : p.access_level === "free"
+            ? "Free training, open to everyone"
+            : allowed
+              ? `Included in ${firstName}'s ${planText} plan`
+              : p.access_level === "coach_only"
+                ? "Coaching only (Premium)"
+                : `Member training; ${firstName} is on ${planText}`;
+    return { p, allowed, granted, all, done, last, why, e: enrollment.get(p.id) };
+  });
+  const open = rows.filter((r) => r.allowed);
+  const locked = rows.filter((r) => !r.allowed);
+
+  const row = (r: (typeof rows)[number]) => (
+    <tr key={r.p.id}>
+      <td className={td}>
+        <b>{r.p.title}</b>
+        {!r.p.published ? (
+          <>
+            {" "}
+            <Status tone="warn">Draft</Status>
+          </>
+        ) : null}
+      </td>
+      <td className={td}>
+        <Status tone={r.allowed ? "ok" : "bad"}>
+          {r.allowed ? "Has access" : "Locked"}
+        </Status>
+      </td>
+      <td className={td}>{r.why}</td>
+      <td className={td}>
+        {!shared ? (
+          "-"
+        ) : r.e?.status === "completed" ? (
+          <Status tone="ok">Completed</Status>
+        ) : r.all.length && (r.e || r.done) ? (
+          <>
+            <span className="tabular-nums">
+              {r.done} of {r.all.length} lessons
+            </span>
+            <div className="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-line">
+              <div
+                className="h-full rounded-full bg-success"
+                style={{ width: `${Math.round((r.done / r.all.length) * 100)}%` }}
+              />
+            </div>
+          </>
+        ) : r.allowed ? (
+          <span className="text-muted">Not started</span>
+        ) : (
+          "-"
+        )}
+      </td>
+      <td className={td}>{shared && r.last ? when(r.last) : "-"}</td>
+      <td className={td}>
+        {canGive && r.granted ? (
+          <form action={removeTrainingAccess.bind(null, id, r.p.id)}>
+            <ABtn>Remove access</ABtn>
+          </form>
+        ) : canGive && !r.allowed && r.p.access_level !== "hidden" ? (
+          <form action={giveAccessToUser.bind(null, id)}>
+            <input type="hidden" name="program_id" value={r.p.id} />
+            <input type="hidden" name="scope" value="training" />
+            <ABtn variant="primary">Give this training</ABtn>
+          </form>
+        ) : null}
+      </td>
+    </tr>
+  );
+  const head = ["Training", "Access", "Why", "Progress", "Last activity", ""];
+
   return (
     <>
-      <Panel title="What she can access">
+      <Panel title={`${firstName}'s trainings`}>
         <p className="text-sm">
-          Plan:{" "}
-          <Status tone={entitlement === "free" ? "mute" : "ok"}>
-            {entitlement === "ck_premium"
-              ? "Premium"
-              : entitlement === "ck_member"
-                ? "Member"
-                : "Free"}
-          </Status>{" "}
+          Plan: <Status tone={entitlement === "free" ? "mute" : "ok"}>{planText}</Status>{" "}
           {entitlement === "free"
-            ? "Free trainings open, member trainings locked."
-            : "All member trainings open."}
+            ? "Free trainings open; member trainings stay locked unless given one at a time."
+            : "Every member training is open."}{" "}
+          <b>
+            {open.length} of {rows.length}
+          </b>{" "}
+          trainings open.
         </p>
-        {grants.length ? (
-          <p className="mt-2 text-sm">
-            Given one at a time:{" "}
-            <b>
-              {progs
-                .filter((p) => grants.includes(p.id))
-                .map((p) => p.title)
-                .join(", ")}
-            </b>
-            . Only these open for her, on top of her plan.
-          </p>
-        ) : null}
+        <h3 className="mt-4 text-xs font-bold uppercase tracking-wider text-success">
+          Has access ({open.length})
+        </h3>
+        {open.length ? (
+          <Table head={head}>{open.map(row)}</Table>
+        ) : (
+          <p className="mt-1 text-sm text-muted">No trainings open.</p>
+        )}
+        <details className="mt-4">
+          <summary className="cursor-pointer text-xs font-bold uppercase tracking-wider text-danger">
+            Locked ({locked.length}) - show
+          </summary>
+          {locked.length ? (
+            <Table head={head}>{locked.map(row)}</Table>
+          ) : (
+            <p className="mt-1 text-sm text-muted">Nothing locked.</p>
+          )}
+        </details>
         {!shared ? (
-          <p className="mt-2 text-xs text-muted">
-            {firstName} has not shared her records, so stage and video progress are
-            hidden. Access below is based on her plan.
+          <p className="mt-3 text-xs text-muted">
+            {firstName}&apos;s records are not shared, so progress is hidden. Access is
+            based on the plan and the trainings given one at a time.
           </p>
         ) : null}
       </Panel>
-      {progs.map((p) => {
-        const allowed = canAccess(
-          viewer,
-          p.access_level,
-          p.id,
-          p.members_included !== false,
-        );
-        const granted = grants.includes(p.id);
-        const mine = secs.filter((s) => s.program_id === p.id);
-        const all = mine.flatMap((s) =>
-          lessonRows
-            .filter((l) => l.section_id === s.id)
-            .sort((a, b) => a.order_index - b.order_index)
-            .map((l) => ({ ...l, section: s.title })),
-        );
-        const e = enrollment.get(p.id);
-        const done = all.filter((l) => progress.get(l.id)?.completed_at).length;
-        const totalWatch = all.reduce(
-          (sum, l) => sum + (progress.get(l.id)?.watch_seconds ?? 0),
-          0,
-        );
-        return (
-          <Panel key={p.id}>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <b className="text-base">{p.title}</b>{" "}
-                <span className="text-xs text-muted">/{p.slug}</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Status tone={p.published ? "ok" : "warn"}>
-                  {p.published ? "Published" : "Draft"}
-                </Status>
-                <Status tone="mute">
-                  {ACCESS_TEXT[p.access_level] ?? p.access_level}
-                </Status>
-                {p.members_included === false ? (
-                  <Status tone="mute">Selected members only</Status>
-                ) : null}
-                <Status tone={allowed ? "ok" : "bad"}>
-                  {allowed ? "Has access" : "Locked for her"}
-                </Status>
-                {granted ? (
-                  <>
-                    <Status tone="mute">This training only</Status>
-                    <form action={removeTrainingAccess.bind(null, id, p.id)}>
-                      <ABtn>Remove access</ABtn>
-                    </form>
-                  </>
-                ) : null}
-              </div>
-            </div>
-            {shared ? (
-              <>
-                <p className="mt-2 text-sm">
-                  {e ? (
-                    <>
-                      Stage:{" "}
-                      <b>{e.status === "completed" ? "Completed" : "In progress"}</b>.
-                      Started {when(e.started_at)}
-                      {e.completed_at ? `, finished ${when(e.completed_at)}` : ""}.{" "}
-                      {e.current_lesson_id ? (
-                        <>
-                          Up next: <b>{titleOf.get(e.current_lesson_id) ?? "-"}</b>.
-                        </>
-                      ) : null}
-                    </>
-                  ) : (
-                    "Not started."
-                  )}{" "}
-                  {done} of {all.length} lessons completed (
-                  {all.length ? Math.round((done / all.length) * 100) : 0}%). Total time
-                  watched: {mmss(totalWatch)}.
-                </p>
-                {all.length ? (
+      {giveAccess}
+      {shared ? (
+        <Panel title="Lesson by lesson">
+          <p className="text-sm text-muted">
+            Open a training to see every lesson, how far {firstName} watched and when.
+          </p>
+          {rows
+            .filter((r) => r.allowed || r.done || r.e)
+            .map((r) => (
+              <details key={r.p.id} className="mt-2 rounded-xl border border-line p-3">
+                <summary className="cursor-pointer text-sm">
+                  <b>{r.p.title}</b>{" "}
+                  <span className="text-muted">
+                    {r.e
+                      ? r.e.status === "completed"
+                        ? `Completed${r.e.completed_at ? ` ${when(r.e.completed_at)}` : ""}`
+                        : `Started ${when(r.e.started_at)}`
+                      : "Not started"}
+                    {" · "}
+                    {r.done} of {r.all.length} lessons completed
+                    {r.e?.current_lesson_id
+                      ? ` · Up next: ${titleOf.get(r.e.current_lesson_id) ?? "-"}`
+                      : ""}
+                  </span>
+                </summary>
+                {r.all.length ? (
                   <div className="mt-3">
                     <Table
                       head={[
@@ -257,7 +315,7 @@ export async function ProgramsTab({
                         "Completed",
                       ]}
                     >
-                      {all.map((l) => {
+                      {r.all.map((l) => {
                         const pr = progress.get(l.id);
                         const len = (l.duration_minutes ?? 0) * 60;
                         const pct =
@@ -278,12 +336,6 @@ export async function ProgramsTab({
                                     {mmss(pr.furthest_seconds)}
                                   </span>
                                   {pct !== null ? ` (${pct}%)` : ""}
-                                  <div className="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-line">
-                                    <div
-                                      className="h-full rounded-full bg-success"
-                                      style={{ width: `${pct ?? 0}%` }}
-                                    />
-                                  </div>
                                 </>
                               ) : (
                                 "-"
@@ -309,11 +361,10 @@ export async function ProgramsTab({
                 ) : (
                   <p className="mt-2 text-sm text-muted">No lessons published yet.</p>
                 )}
-              </>
-            ) : null}
-          </Panel>
-        );
-      })}
+              </details>
+            ))}
+        </Panel>
+      ) : null}
     </>
   );
 }
