@@ -52,6 +52,13 @@ ready** at the top. A cloned lesson uses the same video file, so it appears unde
 - **CRM sync**: see what was sent to Toasted Media CRM, retry failures, run a sync on demand.
 - **Audit log**: who changed access, publishing, roles and settings.
 
+## Giving someone a training or CK Membership
+
+- **They bought one training** (for example a one-off program): open the person (Users -> name) -> Trainings tab -> Give access to a training -> pick the training -> What to give: **This training only** -> Give access. Only that training opens; every other member training stays locked. The same works from the training itself (Add a member to this training, by email), from + Add member, and from Import CSV.
+- **Studio client (all member trainings):** on the person's page use Assign manually -> Member, or Give access with What to give: **CK Membership**. For many people at once: Users -> tick them -> pick a training -> CK Membership -> Give access.
+- **Take it away:** one training: Trainings tab -> Remove access on that training. CK Membership: Overview -> Assign manually -> None.
+- The Trainings tab shows "This training only" on trainings given one at a time.
+
 ## Text messages (welcome text on sign-up)
 
 Admin -> Messages -> **Text messages** (owners and admins). One text per new member after she confirms her email and finishes the
