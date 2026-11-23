@@ -29,6 +29,21 @@ const ready = {
 
 describe("validateForPublish", () => {
   it("passes a complete training", () => expect(validateForPublish(ready)).toEqual([]));
+  it("lets an image-only lesson go live (picture or attached image/PDF, no video)", () => {
+    const noVideo = { ...ready.lessons[0], video_key: null };
+    expect(
+      validateForPublish({
+        ...ready,
+        lessons: [{ ...noVideo, thumbnail_path: "lessons/1.jpg" }],
+      }),
+    ).toEqual([]);
+    expect(
+      validateForPublish({
+        ...ready,
+        lessons: [{ ...noVideo, resource_path: "abc/steps.png" }],
+      }),
+    ).toEqual([]);
+  });
   it("lists every missing piece in plain English", () => {
     const problems = validateForPublish({
       program: { ...ready.program, short_description: "", level: null },
@@ -37,7 +52,7 @@ describe("validateForPublish", () => {
     });
     expect(problems).toContain("Add a one-line benefit (short description).");
     expect(problems).toContain("Choose a level.");
-    expect(problems).toContain('"L1" needs a video or written instructions.');
+    expect(problems).toContain('"L1" needs a video, a picture or written instructions.');
     expect(problems).toContain('"Week 2" has no lessons yet.');
   });
   it("needs at least one published lesson", () =>

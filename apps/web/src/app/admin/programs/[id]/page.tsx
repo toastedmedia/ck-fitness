@@ -227,7 +227,7 @@ export default async function EditProgram({
           Published {sp.allpub} lesson{sp.allpub === "1" ? "" : "s"}. The week is now
           shown in the training.
           {sp.skip && sp.skip !== "0"
-            ? ` ${sp.skip} lesson${sp.skip === "1" ? " was" : "s were"} left as draft because ${sp.skip === "1" ? "it has" : "they have"} no video or written instructions yet.`
+            ? ` ${sp.skip} lesson${sp.skip === "1" ? " was" : "s were"} left as draft because ${sp.skip === "1" ? "it has" : "they have"} no video, picture or written instructions yet.`
             : ""}
         </Flash>
       ) : null}

@@ -16,7 +16,26 @@ export interface PublishCheck {
     video_key: string | null;
     instructions: string;
     published: boolean;
+    /** The lesson's picture; an image-only lesson (for example a set of instructions as images) is fine. */
+    thumbnail_path?: string | null;
+    /** An attached image or PDF. */
+    resource_path?: string | null;
   }[];
+}
+
+/** A lesson can go live with a video, written instructions, a picture or an attached image/PDF. */
+export function lessonHasContent(l: {
+  video_key?: string | null;
+  instructions?: string | null;
+  thumbnail_path?: string | null;
+  resource_path?: string | null;
+}): boolean {
+  return Boolean(
+    l.video_key ||
+    String(l.instructions ?? "").trim() ||
+    l.thumbnail_path ||
+    l.resource_path,
+  );
 }
 
 export function validateForPublish({
@@ -34,9 +53,9 @@ export function validateForPublish({
   if (live.length === 0) problems.push("Add at least one published lesson.");
   for (const l of live) {
     if (!l.title.trim()) problems.push("A lesson is missing its title.");
-    if (!l.video_key && !l.instructions.trim())
+    if (!lessonHasContent(l))
       problems.push(
-        `"${l.title || "Untitled lesson"}" needs a video or written instructions.`,
+        `"${l.title || "Untitled lesson"}" needs a video, a picture or written instructions.`,
       );
   }
   for (const s of sections) {

@@ -114,7 +114,16 @@ export default async function LessonPage({
           <p className="mt-1 text-xs">{lesson.safety_notes}</p>
         </Card>
       ) : null}
-      {lesson.resource_path ? (
+      {lesson.resource_path &&
+      /\.(jpe?g|png|webp)$/i.test(String(lesson.resource_path)) ? (
+        // An attached picture (for example instructions as an image) is shown on the page.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={`/api/resource?lessonId=${lesson.id}`}
+          alt={`${lesson.title}: instructions`}
+          className="w-full rounded-card border border-line"
+        />
+      ) : lesson.resource_path ? (
         <a
           href={`/api/resource?lessonId=${lesson.id}`}
           className="inline-flex min-h-11 items-center text-xs font-bold text-brand underline underline-offset-4"

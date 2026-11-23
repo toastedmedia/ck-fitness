@@ -23,6 +23,7 @@ import {
   renderEmail,
   resolveMembership,
   validateForPublish,
+  lessonHasContent,
   STAFF_ROLES,
   type AudienceKey,
   type EmailKey,
@@ -642,7 +643,9 @@ export async function publishProgram(id: string, formData: FormData): Promise<vo
     .eq("program_id", id);
   const { data: lessons } = await supabase
     .from("lessons")
-    .select("title,section_id,video_key,instructions,published")
+    .select(
+      "title,section_id,video_key,instructions,published,thumbnail_path,resource_path",
+    )
     .in(
       "section_id",
       (sections ?? []).map((s: { id: string }) => s.id),
@@ -2057,7 +2060,7 @@ export async function setSectionPublished(
   const { supabase, user } = await requireStaff(CONTENT);
   const { data } = await supabase
     .from("lessons")
-    .select("id,video_key,instructions,published")
+    .select("id,video_key,instructions,published,thumbnail_path,resource_path")
     .eq("section_id", sectionId);
   const ids: string[] = [];
   let skipped = 0;
@@ -2066,10 +2069,12 @@ export async function setSectionPublished(
     video_key: string | null;
     instructions: string | null;
     published: boolean;
+    thumbnail_path: string | null;
+    resource_path: string | null;
   }[]) {
     if (on) {
-      // Same rule as a single lesson: it needs a video or written instructions to go live.
-      if (!l.video_key && !String(l.instructions ?? "").trim()) {
+      // Same rule as the training's publish check: a video, a picture, a file or written text.
+      if (!lessonHasContent(l)) {
         skipped++;
         continue;
       }
