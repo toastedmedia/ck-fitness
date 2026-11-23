@@ -63,10 +63,7 @@ export async function ProgramsTab({
   const viewer = { entitlement, staffRoles: [] as never[], programGrants: grants };
 
   const [{ data: programs }, { data: sections }, { data: lessons }] = await Promise.all([
-    supabase
-      .from("programs")
-      .select("id,title,slug,access_level,published")
-      .order("sort_order"),
+    supabase.from("programs").select("*").order("sort_order"),
     supabase
       .from("program_sections")
       .select("id,program_id,title,order_index")
@@ -81,6 +78,7 @@ export async function ProgramsTab({
     slug: string;
     access_level: AccessLevel;
     published: boolean;
+    members_included?: boolean;
   }[];
   const secs = (sections ?? []) as {
     id: string;
@@ -173,7 +171,12 @@ export async function ProgramsTab({
         ) : null}
       </Panel>
       {progs.map((p) => {
-        const allowed = canAccess(viewer, p.access_level, p.id);
+        const allowed = canAccess(
+          viewer,
+          p.access_level,
+          p.id,
+          p.members_included !== false,
+        );
         const granted = grants.includes(p.id);
         const mine = secs.filter((s) => s.program_id === p.id);
         const all = mine.flatMap((s) =>
@@ -202,6 +205,9 @@ export async function ProgramsTab({
                 <Status tone="mute">
                   {ACCESS_TEXT[p.access_level] ?? p.access_level}
                 </Status>
+                {p.members_included === false ? (
+                  <Status tone="mute">Only people given it</Status>
+                ) : null}
                 <Status tone={allowed ? "ok" : "bad"}>
                   {allowed ? "Has access" : "Locked for her"}
                 </Status>
@@ -775,11 +781,13 @@ export async function GiveAccess({
   db: Ctx["db"];
   firstName: string;
 }) {
-  const { data } = await db
-    .from("programs")
-    .select("id,title,access_level")
-    .order("sort_order");
-  const list = (data ?? []) as { id: string; title: string; access_level: string }[];
+  const { data } = await db.from("programs").select("*").order("sort_order");
+  const list = (data ?? []) as {
+    id: string;
+    title: string;
+    access_level: string;
+    members_included?: boolean;
+  }[];
   return (
     <Panel title="Give access to a training">
       <p className="text-sm text-muted">
@@ -799,7 +807,13 @@ export async function GiveAccess({
             <option value="">Choose a training</option>
             {list.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.title} ({p.access_level === "free" ? "free" : "paid"})
+                {p.title} (
+                {p.members_included === false
+                  ? "sold on its own"
+                  : p.access_level === "free"
+                    ? "free"
+                    : "paid"}
+                )
               </option>
             ))}
           </select>

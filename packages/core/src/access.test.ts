@@ -35,4 +35,19 @@ describe("canAccess", () => {
     expect(canAccess(bought, "member")).toBe(false);
     expect(canAccess(bought, "hidden", "p-100")).toBe(false);
   });
+
+  it("keeps a training that is not visible to all members away from CK Members", () => {
+    const bought = {
+      entitlement: "free",
+      staffRoles: [],
+      programGrants: ["p-100"],
+    } as const;
+    expect(canAccess(member, "member", "p-100", false)).toBe(false);
+    expect(canAccess(member, "free", "p-100", false)).toBe(false);
+    expect(canAccess(bought, "member", "p-100", false)).toBe(true);
+    expect(canAccess(bought, "member", "p-other", false)).toBe(false);
+    expect(
+      canAccess({ entitlement: "free", staffRoles: ["coach"] }, "member", "p-100", false),
+    ).toBe(true);
+  });
 });

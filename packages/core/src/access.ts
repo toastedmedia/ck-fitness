@@ -27,15 +27,19 @@ const CONTENT_STAFF: readonly StaffRole[] = [
 /**
  * May she open content at this level? Pass the training's id so a one-training grant counts:
  * a grant opens everything in that training except hidden content.
+ * `membersIncluded` is the training's "Visible to all members" switch: when it is off, only
+ * staff and people given that training can open it, whatever their membership.
  */
 export function canAccess(
   viewer: Viewer,
   level: AccessLevel,
   programId?: string | null,
+  membersIncluded = true,
 ): boolean {
   if (viewer.staffRoles.some((r) => CONTENT_STAFF.includes(r))) return true;
   if (level !== "hidden" && programId && viewer.programGrants?.includes(programId))
     return true;
+  if (!membersIncluded) return false;
   switch (level) {
     case "free":
       return true;

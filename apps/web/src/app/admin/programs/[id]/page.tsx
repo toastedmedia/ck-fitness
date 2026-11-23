@@ -192,7 +192,7 @@ export default async function EditProgram({
       {sp.allpub ? (
         <Flash>
           Published {sp.allpub} lesson{sp.allpub === "1" ? "" : "s"}. The week is now
-          visible to members.
+          shown in the training.
           {sp.skip && sp.skip !== "0"
             ? ` ${sp.skip} lesson${sp.skip === "1" ? " was" : "s were"} left as draft because ${sp.skip === "1" ? "it has" : "they have"} no video or written instructions yet.`
             : ""}
@@ -632,6 +632,26 @@ export default async function EditProgram({
                       ))}
                     </select>
                   </label>
+                  <div className="rounded-xl border-2 border-line p-3 md:col-span-2">
+                    <input type="hidden" name="members_included_field" value="1" />
+                    <label className="flex items-center gap-2 text-sm font-bold">
+                      <input
+                        type="checkbox"
+                        name="members_included"
+                        defaultChecked={p.members_included !== false}
+                        className="size-4 accent-brand"
+                      />
+                      Visible to all members
+                    </label>
+                    <p className="mt-1 text-xs text-muted">
+                      Ticked: everyone the Access level allows sees this training (Member
+                      = every CK Member).{" "}
+                      <b>Untick it for a training you sell on its own</b> (for example a
+                      one-off program): nobody sees it, CK Members included, except the
+                      people you give it to on their page (Give access, This training
+                      only).
+                    </p>
+                  </div>
                   <label className={`${lab} md:col-span-2`}>
                     One-line benefit
                     <input
@@ -1077,7 +1097,8 @@ export default async function EditProgram({
                     defaultChecked={selWeek.published}
                     className="size-4 accent-brand"
                   />
-                  Visible to members
+                  Show this week{" "}
+                  <span className="text-xs text-muted">(untick = draft, staff only)</span>
                 </label>
                 {canEdit ? <ABtn variant="primary">Save</ABtn> : null}
               </AjaxForm>

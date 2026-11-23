@@ -28,9 +28,7 @@ export async function POST(request: NextRequest) {
 
   const { data: lesson } = await supabase
     .from("lessons")
-    .select(
-      "id,video_key,access_override,program_sections(program_id,programs(access_level))",
-    )
+    .select("id,video_key,access_override,program_sections(program_id,programs(*))")
     .eq("id", lessonId)
     .maybeSingle();
   if (!lesson)
@@ -38,7 +36,7 @@ export async function POST(request: NextRequest) {
 
   const section = lesson.program_sections as unknown as {
     program_id: string;
-    programs: { access_level: AccessLevel };
+    programs: { access_level: AccessLevel; members_included?: boolean };
   } | null;
   const programLevel = section?.programs.access_level ?? "member";
   const level = (lesson.access_override ?? programLevel) as AccessLevel;
@@ -56,7 +54,14 @@ export async function POST(request: NextRequest) {
     staffRoles: ((roles ?? []) as { role: StaffRole }[]).map((r) => r.role),
     programGrants: grants,
   };
-  if (!canAccess(viewer, level, section?.program_id))
+  if (
+    !canAccess(
+      viewer,
+      level,
+      section?.program_id,
+      section?.programs.members_included !== false,
+    )
+  )
     return NextResponse.json({ error: "This video is for members." }, { status: 403 });
   if (!lesson.video_key)
     return NextResponse.json({ error: "This video is coming soon." }, { status: 404 });

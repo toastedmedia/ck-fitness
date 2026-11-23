@@ -1996,3 +1996,65 @@ describe("one-training access (0033)", () => {
     ).toHaveLength(0);
   });
 });
+
+describe('"Visible to all members" switch (0034)', () => {
+  const MEMBER = "00000000-0000-0000-0000-000000000e01";
+  const BUYER = "00000000-0000-0000-0000-000000000e02";
+  const FREE = "00000000-0000-0000-0000-000000000e03";
+  const P_SOLO = "10000000-0000-0000-0000-0000000000e1";
+  const S_SOLO = "20000000-0000-0000-0000-0000000000e1";
+  beforeAll(async () => {
+    for (const u of [MEMBER, BUYER, FREE]) await addUser(db, u);
+    await db.exec(`
+      insert into public.memberships (user_id, provider, source, entitlement, status)
+        values ('${MEMBER}','manual','manual','ck_member','active');
+      insert into public.programs (id, slug, title, access_level, published, members_included)
+        values ('${P_SOLO}','solo-p','Sold on its own','member',true,false);
+      insert into public.program_sections (id, program_id, title) values ('${S_SOLO}','${P_SOLO}','Week 1');
+      insert into public.lessons (id, section_id, title, instructions) values
+        ('30000000-0000-0000-0000-0000000000e1','${S_SOLO}','Solo lesson','text');
+      insert into public.program_grants (user_id, program_id) values ('${BUYER}','${P_SOLO}');
+    `);
+  });
+
+  const sees = async (who: string) =>
+    asUser(db, who, async () => ({
+      programs: (await db.query("select 1 from public.programs where id = $1", [P_SOLO]))
+        .rows.length,
+      weeks: (
+        await db.query("select 1 from public.program_sections where program_id = $1", [
+          P_SOLO,
+        ])
+      ).rows.length,
+      lessons: (
+        await db.query("select 1 from public.lessons where section_id = $1", [S_SOLO])
+      ).rows.length,
+    }));
+
+  it("hides it completely from CK Members and free members", async () => {
+    expect(await sees(MEMBER)).toEqual({ programs: 0, weeks: 0, lessons: 0 });
+    expect(await sees(FREE)).toEqual({ programs: 0, weeks: 0, lessons: 0 });
+  });
+
+  it("shows and opens it for the person given it", async () => {
+    expect(await sees(BUYER)).toEqual({ programs: 1, weeks: 1, lessons: 1 });
+  });
+
+  it("does not let a CK Member start it", async () => {
+    await asUser(db, MEMBER, async () => {
+      await expect(
+        db.query(
+          "insert into public.program_enrollments (user_id, program_id) values ($1, $2)",
+          [MEMBER, P_SOLO],
+        ),
+      ).rejects.toThrow();
+    });
+  });
+
+  it("keeps every training visible to all members by default", async () => {
+    const r = await db.query<{ n: number }>(
+      "select count(*)::int as n from public.programs where members_included = false",
+    );
+    expect(r.rows[0]?.n).toBe(1);
+  });
+});

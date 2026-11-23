@@ -16,9 +16,7 @@ export default async function AdminPrograms({
   const { supabase } = await requireStaff([...CONTENT, "coach"]);
   const { data } = await supabase
     .from("programs")
-    .select(
-      "id,title,slug,access_level,published,featured,duration_label,sort_order,cover_path",
-    )
+    .select("*")
     .order("sort_order")
     .order("created_at", { ascending: false });
   const rows = (data ?? []) as {
@@ -30,6 +28,7 @@ export default async function AdminPrograms({
     featured: boolean;
     duration_label: string | null;
     cover_path: string | null;
+    members_included?: boolean;
   }[];
   return (
     <>
@@ -87,6 +86,11 @@ export default async function AdminPrograms({
                     </Link>
                     {p.featured ? (
                       <span className="ml-2 text-xs text-muted">featured</span>
+                    ) : null}
+                    {p.members_included === false ? (
+                      <span className="ml-2 text-xs text-muted">
+                        only people given it
+                      </span>
                     ) : null}
                     <span className="block text-xs text-muted">/{p.slug}</span>
                   </div>

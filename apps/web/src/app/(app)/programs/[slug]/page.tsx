@@ -39,15 +39,17 @@ export default async function ProgramPage({
     instructor_title?: string | null;
     instructor_bio?: string | null;
     instructor_photo_path?: string | null;
+    members_included?: boolean;
   }>(
     supabase,
     slug,
     "id,slug,title,short_description,long_description,cover_path,access_level,level,duration_label",
-    "instructor_name,instructor_title,instructor_bio,instructor_photo_path",
+    "instructor_name,instructor_title,instructor_bio,instructor_photo_path,members_included",
   );
   if (!program) notFound();
   const level = program.access_level as AccessLevel;
-  const allowed = canAccess(viewer, level, program.id);
+  const forMembers = program.members_included !== false;
+  const allowed = canAccess(viewer, level, program.id, forMembers);
 
   const [
     { outline, flat },
@@ -240,7 +242,12 @@ export default async function ProgramPage({
               <h2 className="text-[13px] font-bold text-brand">{s.title}</h2>
               <ol className="mt-2 flex flex-col divide-y divide-line">
                 {s.lessons.map((l) => {
-                  const open = canAccess(viewer, l.effective_access, program.id);
+                  const open = canAccess(
+                    viewer,
+                    l.effective_access,
+                    program.id,
+                    forMembers,
+                  );
                   const isDone = doneSet.has(l.id);
                   const inner = (
                     <>

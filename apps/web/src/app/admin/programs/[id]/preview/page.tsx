@@ -25,7 +25,7 @@ export default async function Preview({
   };
   const { data: p } = await supabase
     .from("programs")
-    .select("title,short_description,long_description,access_level")
+    .select("*")
     .eq("id", id)
     .maybeSingle();
   if (!p) notFound();
@@ -42,7 +42,8 @@ export default async function Preview({
         .in("section_id", ids)
         .order("order_index")
     : { data: [] };
-  const allowed = canAccess(viewer, p.access_level as AccessLevel);
+  const forMembers = p.members_included !== false;
+  const allowed = canAccess(viewer, p.access_level as AccessLevel, null, forMembers);
   return (
     <>
       <H1
@@ -105,6 +106,8 @@ export default async function Preview({
                         {canAccess(
                           viewer,
                           l.access_override ?? (p.access_level as AccessLevel),
+                          null,
+                          forMembers,
                         )
                           ? ""
                           : "🔒 "}

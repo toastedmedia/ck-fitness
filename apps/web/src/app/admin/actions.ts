@@ -112,6 +112,9 @@ export async function updateProgram(
     featured: formData.get("featured") === "on",
     sort_order: int(formData, "sort_order"),
   };
+  // "Visible to all members" box (0034); only read when the form shows it.
+  if (formData.get("members_included_field") === "1")
+    patch.members_included = formData.get("members_included") === "on";
   const slug = slugify(str(formData, "slug", 80));
   if (slug) patch.slug = slug;
 
@@ -131,7 +134,12 @@ export async function updateProgram(
     if (error) return exit(formData, `/admin/programs/${id}?error=cover`);
     patch.cover_path = path;
   }
-  const { error } = await supabase.from("programs").update(patch).eq("id", id);
+  let { error } = await supabase.from("programs").update(patch).eq("id", id);
+  if (error && "members_included" in patch) {
+    // Database change 0034 not run yet: save everything else rather than failing.
+    delete patch.members_included;
+    ({ error } = await supabase.from("programs").update(patch).eq("id", id));
+  }
   if (error) return exit(formData, `/admin/programs/${id}?error=save`);
 
   const tagIds = formData.getAll("tags").map(String);
@@ -142,6 +150,7 @@ export async function updateProgram(
       .insert(tagIds.map((tag_id) => ({ program_id: id, tag_id })));
   await audit(supabase, user.id, "program.update", id, {
     access_level: patch.access_level,
+    members_included: patch.members_included,
   });
   revalidatePath("/programs");
   return exit(formData, `/admin/programs/${id}?saved=1`);
@@ -617,7 +626,7 @@ export async function publishProgram(id: string, formData: FormData): Promise<vo
   const { supabase, user, db } = await requireStaff(CONTENT);
   const { data: p } = await supabase
     .from("programs")
-    .select("title,short_description,access_level,level,duration_label,slug")
+    .select("*")
     .eq("id", id)
     .maybeSingle();
   if (!p) redirect("/admin/programs");
@@ -651,10 +660,19 @@ export async function publishProgram(id: string, formData: FormData): Promise<vo
   await audit(supabase, user.id, "program.publish", id, { title: p.title });
 
   if (formData.get("notify") === "on" && p.access_level !== "hidden") {
-    const { data: prefs } = await db
-      .from("notification_preferences")
-      .select("user_id")
-      .eq("new_content", true);
+    let q = db.from("notification_preferences").select("user_id").eq("new_content", true);
+    // Not visible to all members: tell only the people given this training.
+    if (p.members_included === false) {
+      const { data: given } = await db
+        .from("program_grants")
+        .select("user_id")
+        .eq("program_id", id);
+      q = q.in(
+        "user_id",
+        ((given ?? []) as { user_id: string }[]).map((g) => g.user_id),
+      );
+    }
+    const { data: prefs } = await q;
     const rows = ((prefs ?? []) as { user_id: string }[]).map((u) => ({
       user_id: u.user_id,
       kind: "content",

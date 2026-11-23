@@ -72,19 +72,21 @@ export async function grantAccess(
 ): Promise<GrantResult> {
   const { data: program } = await db
     .from("programs")
-    .select("id,access_level")
+    .select("*")
     .eq("id", programId)
     .maybeSingle();
   if (!program) throw new Error("Training not found.");
+  // "Visible to all members" switched off (0034): membership never opens it, only a grant does.
+  const onlyGiven = program.members_included === false;
 
   let access: GrantResult["access"] = "not_needed";
   let membership = false;
   // Coach-only trainings are never opened by CK Membership, so they always use a grant.
-  if (
+  const viaMembership =
     program.access_level !== "free" &&
     program.access_level !== "coach_only" &&
-    opts.membership
-  ) {
+    !!opts.membership;
+  if (viaMembership) {
     // CK Membership by hand: every member training, for as long as staff keep it on.
     const { data: m } = await db
       .from("memberships")
@@ -110,8 +112,9 @@ export async function grantAccess(
       access = m?.entitlement === "ck_member" ? "already" : "granted";
       membership = true;
     }
-  } else if (program.access_level !== "free") {
-    // This training only.
+  }
+  if ((!viaMembership && program.access_level !== "free") || onlyGiven) {
+    // This training only (also on top of CK Membership when the training is not visible to all members).
     const { data: had, error: readError } = await db
       .from("program_grants")
       .select("program_id")
@@ -131,7 +134,7 @@ export async function grantAccess(
       throw new Error(
         "One-training access needs database change 0033 (program_grants). Run it in Supabase first.",
       );
-    access = had ? "already" : "granted";
+    access = !had || access === "granted" ? "granted" : "already";
   }
 
   const { data: enr } = await db
