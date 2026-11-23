@@ -89,7 +89,7 @@ export default async function AdminPrograms({
                     ) : null}
                     {p.members_included === false ? (
                       <span className="ml-2 text-xs text-muted">
-                        only people given it
+                        selected members only
                       </span>
                     ) : null}
                     <span className="block text-xs text-muted">/{p.slug}</span>

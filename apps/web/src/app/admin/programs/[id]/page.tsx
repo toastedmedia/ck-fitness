@@ -22,6 +22,7 @@ import {
   duplicateLesson,
   duplicateSection,
   giveProgramAccess,
+  removeProgramMember,
   moveLesson,
   moveSection,
   publishProgram,
@@ -55,6 +56,7 @@ export default async function EditProgram({
   const sp = await searchParams;
   const { supabase, roles, db } = await requireStaff([...CONTENT, "coach"]);
   const canEdit = roles.some((r) => (CONTENT as string[]).includes(r));
+  const canGive = roles.some((r) => r === "owner" || r === "admin");
   const { data: p } = await supabase
     .from("programs")
     .select("*")
@@ -126,6 +128,37 @@ export default async function EditProgram({
             ? "access"
             : "details";
   const progress = view === "progress" ? await loadProgramProgress(db, id) : null;
+  // Selected members page: who has this training given to them, and everyone who signed up (picker).
+  type Person = {
+    user_id: string;
+    email: string | null;
+    first_name: string | null;
+    last_name: string | null;
+  };
+  const [grantRes, peopleRes] =
+    view === "access"
+      ? await Promise.all([
+          db
+            .from("program_grants")
+            .select("user_id,created_at")
+            .eq("program_id", id)
+            .order("created_at", { ascending: false }),
+          db
+            .from("profiles")
+            .select("user_id,email,first_name,last_name")
+            .not("email", "is", null)
+            .order("first_name")
+            .limit(5000),
+        ])
+      : [{ data: [] }, { data: [] }];
+  const people = (peopleRes.data ?? []) as Person[];
+  const personOf = new Map(people.map((x) => [x.user_id, x]));
+  const nameOf = (x: Person | undefined) =>
+    [x?.first_name, x?.last_name].filter(Boolean).join(" ") || x?.email || "Unknown";
+  const selected = (
+    (grantRes.data ?? []) as { user_id: string; created_at: string }[]
+  ).map((g) => ({ ...g, person: personOf.get(g.user_id) }));
+  const selectedIds = new Set(selected.map((g) => g.user_id));
   const q = (sp.q ?? "").trim().toLowerCase();
   const filtered = (progress?.members ?? []).filter(
     (m) => !q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q),
@@ -204,16 +237,20 @@ export default async function EditProgram({
           longer see them.
         </Flash>
       ) : null}
-      {sp.granted ? (
+      {sp.added ? (
         <Flash>
-          {sp.who} now has this training in My Trainings.
-          {sp.granted === "granted"
-            ? " Only this training is opened for them, not the other member trainings."
-            : sp.granted === "already"
-              ? " They already had access to it."
-              : ""}
+          Added {sp.added} {sp.added === "1" ? "person" : "people"}
+          {sp.already && sp.already !== "0" ? ` (${sp.already} already had it)` : ""}.
+          They see this training under My Trainings; only this training opens for them.
         </Flash>
       ) : null}
+      {sp.missing ? (
+        <Flash bad>
+          No account yet for: {sp.missing}. They need to sign up first (or add them under
+          Users), then add them here.
+        </Flash>
+      ) : null}
+      {sp.removed ? <Flash>Removed. They no longer have this training.</Flash> : null}
       {sp.cloned ? (
         <Flash>Cloned. This copy is a draft right under the original.</Flash>
       ) : null}
@@ -242,7 +279,7 @@ export default async function EditProgram({
                 ["details", "Details and publish", ""],
                 ["settings", "Instructor and settings", "?view=settings"],
                 ["progress", "Member progress", "?view=progress"],
-                ["access", "Add members", "?view=access"],
+                ["access", "Selected members", "?view=access"],
               ] as const
             ).map(([key, label, qs]) => (
               <Link
@@ -632,26 +669,50 @@ export default async function EditProgram({
                       ))}
                     </select>
                   </label>
-                  <div className="rounded-xl border-2 border-line p-3 md:col-span-2">
-                    <input type="hidden" name="members_included_field" value="1" />
-                    <label className="flex items-center gap-2 text-sm font-bold">
+                  <fieldset className="rounded-xl border-2 border-line p-3 md:col-span-2">
+                    <legend className="px-1 text-xs font-bold text-brand">
+                      Who can see this training
+                    </legend>
+                    <label className="flex items-start gap-2 py-1 text-sm">
                       <input
-                        type="checkbox"
-                        name="members_included"
+                        type="radio"
+                        name="audience"
+                        value="all"
                         defaultChecked={p.members_included !== false}
-                        className="size-4 accent-brand"
+                        className="mt-1 size-4 accent-brand"
                       />
-                      Visible to all members
+                      <span>
+                        <b>Visible to all members</b>
+                        <span className="block text-xs text-muted">
+                          Everyone the Access level allows (Free = everyone, Member =
+                          every CK Member).
+                        </span>
+                      </span>
                     </label>
-                    <p className="mt-1 text-xs text-muted">
-                      Ticked: everyone the Access level allows sees this training (Member
-                      = every CK Member).{" "}
-                      <b>Untick it for a training you sell on its own</b> (for example a
-                      one-off program): nobody sees it, CK Members included, except the
-                      people you give it to on their page (Give access, This training
-                      only).
-                    </p>
-                  </div>
+                    <label className="flex items-start gap-2 py-1 text-sm">
+                      <input
+                        type="radio"
+                        name="audience"
+                        value="selected"
+                        defaultChecked={p.members_included === false}
+                        className="mt-1 size-4 accent-brand"
+                      />
+                      <span>
+                        <b>Visible to selected members only</b>
+                        <span className="block text-xs text-muted">
+                          For a training you sell on its own. Nobody else sees it, CK
+                          Members included. Choose the people under{" "}
+                          <Link
+                            href={`/admin/programs/${id}?view=access`}
+                            className="font-bold text-brand underline"
+                          >
+                            Selected members
+                          </Link>
+                          .
+                        </span>
+                      </span>
+                    </label>
+                  </fieldset>
                   <label className={`${lab} md:col-span-2`}>
                     One-line benefit
                     <input
@@ -885,55 +946,124 @@ export default async function EditProgram({
           ) : null}
 
           {view === "access" ? (
-            <Panel title="Add a member to this training">
-              <p className="text-sm text-muted">
-                Use this when someone has bought this one training from you. Enter the
-                email they signed up with. It opens this training only (not the other
-                member trainings) and puts it under My Trainings so they can start. To
-                give every member training, open the person under Users and choose CK
-                Membership. To take this training away, open the person, Trainings tab,
-                Remove access.
-              </p>
-              {canEdit && roles.some((r) => r === "owner" || r === "admin") ? (
-                <form
-                  action={giveProgramAccess.bind(null, id)}
-                  className="mt-3 flex flex-wrap items-end gap-2"
-                >
-                  <label className={`${lab} min-w-60 flex-1`}>
-                    Member email
-                    <input
-                      name="email"
-                      type="email"
-                      required
-                      className={aInput}
-                      placeholder="name@example.com"
-                    />
-                  </label>
-                  <ABtn variant="primary">Give access</ABtn>
-                </form>
-              ) : (
-                <p className="mt-3 text-sm font-bold text-muted">
-                  Only owners and admins can give access.
+            <>
+              <Panel title={`Selected members (${selected.length})`}>
+                <p className="text-sm text-muted">
+                  {p.members_included === false ? (
+                    <>
+                      This training is <b>visible to selected members only</b>: the people
+                      below are the only ones who see it (plus staff).
+                    </>
+                  ) : (
+                    <>
+                      This training is <b>visible to all members</b>, so everyone the
+                      Access level allows already sees it. The people below get it even
+                      without a membership. To limit it to these people, choose{" "}
+                      <b>Visible to selected members only</b> under{" "}
+                      <Link
+                        href={`/admin/programs/${id}`}
+                        className="font-bold text-brand underline"
+                      >
+                        Details
+                      </Link>
+                      .
+                    </>
+                  )}
                 </p>
-              )}
-              <p className="mt-3 text-sm">
-                Not on the app yet?{" "}
-                <Link
-                  href="/admin/users?view=add"
-                  className="font-bold text-brand underline"
-                >
-                  Add a member
-                </Link>{" "}
-                or{" "}
-                <Link
-                  href="/admin/users?view=import"
-                  className="font-bold text-brand underline"
-                >
-                  import a CSV
-                </Link>
-                .
-              </p>
-            </Panel>
+                {selected.length ? (
+                  <ul className="mt-3 divide-y divide-line">
+                    {selected.map((g) => (
+                      <li
+                        key={g.user_id}
+                        className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"
+                      >
+                        <span>
+                          <Link
+                            href={`/admin/users/${g.user_id}?tab=programs`}
+                            className="font-bold text-brand underline"
+                          >
+                            {nameOf(g.person)}
+                          </Link>{" "}
+                          <span className="text-xs text-muted">
+                            {g.person?.email ?? ""} · added {fmtDay(g.created_at)}
+                          </span>
+                        </span>
+                        {canGive ? (
+                          <form action={removeProgramMember.bind(null, id, g.user_id)}>
+                            <ABtn>Remove</ABtn>
+                          </form>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-3 text-sm font-bold">Nobody added yet.</p>
+                )}
+              </Panel>
+              <Panel title="Add people">
+                {canGive ? (
+                  <form action={giveProgramAccess.bind(null, id)} className="grid gap-3">
+                    <label className={lab}>
+                      Pick someone who signed up (type a name or email)
+                      <input
+                        name="pick"
+                        list="ck-people"
+                        autoComplete="off"
+                        className={aInput}
+                        placeholder="Start typing a name or email"
+                      />
+                      <datalist id="ck-people">
+                        {people
+                          .filter((x) => !selectedIds.has(x.user_id))
+                          .map((x) => (
+                            <option key={x.user_id} value={x.email ?? ""}>
+                              {nameOf(x)}
+                            </option>
+                          ))}
+                      </datalist>
+                    </label>
+                    <label className={lab}>
+                      Or paste email addresses (one per line, or separated by commas)
+                      <textarea
+                        name="emails"
+                        rows={4}
+                        className={`${aInput} py-2`}
+                        placeholder={"name@example.com\nfriend@example.com"}
+                      />
+                    </label>
+                    <div>
+                      <ABtn variant="primary">Give access</ABtn>
+                    </div>
+                    <p className="text-xs text-muted">
+                      Gives this training only (not the other member trainings) and puts
+                      it under their My Trainings. People must have signed up first;
+                      anyone not found is listed after you press Give access.
+                    </p>
+                  </form>
+                ) : (
+                  <p className="text-sm font-bold text-muted">
+                    Only owners and admins can give access.
+                  </p>
+                )}
+                <p className="mt-3 text-sm">
+                  Not on the app yet?{" "}
+                  <Link
+                    href="/admin/users?view=add"
+                    className="font-bold text-brand underline"
+                  >
+                    Add a member
+                  </Link>{" "}
+                  or{" "}
+                  <Link
+                    href="/admin/users?view=import"
+                    className="font-bold text-brand underline"
+                  >
+                    import a CSV
+                  </Link>
+                  .
+                </p>
+              </Panel>
+            </>
           ) : null}
 
           {view === "progress" && progress ? (
@@ -1089,16 +1219,6 @@ export default async function EditProgram({
                     defaultValue={selWeek.order_index}
                     className={aInput}
                   />
-                </label>
-                <label className="flex items-center gap-2 pb-2 text-sm">
-                  <input
-                    type="checkbox"
-                    name="published"
-                    defaultChecked={selWeek.published}
-                    className="size-4 accent-brand"
-                  />
-                  Show this week{" "}
-                  <span className="text-xs text-muted">(untick = draft, staff only)</span>
                 </label>
                 {canEdit ? <ABtn variant="primary">Save</ABtn> : null}
               </AjaxForm>

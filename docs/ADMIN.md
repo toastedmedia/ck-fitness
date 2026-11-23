@@ -58,12 +58,14 @@ ready** at the top. A cloned lesson uses the same video file, so it appears unde
 - **Studio client (all member trainings):** on the person's page use Assign manually -> Member, or Give access with What to give: **CK Membership**. For many people at once: Users -> tick them -> pick a training -> CK Membership -> Give access.
 - **Take it away:** one training: Trainings tab -> Remove access on that training. CK Membership: Overview -> Assign manually -> None.
 - The Trainings tab shows "This training only" on trainings given one at a time.
-- **A training you sell on its own** (CK Members should NOT get it): Admin -> Trainings -> the training -> Details -> untick
-  **Visible to all members** -> Save. Nobody sees it in the app any more (no card, not even locked), CK Members included,
-  except staff and the people you give it to (This training only). Its "New training" announcement goes only to those people.
-  Leave it ticked for normal trainings: then the Access level decides (Member = every CK Member).
-- **Show this week** (inside a training, on each week/module) only switches that week on or off (unticked = draft, staff only).
-  It never decides which members get the training.
+- **A training you sell on its own** (CK Members should NOT get it): Admin -> Trainings -> the training -> Details -> **Who can
+  see this training: Visible to selected members only** -> Save. Then open **Selected members** (left menu of the training) and
+  add the people: pick a name/email from the list of everyone who signed up, or paste email addresses (one per line or with
+  commas, up to 100 at once) -> Give access. The list shows everyone who has it, each with **Remove**. Nobody else sees the
+  training (no card, not even locked), CK Members included; its "New training" announcement goes only to them.
+  **Visible to all members** (the default) works as before: the Access level decides (Member = every CK Member).
+- There is no visibility box on weeks any more: one choice per training. To hide a week's lessons use its menu -> Move all to
+  draft; Publish all lessons shows them again.
 
 ## Text messages (welcome text on sign-up)
 

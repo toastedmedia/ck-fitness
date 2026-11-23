@@ -206,7 +206,7 @@ export async function ProgramsTab({
                   {ACCESS_TEXT[p.access_level] ?? p.access_level}
                 </Status>
                 {p.members_included === false ? (
-                  <Status tone="mute">Only people given it</Status>
+                  <Status tone="mute">Selected members only</Status>
                 ) : null}
                 <Status tone={allowed ? "ok" : "bad"}>
                   {allowed ? "Has access" : "Locked for her"}
@@ -809,7 +809,7 @@ export async function GiveAccess({
               <option key={p.id} value={p.id}>
                 {p.title} (
                 {p.members_included === false
-                  ? "sold on its own"
+                  ? "selected members only"
                   : p.access_level === "free"
                     ? "free"
                     : "paid"}

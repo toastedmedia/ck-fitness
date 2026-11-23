@@ -113,8 +113,9 @@ export async function updateProgram(
     sort_order: int(formData, "sort_order"),
   };
   // "Visible to all members" box (0034); only read when the form shows it.
-  if (formData.get("members_included_field") === "1")
-    patch.members_included = formData.get("members_included") === "on";
+  const audience = str(formData, "audience");
+  if (audience === "all" || audience === "selected")
+    patch.members_included = audience === "all";
   const slug = slugify(str(formData, "slug", 80));
   if (slug) patch.slug = slug;
 
@@ -459,7 +460,12 @@ export async function updateSection(
         ? { section_type: str(formData, "section_type") }
         : {}),
       order_index: int(formData, "order_index"),
-      published: formData.get("published") === "on",
+      // Visibility is no longer set here (owner request 2026-11-23: one switch per training, not
+      // per week). To hide a week's lessons use "Move all to draft" in its menu; "Publish all
+      // lessons" shows the week again.
+      ...(formData.has("published")
+        ? { published: formData.get("published") === "on" }
+        : {}),
     })
     .eq("id", sectionId);
   await audit(supabase, user.id, "section.update", sectionId);
@@ -1365,32 +1371,84 @@ export async function removeTrainingAccess(
   redirect(`/admin/users/${userId}?tab=programs&saved=1`);
 }
 
-/** Same thing from a program page, looked up by the member's email. */
+/**
+ * From a training's "Selected members" page: gives this one training to everyone picked from the
+ * list or pasted as email addresses (one per line or separated by commas, up to 100 at once).
+ */
 export async function giveProgramAccess(
   programId: string,
   formData: FormData,
 ): Promise<void> {
   const { supabase, user, db } = await requireStaff(OPS);
-  const email = str(formData, "email", 200).toLowerCase();
   const back = `/admin/programs/${programId}?view=access`;
-  if (!EMAIL_RE.test(email)) redirect(`${back}&error=email`);
-  const { data: prof } = await db
+  const typed = [
+    ...formData.getAll("pick").map(String),
+    str(formData, "emails", 20000),
+    str(formData, "email", 200),
+  ].join("\n");
+  const emails = [
+    ...new Set(
+      typed
+        .split(/[\s,;]+/)
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  ].slice(0, 100);
+  if (!emails.length || emails.some((e) => !EMAIL_RE.test(e)))
+    redirect(`${back}&error=email`);
+  const { data: profs } = await db
     .from("profiles")
-    .select("user_id")
-    .eq("email", email)
-    .maybeSingle();
-  if (!prof) redirect(`${back}&error=nouser`);
-  let r: Awaited<ReturnType<typeof grantAccess>>;
+    .select("user_id,email")
+    .in("email", emails);
+  const byEmail = new Map(
+    ((profs ?? []) as { user_id: string; email: string | null }[]).map((r) => [
+      (r.email ?? "").toLowerCase(),
+      r.user_id,
+    ]),
+  );
+  let added = 0;
+  let already = 0;
+  const missing: string[] = [];
+  for (const email of emails) {
+    const uid = byEmail.get(email);
+    if (!uid) {
+      missing.push(email);
+      continue;
+    }
+    let r: Awaited<ReturnType<typeof grantAccess>>;
+    try {
+      r = await grantAccess(db, uid, programId, { by: user.id });
+    } catch {
+      redirect(`${back}&error=save`);
+    }
+    if (r.access === "already") already++;
+    else added++;
+    await audit(supabase, user.id, "member.grant_access", uid, {
+      programId,
+      scope: "training",
+    });
+  }
+  revalidatePath("/programs");
+  const q = new URLSearchParams({ added: String(added), already: String(already) });
+  if (missing.length) q.set("missing", missing.slice(0, 10).join(", "));
+  redirect(`${back}&${q.toString()}`);
+}
+
+/** Takes this training away from one person, from the training's "Selected members" page. */
+export async function removeProgramMember(
+  programId: string,
+  userId: string,
+): Promise<void> {
+  const { supabase, user, db } = await requireStaff(OPS);
+  const back = `/admin/programs/${programId}?view=access`;
   try {
-    r = await grantAccess(db, prof.user_id, programId, { by: user.id });
+    await removeGrant(db, userId, programId);
   } catch {
     redirect(`${back}&error=save`);
   }
-  await audit(supabase, user.id, "member.grant_access", prof.user_id, {
-    programId,
-    scope: "training",
-  });
-  redirect(`${back}&granted=${r.access}&who=${encodeURIComponent(email)}`);
+  await audit(supabase, user.id, "member.remove_access", userId, { programId });
+  revalidatePath("/programs");
+  redirect(`${back}&removed=1`);
 }
 
 /** Saves a drag-and-drop reorder: the order of weeks, the lessons in each, and lessons moved between weeks. */
