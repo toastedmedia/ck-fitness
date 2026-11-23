@@ -333,6 +333,11 @@ export default async function EditProgram({
                           >
                             Edit phase
                           </Link>
+                          {s.published ? null : (
+                            <form action={setSectionPublished.bind(null, id, s.id, true)}>
+                              <button className={mi}>Show this phase</button>
+                            </form>
+                          )}
                           {phaseIdxs.some((i) => i < si) ? (
                             <form action={moveSection.bind(null, id, s.id, "up")}>
                               <button className={mi}>Move phase up</button>

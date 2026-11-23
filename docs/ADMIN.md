@@ -65,7 +65,7 @@ ready** at the top. A cloned lesson uses the same video file, so it appears unde
   training (no card, not even locked), CK Members included; its "New training" announcement goes only to them.
   **Visible to all members** (the default) works as before: the Access level decides (Member = every CK Member).
 - There is no visibility box on weeks any more: one choice per training. To hide a week's lessons use its menu -> Move all to
-  draft; Publish all lessons shows them again.
+  draft; Publish all lessons shows them again. A phase marked Hidden has **Show this phase** in its menu.
 
 ## Text messages (welcome text on sign-up)
 
