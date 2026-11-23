@@ -67,6 +67,20 @@ ready** at the top. A cloned lesson uses the same video file, so it appears unde
 - There is no visibility box on weeks any more: one choice per training. To hide a week's lessons use its menu -> Move all to
   draft; Publish all lessons shows them again. A phase marked Hidden has **Show this phase** in its menu.
 
+## Emails for a training (welcome email and announcements)
+
+Admin -> Trainings -> the training -> **Emails** (owners and admins; needs SQL 0035).
+
+- **Welcome email:** write the subject, heading and message (`{{name}}` = first name, `{{training}}` = the training's name;
+  a "Start the training" button and the cover picture are added). Press **Save welcome email**, then **Send a test to me**.
+  **Send to the N people who have not had it** sends it once to everyone given the training. Tick **Send it automatically** so
+  everyone you add later gets it the moment you give access (only while the training is published). On **Selected members**
+  each person shows "Welcome email sent <date>" or "No welcome email yet", with a one-click button for the ones missing it.
+- **Announce this training:** send to the people given it, all CK Members, all free members or everyone, with an optional note
+  in the app (bell). Test to yourself first, tick "I am sure", then **Send announcement**. Only members who signed up themselves
+  and kept Email and "New trainings and content" on receive it (unsubscribe link included); big lists finish in the background
+  within minutes. Past announcements are listed there and under Admin -> Emails.
+
 ## Text messages (welcome text on sign-up)
 
 Admin -> Messages -> **Text messages** (owners and admins). One text per new member after she confirms her email and finishes the

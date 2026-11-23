@@ -7,11 +7,19 @@ export const dynamic = "force-dynamic";
 async function turnOff(token: string | null, category: string | null) {
   const id = token ? verifyUnsubscribe(token) : null;
   if (!id) return false;
-  // "marketing" stops offers and news only; anything else stops all optional emails.
-  const patch: { user_id: string; marketing?: boolean; email?: boolean } =
+  // "marketing" stops offers and news only; "content" stops new-training news only;
+  // anything else stops all optional emails.
+  const patch: {
+    user_id: string;
+    marketing?: boolean;
+    new_content?: boolean;
+    email?: boolean;
+  } =
     category === "marketing"
       ? { user_id: id, marketing: false }
-      : { user_id: id, email: false };
+      : category === "content"
+        ? { user_id: id, new_content: false }
+        : { user_id: id, email: false };
   const { error } = await createAdminSupabase()
     .from("notification_preferences")
     .upsert(patch, { onConflict: "user_id" });

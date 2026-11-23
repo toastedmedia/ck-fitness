@@ -8,6 +8,10 @@ type Db = ReturnType<typeof createAdminSupabase>;
 export interface Audience {
   tag_id?: string;
   plan?: "all" | "free" | "member";
+  /** Training announcement: the training it is about (Admin -> training -> Emails). */
+  training?: string;
+  /** Announcement only to the people given that training one at a time. */
+  given_only?: boolean;
 }
 export interface CampaignRow {
   id: string;
@@ -50,15 +54,28 @@ export const toCampaign = (r: CampaignRow): Campaign => ({
   ctaUrl: r.cta_url,
 });
 
-/** Only members who turned on Offers and news AND email can receive marketing. Then the optional filters. */
+/**
+ * Marketing: only members who turned on Offers and news AND email. A training announcement
+ * (audience.training) instead needs Email and "New trainings and content" on, and only members who
+ * signed up and accepted the terms themselves (imported people are never emailed). Then the filters.
+ */
 export async function audienceUserIds(db: Db, a: Audience): Promise<string[]> {
   const { data: prefs } = await db
     .from("notification_preferences")
     .select("user_id")
-    .eq("marketing", true)
+    .eq(a.training ? "new_content" : "marketing", true)
     .eq("email", true)
     .limit(50000);
   let ids = ((prefs ?? []) as { user_id: string }[]).map((p) => p.user_id);
+  if (a.training && a.given_only) {
+    const { data: g } = await db
+      .from("program_grants")
+      .select("user_id")
+      .eq("program_id", a.training)
+      .limit(50000);
+    const given = new Set(((g ?? []) as { user_id: string }[]).map((x) => x.user_id));
+    ids = ids.filter((i) => given.has(i));
+  }
   if (a.tag_id) {
     const { data: tm } = await db
       .from("member_tag_map")
@@ -93,10 +110,14 @@ export async function audienceUserIds(db: Db, a: Audience): Promise<string[]> {
   for (let i = 0; i < ids.length; i += 500) {
     const { data } = await db
       .from("profiles")
-      .select("user_id,email")
+      .select("user_id,email,terms_accepted_at")
       .in("user_id", ids.slice(i, i + 500));
-    for (const p of (data ?? []) as { user_id: string; email: string | null }[])
-      if (p.email) withEmail.push(p.user_id);
+    for (const p of (data ?? []) as {
+      user_id: string;
+      email: string | null;
+      terms_accepted_at: string | null;
+    }[])
+      if (p.email && (!a.training || p.terms_accepted_at)) withEmail.push(p.user_id);
   }
   return withEmail;
 }
@@ -165,11 +186,18 @@ export async function processCampaign(
     const messages = ids.flatMap((uid) => {
       const p = byId.get(uid);
       if (!p?.email) return [];
-      const unsub = `${siteBase()}/api/email/unsubscribe?c=marketing&t=${encodeURIComponent(signUnsubscribe(uid))}`;
+      const training = Boolean(c.audience?.training);
+      const unsub = `${siteBase()}/api/email/unsubscribe?c=${training ? "content" : "marketing"}&t=${encodeURIComponent(signUnsubscribe(uid))}`;
       const e = renderCampaign(
         campaign,
         { name: p.first_name ?? undefined },
-        { siteUrl: siteBase(), unsubscribeUrl: unsub },
+        {
+          siteUrl: siteBase(),
+          unsubscribeUrl: unsub,
+          reason: training
+            ? "You are getting this because you get news about new trainings."
+            : undefined,
+        },
       );
       return [
         {

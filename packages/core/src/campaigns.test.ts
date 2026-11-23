@@ -4,6 +4,8 @@ import {
   renderCampaign,
   safeCtaUrl,
   CAMPAIGN_PRESETS,
+  fillTraining,
+  TRAINING_WELCOME_DEFAULT,
 } from "./campaigns";
 
 const site = "https://app.chardikalafitness.com";
@@ -60,5 +62,27 @@ describe("renderCampaign", () => {
         renderCampaign({ ...p, imageUrl: null }, { name: "A" }, { siteUrl: site }).html
           .length,
       ).toBeGreaterThan(200);
+  });
+});
+
+describe("training emails", () => {
+  it("fills the training name and keeps {{name}} for the member", () => {
+    const c = {
+      subject: fillTraining(TRAINING_WELCOME_DEFAULT.subject, "Winter Challenge"),
+      preheader: "",
+      heading: fillTraining(TRAINING_WELCOME_DEFAULT.heading, "Winter Challenge"),
+      body: fillTraining(TRAINING_WELCOME_DEFAULT.body, "Winter Challenge"),
+      ctaLabel: "Start the training",
+      ctaUrl: "/programs/winter",
+    };
+    const e = renderCampaign(
+      c,
+      { name: "Gurjit" },
+      { siteUrl: "https://app.example.com", reason: "You were given this training." },
+    );
+    expect(e.subject).toBe("Welcome to Winter Challenge, Gurjit!");
+    expect(e.html).toContain("You were given this training.");
+    expect(e.html).not.toContain("offers and news");
+    expect(e.html).toContain("https://app.example.com/programs/winter");
   });
 });

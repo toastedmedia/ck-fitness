@@ -24,12 +24,14 @@ import {
   resolveMembership,
   validateForPublish,
   lessonHasContent,
+  fillTraining,
   STAFF_ROLES,
   type AudienceKey,
   type EmailKey,
 } from "@ck/core";
 import { CONTENT, OPS, SUPPORT, audit, requireStaff } from "@/lib/admin";
 import { processCrmQueue } from "@/lib/crm";
+import { loadProgramEmail, renderWelcome, sendWelcomeEmails } from "@/lib/email/training";
 import {
   audienceUserIds,
   imageUrlOf,
@@ -2102,4 +2104,191 @@ export async function setSectionPublished(
   redirect(
     `/admin/programs/${programId}?week=${sectionId}&${on ? "allpub" : "alldraft"}=${ids.length}&skip=${skipped}`,
   );
+}
+
+/* --------------------------------------------------------------- training emails */
+const emailsBack = (programId: string, q: string) =>
+  `/admin/programs/${programId}?view=emails&${q}`;
+
+/** Saves a training's welcome email and whether it goes out automatically to people added later. */
+export async function saveTrainingWelcome(
+  programId: string,
+  formData: FormData,
+): Promise<void> {
+  const { supabase, user, db } = await requireStaff(OPS);
+  const row = {
+    program_id: programId,
+    welcome_subject: str(formData, "subject", 200),
+    welcome_heading: str(formData, "heading", 200),
+    welcome_body: str(formData, "body", 6000),
+    auto_welcome: formData.get("auto_welcome") === "on",
+    updated_by: user.id,
+    updated_at: new Date().toISOString(),
+  };
+  if (!row.welcome_subject || !row.welcome_body)
+    redirect(emailsBack(programId, "error=welcome"));
+  const { error } = await db
+    .from("program_emails")
+    .upsert(row, { onConflict: "program_id" });
+  if (error) redirect(emailsBack(programId, "error=nodb"));
+  await audit(supabase, user.id, "program.welcome_email", programId, {
+    auto: row.auto_welcome,
+  });
+  redirect(emailsBack(programId, "wsaved=1"));
+}
+
+/** "Send a test to me", or send the welcome email to everyone given this training who has not had it. */
+export async function sendTrainingWelcome(
+  programId: string,
+  formData: FormData,
+): Promise<void> {
+  const { supabase, user, db } = await requireStaff(OPS);
+  const back = str(formData, "back") === "access" ? "access" : "emails";
+  const to = (q: string) => `/admin/programs/${programId}?view=${back}&${q}`;
+  if (!emailConfigured()) redirect(to("error=noemail"));
+  const { data: prog } = await db
+    .from("programs")
+    .select("id,title,slug,cover_path,published")
+    .eq("id", programId)
+    .maybeSingle();
+  if (!prog) redirect("/admin/programs");
+  if (str(formData, "mode") === "test") {
+    const { data: me } = await db
+      .from("profiles")
+      .select("email,first_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!me?.email) redirect(to("error=noemail"));
+    const m = renderWelcome(prog, await loadProgramEmail(db, programId), me.first_name);
+    const ok = await sendRaw({
+      to: me.email,
+      subject: `[TEST] ${m.subject}`,
+      html: m.html,
+      text: m.text,
+    });
+    redirect(to(ok ? `wtest=${encodeURIComponent(me.email)}` : "error=send"));
+  }
+  const { data: given } = await db
+    .from("program_grants")
+    .select("user_id")
+    .eq("program_id", programId);
+  const ids = ((given ?? []) as { user_id: string }[]).map((g) => g.user_id);
+  const r = await sendWelcomeEmails(db, programId, ids, user.id);
+  await audit(supabase, user.id, "program.welcome_send", programId, r);
+  redirect(to(`wsent=${r.sent}&wfail=${r.failed}`));
+}
+
+/**
+ * Announces a training by email (and optionally in the app): to the people given it, all CK
+ * Members, all free members or everyone. Uses the campaign queue, so big lists keep sending in the
+ * background. Only members with Email and "New trainings and content" on who signed up themselves.
+ */
+export async function announceTraining(
+  programId: string,
+  formData: FormData,
+): Promise<void> {
+  const { supabase, user, db } = await requireStaff(OPS);
+  if (!emailConfigured()) redirect(emailsBack(programId, "error=noemail"));
+  const { data: prog } = await db
+    .from("programs")
+    .select("id,title,slug,cover_path,published")
+    .eq("id", programId)
+    .maybeSingle();
+  if (!prog) redirect("/admin/programs");
+  const who = str(formData, "audience");
+  const audience: Audience =
+    who === "given"
+      ? { training: programId, given_only: true }
+      : who === "member" || who === "free"
+        ? { training: programId, plan: who }
+        : { training: programId, plan: "all" };
+  const c = {
+    subject: fillTraining(str(formData, "subject", 200), prog.title),
+    preheader: fillTraining("{{training}} is ready for you in the app.", prog.title),
+    heading: fillTraining(str(formData, "heading", 200), prog.title),
+    body: fillTraining(str(formData, "body", 6000), prog.title),
+    image_path: prog.cover_path ?? null,
+    cta_label: "Open the training",
+    cta_url: `/programs/${prog.slug}`,
+  };
+  if (!c.subject || !c.body) redirect(emailsBack(programId, "error=announce"));
+  if (str(formData, "mode") === "test") {
+    const { data: me } = await db
+      .from("profiles")
+      .select("email,first_name")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!me?.email) redirect(emailsBack(programId, "error=noemail"));
+    const site = siteBase();
+    const e = renderCampaign(
+      {
+        subject: c.subject,
+        preheader: c.preheader,
+        heading: c.heading,
+        body: c.body,
+        imageUrl: imageUrlOf(c.image_path),
+        ctaLabel: c.cta_label,
+        ctaUrl: c.cta_url,
+      },
+      { name: me.first_name ?? undefined },
+      {
+        siteUrl: site,
+        unsubscribeUrl: `${site}/api/email/unsubscribe?c=content&t=sample`,
+        reason: "You are getting this because you get news about new trainings.",
+      },
+    );
+    const ok = await sendRaw({
+      to: me.email,
+      subject: `[TEST] ${e.subject}`,
+      html: e.html,
+      text: e.text,
+    });
+    redirect(
+      emailsBack(programId, ok ? `atest=${encodeURIComponent(me.email)}` : "error=send"),
+    );
+  }
+  if (formData.get("confirm") !== "on") redirect(emailsBack(programId, "error=confirm"));
+  if (!prog.published) redirect(emailsBack(programId, "error=draft"));
+  const label =
+    who === "given"
+      ? "people given it"
+      : who === "member"
+        ? "CK Members"
+        : who === "free"
+          ? "free members"
+          : "everyone";
+  const { data: made, error } = await db
+    .from("email_campaigns")
+    .insert({
+      name: `Training: ${prog.title} (to ${label})`,
+      ...c,
+      audience,
+      created_by: user.id,
+    })
+    .select("*")
+    .single();
+  if (error || !made) redirect(emailsBack(programId, "error=send"));
+  const n = await startCampaign(db, made);
+  if (formData.get("inapp") === "on") {
+    const ids = await audienceUserIds(db, audience);
+    const rows = ids.map((user_id) => ({
+      user_id,
+      kind: "content",
+      title: c.subject,
+      body: c.heading || "",
+      link: c.cta_url,
+      dedupe_key: `announce:${made.id}`,
+    }));
+    for (let i = 0; i < rows.length; i += 500)
+      await db.from("notifications").upsert(rows.slice(i, i + 500), {
+        onConflict: "user_id,dedupe_key",
+        ignoreDuplicates: true,
+      });
+  }
+  await audit(supabase, user.id, "program.announce", programId, {
+    audience: who,
+    recipients: n,
+  });
+  if (n > 0) await processCampaign(db, made.id, 180);
+  redirect(emailsBack(programId, `announced=${n}`));
 }

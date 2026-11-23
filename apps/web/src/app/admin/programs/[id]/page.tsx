@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TRAINING_ANNOUNCE_DEFAULT } from "@ck/core";
+import { loadProgramEmail, welcomeLog } from "@/lib/email/training";
 import { notFound } from "next/navigation";
 import { ABtn, Flash, H1, Panel, Status, Tile, aInput } from "@/components/admin/ui";
 import { ActionMenu as Menu } from "@/components/admin/ActionMenu";
@@ -23,6 +25,9 @@ import {
   duplicateSection,
   giveProgramAccess,
   removeProgramMember,
+  saveTrainingWelcome,
+  sendTrainingWelcome,
+  announceTraining,
   moveLesson,
   moveSection,
   publishProgram,
@@ -108,6 +113,13 @@ export default async function EditProgram({
     email: "Please enter a valid email address.",
     nouser:
       "No member has that email yet. Add them first under Users, then give access here.",
+    welcome: "Please write a subject and a message for the welcome email.",
+    announce: "Please write a subject and a message for the announcement.",
+    nodb: "Training emails need database change 0035. Run it in Supabase first.",
+    noemail: "Email is not set up (or your account has no email address).",
+    send: "The email could not be sent. Please try again.",
+    confirm: "Tick the box to confirm before sending to everyone.",
+    draft: "Publish the training first, then announce it.",
   };
 
   type LessonRow = Record<string, string | number | boolean | null>;
@@ -126,7 +138,9 @@ export default async function EditProgram({
           ? "progress"
           : sp.view === "access"
             ? "access"
-            : "details";
+            : sp.view === "emails"
+              ? "emails"
+              : "details";
   const progress = view === "progress" ? await loadProgramProgress(db, id) : null;
   // Selected members page: who has this training given to them, and everyone who signed up (picker).
   type Person = {
@@ -159,6 +173,43 @@ export default async function EditProgram({
     (grantRes.data ?? []) as { user_id: string; created_at: string }[]
   ).map((g) => ({ ...g, person: personOf.get(g.user_id) }));
   const selectedIds = new Set(selected.map((g) => g.user_id));
+  // Welcome email and announcements (Emails page; welcome status also on Selected members).
+  const mailView = view === "access" || view === "emails";
+  const [welcome, sentLog, givenCount, pastAnnounce] = mailView
+    ? await Promise.all([
+        loadProgramEmail(db, id),
+        welcomeLog(db, id),
+        view === "emails"
+          ? db
+              .from("program_grants")
+              .select("user_id")
+              .eq("program_id", id)
+              .then((r) =>
+                ((r.data ?? []) as { user_id: string }[]).map((g) => g.user_id),
+              )
+          : Promise.resolve(selected.map((g) => g.user_id)),
+        view === "emails"
+          ? db
+              .from("email_campaigns")
+              .select("id,name,status,total,sent,created_at")
+              .eq("audience->>training", id)
+              .order("created_at", { ascending: false })
+              .limit(10)
+              .then(
+                (r) =>
+                  (r.data ?? []) as {
+                    id: string;
+                    name: string;
+                    status: string;
+                    total: number;
+                    sent: number;
+                    created_at: string;
+                  }[],
+              )
+          : Promise.resolve([]),
+      ])
+    : [null, new Map<string, string>(), [] as string[], []];
+  const notWelcomed = givenCount.filter((u) => !sentLog.has(u)).length;
   const q = (sp.q ?? "").trim().toLowerCase();
   const filtered = (progress?.members ?? []).filter(
     (m) => !q || m.name.toLowerCase().includes(q) || m.email.toLowerCase().includes(q),
@@ -251,6 +302,22 @@ export default async function EditProgram({
         </Flash>
       ) : null}
       {sp.removed ? <Flash>Removed. They no longer have this training.</Flash> : null}
+      {sp.wsaved ? <Flash>Welcome email saved.</Flash> : null}
+      {sp.wtest ? <Flash>Test welcome email sent to {sp.wtest}.</Flash> : null}
+      {sp.wsent ? (
+        <Flash bad={sp.wfail !== undefined && sp.wfail !== "0"}>
+          Welcome email sent to {sp.wsent} {sp.wsent === "1" ? "person" : "people"}.
+          {sp.wfail && sp.wfail !== "0" ? ` ${sp.wfail} could not be sent.` : ""}
+        </Flash>
+      ) : null}
+      {sp.atest ? <Flash>Test announcement sent to {sp.atest}.</Flash> : null}
+      {sp.announced ? (
+        <Flash>
+          Announcement is going out to {sp.announced}{" "}
+          {sp.announced === "1" ? "person" : "people"}. Big lists finish in the background
+          within a few minutes.
+        </Flash>
+      ) : null}
       {sp.cloned ? (
         <Flash>Cloned. This copy is a draft right under the original.</Flash>
       ) : null}
@@ -280,6 +347,7 @@ export default async function EditProgram({
                 ["settings", "Instructor and settings", "?view=settings"],
                 ["progress", "Member progress", "?view=progress"],
                 ["access", "Selected members", "?view=access"],
+                ["emails", "Emails", "?view=emails"],
               ] as const
             ).map(([key, label, qs]) => (
               <Link
@@ -975,6 +1043,32 @@ export default async function EditProgram({
                     </>
                   )}
                 </p>
+                {welcome ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl bg-page p-3 text-sm">
+                    <span>
+                      Welcome email:{" "}
+                      <b>
+                        {welcome.auto_welcome ? "sent automatically" : "sent by hand"}
+                      </b>
+                      {" · "}
+                      {notWelcomed
+                        ? `${notWelcomed} ${notWelcomed === 1 ? "person has" : "people have"} not had it`
+                        : "everyone here has had it"}
+                    </span>
+                    {canGive && notWelcomed ? (
+                      <form action={sendTrainingWelcome.bind(null, id)}>
+                        <input type="hidden" name="back" value="access" />
+                        <ABtn variant="primary">Send welcome email to {notWelcomed}</ABtn>
+                      </form>
+                    ) : null}
+                    <Link
+                      href={`/admin/programs/${id}?view=emails`}
+                      className="font-bold text-brand underline"
+                    >
+                      Edit the welcome email
+                    </Link>
+                  </div>
+                ) : null}
                 {selected.length ? (
                   <ul className="mt-3 divide-y divide-line">
                     {selected.map((g) => (
@@ -991,7 +1085,14 @@ export default async function EditProgram({
                           </Link>{" "}
                           <span className="text-xs text-muted">
                             {g.person?.email ?? ""} · added {fmtDay(g.created_at)}
-                          </span>
+                          </span>{" "}
+                          {sentLog.has(g.user_id) ? (
+                            <Status tone="ok">
+                              Welcome email sent {fmtDay(sentLog.get(g.user_id) ?? null)}
+                            </Status>
+                          ) : (
+                            <Status tone="mute">No welcome email yet</Status>
+                          )}
                         </span>
                         {canGive ? (
                           <form action={removeProgramMember.bind(null, id, g.user_id)}>
@@ -1067,6 +1168,222 @@ export default async function EditProgram({
                   </Link>
                   .
                 </p>
+              </Panel>
+            </>
+          ) : null}
+
+          {view === "emails" && welcome ? (
+            <>
+              <Panel title="Welcome email">
+                <p className="text-sm text-muted">
+                  Goes to each person you give this training to (Selected members), once.
+                  Use <b>{"{{name}}"}</b> for their first name and <b>{"{{training}}"}</b>{" "}
+                  for &quot;{p.title}&quot;. A &quot;Start the training&quot; button and
+                  the cover picture are added for you.
+                </p>
+                <form
+                  action={saveTrainingWelcome.bind(null, id)}
+                  className="mt-3 grid gap-3"
+                >
+                  <label className={lab}>
+                    Subject
+                    <input
+                      name="subject"
+                      defaultValue={welcome.welcome_subject}
+                      maxLength={200}
+                      className={aInput}
+                    />
+                  </label>
+                  <label className={lab}>
+                    Heading
+                    <input
+                      name="heading"
+                      defaultValue={welcome.welcome_heading}
+                      maxLength={200}
+                      className={aInput}
+                    />
+                  </label>
+                  <label className={lab}>
+                    Message (blank line = new paragraph, &quot;- &quot; = bullet)
+                    <textarea
+                      name="body"
+                      rows={9}
+                      defaultValue={welcome.welcome_body}
+                      className={`${aInput} py-2`}
+                    />
+                  </label>
+                  <label className="flex items-start gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      name="auto_welcome"
+                      defaultChecked={welcome.auto_welcome}
+                      className="mt-0.5 size-4 accent-brand"
+                    />
+                    <span>
+                      <b>Send it automatically</b> to everyone I give this training to
+                      from now on (only while the training is published).
+                    </span>
+                  </label>
+                  {canGive ? (
+                    <div className="flex flex-wrap gap-2">
+                      <ABtn variant="primary">Save welcome email</ABtn>
+                    </div>
+                  ) : null}
+                  {!welcome.saved ? (
+                    <p className="text-xs text-muted">
+                      This is the starting text. Change it and press Save.
+                    </p>
+                  ) : null}
+                </form>
+                {canGive ? (
+                  <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
+                    <form action={sendTrainingWelcome.bind(null, id)}>
+                      <input type="hidden" name="mode" value="test" />
+                      <ABtn>Send a test to me</ABtn>
+                    </form>
+                    {notWelcomed ? (
+                      <form action={sendTrainingWelcome.bind(null, id)}>
+                        <ABtn variant="primary">
+                          Send to the {notWelcomed}{" "}
+                          {notWelcomed === 1 ? "person" : "people"} who have not had it
+                        </ABtn>
+                      </form>
+                    ) : (
+                      <p className="self-center text-sm text-muted">
+                        Everyone given this training has had the welcome email.
+                      </p>
+                    )}
+                  </div>
+                ) : null}
+                <p className="mt-2 text-xs text-muted">
+                  Save first, then test. The welcome email is a service email about a
+                  training they were given, so it is sent even if they turned off news
+                  emails. Each person gets it once.
+                </p>
+              </Panel>
+
+              <Panel title="Announce this training">
+                <p className="text-sm text-muted">
+                  Tell people this training is here: a short email (and a note in the app
+                  if you tick it). It only reaches members who signed up themselves and
+                  kept Email and &quot;New trainings and content&quot; on in Profile, and
+                  every email has an unsubscribe link. Imported members are not emailed.
+                </p>
+                <form
+                  action={announceTraining.bind(null, id)}
+                  className="mt-3 grid gap-3"
+                >
+                  <label className={lab}>
+                    Send to
+                    <select
+                      name="audience"
+                      className={aInput}
+                      defaultValue={
+                        p.members_included === false
+                          ? "given"
+                          : p.access_level === "free"
+                            ? "all"
+                            : "member"
+                      }
+                    >
+                      <option value="given">
+                        People given this training (Selected members)
+                      </option>
+                      <option value="member">All CK Members</option>
+                      <option value="free">All free members</option>
+                      <option value="all">Everyone</option>
+                    </select>
+                  </label>
+                  <label className={lab}>
+                    Subject
+                    <input
+                      name="subject"
+                      defaultValue={TRAINING_ANNOUNCE_DEFAULT.subject}
+                      maxLength={200}
+                      className={aInput}
+                    />
+                  </label>
+                  <label className={lab}>
+                    Heading
+                    <input
+                      name="heading"
+                      defaultValue={TRAINING_ANNOUNCE_DEFAULT.heading}
+                      maxLength={200}
+                      className={aInput}
+                    />
+                  </label>
+                  <label className={lab}>
+                    Message
+                    <textarea
+                      name="body"
+                      rows={6}
+                      defaultValue={TRAINING_ANNOUNCE_DEFAULT.body}
+                      className={`${aInput} py-2`}
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      name="inapp"
+                      defaultChecked
+                      className="size-4 accent-brand"
+                    />
+                    Also show it in the app (the bell)
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      name="confirm"
+                      className="size-4 accent-brand"
+                    />
+                    I am sure: send it now
+                  </label>
+                  {canGive ? (
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        name="mode"
+                        value="test"
+                        className="min-h-10 rounded-xl border-2 border-line px-4 text-sm font-bold text-brand"
+                      >
+                        Send a test to me
+                      </button>
+                      <button
+                        name="mode"
+                        value="send"
+                        className="min-h-10 rounded-xl bg-brand px-4 text-sm font-bold text-white"
+                      >
+                        Send announcement
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-sm font-bold text-muted">
+                      Only owners and admins can send emails.
+                    </p>
+                  )}
+                </form>
+                {pastAnnounce.length ? (
+                  <div className="mt-4 border-t border-line pt-3">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-muted">
+                      Sent before
+                    </h3>
+                    <ul className="mt-1 text-sm">
+                      {pastAnnounce.map((c) => (
+                        <li key={c.id} className="py-1">
+                          <Link
+                            href={`/admin/emails/${c.id}`}
+                            className="font-bold text-brand underline"
+                          >
+                            {c.name}
+                          </Link>{" "}
+                          <span className="text-xs text-muted">
+                            {fmtDay(c.created_at)} · {c.sent} of {c.total} sent
+                            {c.status === "sending" ? " (still sending)" : ""}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
               </Panel>
             </>
           ) : null}

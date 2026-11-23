@@ -1,6 +1,7 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
 import type { createAdminSupabase } from "@/lib/supabase/admin";
+import { autoWelcome } from "@/lib/email/training";
 
 type Db = ReturnType<typeof createAdminSupabase>;
 
@@ -135,6 +136,8 @@ export async function grantAccess(
         "One-training access needs database change 0033 (program_grants). Run it in Supabase first.",
       );
     access = !had || access === "granted" ? "granted" : "already";
+    // The training's welcome email, when switched on for it (Admin -> training -> Emails).
+    if (!had) await autoWelcome(db, programId, userId, opts.by ?? null);
   }
 
   const { data: enr } = await db

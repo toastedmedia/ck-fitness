@@ -2058,3 +2058,39 @@ describe('"Visible to all members" switch (0034)', () => {
     expect(r.rows[0]?.n).toBe(1);
   });
 });
+
+describe("training emails (0035)", () => {
+  const M = "00000000-0000-0000-0000-000000000f01";
+  const P = "10000000-0000-0000-0000-0000000000f1";
+  beforeAll(async () => {
+    await addUser(db, M);
+    await db.exec(`
+      insert into public.programs (id, slug, title, access_level, published) values ('${P}','mail-p','Mail training','free',true);
+      insert into public.program_emails (program_id, welcome_subject, welcome_body) values ('${P}','Hi','Body');
+      insert into public.program_email_log (program_id, user_id) values ('${P}','${M}');
+    `);
+  });
+  it("keeps the welcome text and send log away from members (server only)", async () => {
+    await asUser(db, M, async () => {
+      expect((await db.query("select * from public.program_emails")).rows).toHaveLength(
+        0,
+      );
+      expect(
+        (await db.query("select * from public.program_email_log")).rows,
+      ).toHaveLength(0);
+      await expect(
+        db.query(
+          "insert into public.program_email_log (program_id, user_id) values ($1, $2)",
+          [P, M],
+        ),
+      ).rejects.toThrow();
+    });
+  });
+  it("removes the log with the account", async () => {
+    await db.query("delete from auth.users where id = $1", [M]);
+    expect(
+      (await db.query("select 1 from public.program_email_log where user_id = $1", [M]))
+        .rows,
+    ).toHaveLength(0);
+  });
+});

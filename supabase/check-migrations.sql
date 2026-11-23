@@ -31,7 +31,8 @@ with need(mig, kind, tbl, col) as (values
   ('0031','table','sms_settings',null),('0031','table','sms_messages',null),
   ('0032','table','member_calls',null),('0032','column','sms_settings','nudge_enabled'),
   ('0033','table','program_grants',null),
-  ('0034','column','programs','members_included')
+  ('0034','column','programs','members_included'),
+  ('0035','table','program_emails',null),('0035','table','program_email_log',null)
 ), found as (
   select n.*, case n.kind
     when 'table' then exists (select 1 from information_schema.tables t where t.table_schema='public' and t.table_name=n.tbl)

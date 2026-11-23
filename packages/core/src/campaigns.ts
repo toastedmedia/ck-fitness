@@ -47,7 +47,12 @@ const fill = (s: string, name: string) => s.replace(/\{\{\s*name\s*\}\}/gi, name
 export function renderCampaign(
   c: Campaign,
   data: { name?: string },
-  opts: { siteUrl: string; unsubscribeUrl?: string },
+  opts: {
+    siteUrl: string;
+    unsubscribeUrl?: string;
+    /** Why she gets this email (footer). Defaults to the offers-and-news wording. */
+    reason?: string;
+  },
 ): { subject: string; html: string; text: string } {
   const name = (data.name ?? "").trim() || "there";
   const url = c.ctaLabel.trim() ? safeCtaUrl(c.ctaUrl, opts.siteUrl) : null;
@@ -66,9 +71,13 @@ export function renderCampaign(
   const cta = url
     ? `<p style="margin:0 0 20px"><a href="${esc(url)}" style="display:inline-block;background:#c8a84b;color:#1b1b36;text-decoration:none;font-weight:bold;padding:14px 26px;border-radius:999px">${esc(c.ctaLabel.trim())}</a></p>`
     : "";
+  const reason =
+    opts.reason ?? "You are getting this because you chose to receive offers and news.";
   const unsub = opts.unsubscribeUrl
-    ? `<br />You are getting this because you chose to receive offers and news. <a href="${esc(opts.unsubscribeUrl)}" style="color:#5b6075">Unsubscribe</a>`
-    : "";
+    ? `<br />${esc(reason)} <a href="${esc(opts.unsubscribeUrl)}" style="color:#5b6075">Unsubscribe</a>`
+    : opts.reason
+      ? `<br />${esc(opts.reason)}`
+      : "";
   const html = `<!doctype html><html><body style="margin:0"><span style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(fill(c.preheader, name))}</span>
 <div style="background:#f3f4f9;padding:24px 12px;font-family:Arial,Helvetica,sans-serif">
 <table role="presentation" width="100%" style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:20px;overflow:hidden">
@@ -155,3 +164,21 @@ export const CAMPAIGN_PRESETS: {
     ctaUrl: "",
   },
 ];
+
+/** Puts the training's name into a welcome or announcement text ({{training}}). */
+export const fillTraining = (s: string, title: string) =>
+  s.replace(/\{\{\s*training\s*\}\}/gi, title);
+
+/** Starting text for a training's welcome email (owners edit it in Admin -> training -> Emails). */
+export const TRAINING_WELCOME_DEFAULT = {
+  subject: "Welcome to {{training}}, {{name}}!",
+  heading: "Congratulations and welcome to {{training}}",
+  body: "Hi {{name}},\n\nCongratulations and welcome to {{training}}! We are so happy to have you with us.\n\n- Open the Chardikala Fitness app and tap Trainings to find it\n- Start with the first lesson and go at your own pace\n- Reply to this email any time if you have a question\n\nWe will be cheering you on every step of the way.",
+};
+
+/** Starting text for announcing a training (new training or newly opened to a group). */
+export const TRAINING_ANNOUNCE_DEFAULT = {
+  subject: "New in the app: {{training}}",
+  heading: "{{training}} is here",
+  body: "Hi {{name}},\n\nWe just added {{training}} to the Chardikala Fitness app and we would love for you to try it.\n\nOpen the app, tap Trainings and start whenever you are ready.",
+};
