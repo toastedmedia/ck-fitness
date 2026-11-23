@@ -22,6 +22,7 @@ const TABLES = [
   "community_comments",
   "community_profiles",
   "memberships",
+  "program_grants",
   "support_requests",
   "notifications",
   "nutrition_profiles",

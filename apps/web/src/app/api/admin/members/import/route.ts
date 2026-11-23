@@ -69,12 +69,12 @@ export async function POST(request: NextRequest) {
       if (tagId) await addTag(db, tagId, [id]);
       let note = "";
       if (b.programId) {
-        const g = await grantAccess(db, id, b.programId);
+        const g = await grantAccess(db, id, b.programId, { by: user.id });
         note =
-          g.membership === "granted"
-            ? "Access granted"
-            : g.membership === "already"
-              ? "Already a paying member"
+          g.access === "granted"
+            ? "Given this training"
+            : g.access === "already"
+              ? "Already had this training"
               : "Enrolled";
       }
       if (created && b.notify)

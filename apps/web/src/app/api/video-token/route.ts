@@ -5,6 +5,7 @@ import { playlistPath, renditionStatus, signPass } from "@/lib/hls";
 import { playbackLink, r2Configured } from "@/lib/r2";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { resolveMembership } from "@ck/core";
+import { loadProgramGrants } from "@/lib/viewer";
 
 export const dynamic = "force-dynamic";
 
@@ -27,32 +28,35 @@ export async function POST(request: NextRequest) {
 
   const { data: lesson } = await supabase
     .from("lessons")
-    .select("id,video_key,access_override,program_sections(programs(access_level))")
+    .select(
+      "id,video_key,access_override,program_sections(program_id,programs(access_level))",
+    )
     .eq("id", lessonId)
     .maybeSingle();
   if (!lesson)
     return NextResponse.json({ error: "This video is for members." }, { status: 403 });
 
-  const programLevel =
-    (
-      lesson.program_sections as unknown as {
-        programs: { access_level: AccessLevel };
-      } | null
-    )?.programs.access_level ?? "member";
+  const section = lesson.program_sections as unknown as {
+    program_id: string;
+    programs: { access_level: AccessLevel };
+  } | null;
+  const programLevel = section?.programs.access_level ?? "member";
   const level = (lesson.access_override ?? programLevel) as AccessLevel;
-  const [{ data: m }, { data: roles }] = await Promise.all([
+  const [{ data: m }, { data: roles }, grants] = await Promise.all([
     supabase
       .from("memberships")
       .select("entitlement,status,period_end,cancel_at_period_end")
       .eq("user_id", user.id)
       .maybeSingle(),
     supabase.from("staff_roles").select("role").eq("user_id", user.id).eq("active", true),
+    loadProgramGrants(supabase, user.id),
   ]);
   const viewer = {
     entitlement: resolveMembership(m).entitlement,
     staffRoles: ((roles ?? []) as { role: StaffRole }[]).map((r) => r.role),
+    programGrants: grants,
   };
-  if (!canAccess(viewer, level))
+  if (!canAccess(viewer, level, section?.program_id))
     return NextResponse.json({ error: "This video is for members." }, { status: 403 });
   if (!lesson.video_key)
     return NextResponse.json({ error: "This video is coming soon." }, { status: 404 });

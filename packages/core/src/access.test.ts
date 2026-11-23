@@ -22,4 +22,17 @@ describe("canAccess", () => {
     expect(canAccess({ entitlement: "free", staffRoles: ["support"] }, "member")).toBe(
       false,
     ));
+
+  it("opens only the one granted training for a free member", () => {
+    const bought = {
+      entitlement: "free",
+      staffRoles: [],
+      programGrants: ["p-100"],
+    } as const;
+    expect(canAccess(bought, "member", "p-100")).toBe(true);
+    expect(canAccess(bought, "coach_only", "p-100")).toBe(true);
+    expect(canAccess(bought, "member", "p-other")).toBe(false);
+    expect(canAccess(bought, "member")).toBe(false);
+    expect(canAccess(bought, "hidden", "p-100")).toBe(false);
+  });
 });

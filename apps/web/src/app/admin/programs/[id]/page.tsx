@@ -208,9 +208,9 @@ export default async function EditProgram({
         <Flash>
           {sp.who} now has this training in My Trainings.
           {sp.granted === "granted"
-            ? " They were given CK Membership, as if they had paid."
+            ? " Only this training is opened for them, not the other member trainings."
             : sp.granted === "already"
-              ? " They already have a paid membership."
+              ? " They already had access to it."
               : ""}
         </Flash>
       ) : null}
@@ -867,10 +867,12 @@ export default async function EditProgram({
           {view === "access" ? (
             <Panel title="Add a member to this training">
               <p className="text-sm text-muted">
-                Use this when someone has paid you directly. Enter the email they signed
-                up with. For a paid training this also gives them CK Membership, the same
-                as a payment, and puts the training under My Trainings so they can start.
-                To take access away, open the person under Users and use Assign manually.
+                Use this when someone has bought this one training from you. Enter the
+                email they signed up with. It opens this training only (not the other
+                member trainings) and puts it under My Trainings so they can start. To
+                give every member training, open the person under Users and choose CK
+                Membership. To take this training away, open the person, Trainings tab,
+                Remove access.
               </p>
               {canEdit && roles.some((r) => r === "owner" || r === "admin") ? (
                 <form

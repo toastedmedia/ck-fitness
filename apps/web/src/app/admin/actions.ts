@@ -42,7 +42,7 @@ import {
 import { resendConfirmationEmail } from "@/lib/email/confirm";
 import { sendMemberEmail, sendRaw, emailConfigured } from "@/lib/email/send";
 import { notifyUser } from "@/lib/events";
-import { createMember, grantAccess } from "@/lib/members";
+import { createMember, grantAccess, removeGrant } from "@/lib/members";
 import {
   addTag as tagMembers,
   ensureTag,
@@ -1285,7 +1285,11 @@ export async function addMember(formData: FormData): Promise<void> {
   let created = false;
   try {
     ({ id, created } = await createMember(db, { first, last, email, phone }));
-    if (programId) await grantAccess(db, id, programId);
+    if (programId)
+      await grantAccess(db, id, programId, {
+        by: user.id,
+        membership: str(formData, "scope") === "membership",
+      });
     if (created && formData.get("notify") === "on") {
       const site = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
       if (site)
@@ -1304,20 +1308,42 @@ export async function addMember(formData: FormData): Promise<void> {
   redirect(`/admin/users/${id}?saved=1${created ? "&added=1" : "&existed=1"}`);
 }
 
-/** Gives a member a program the way a payment would (manual CK Membership + enrol). From a client page. */
+/**
+ * Gives a member a training from a client page: this training only (default), or CK Membership
+ * (all member trainings) when "scope" is "membership". Either way it lands under My Trainings.
+ */
 export async function giveAccessToUser(
   userId: string,
   formData: FormData,
 ): Promise<void> {
   const { supabase, user, db } = await requireStaff(OPS);
   const programId = str(formData, "program_id");
+  const membership = str(formData, "scope") === "membership";
   if (!programId) redirect(`/admin/users/${userId}?tab=programs&error=program`);
   try {
-    await grantAccess(db, userId, programId);
+    await grantAccess(db, userId, programId, { by: user.id, membership });
   } catch {
     redirect(`/admin/users/${userId}?tab=programs&error=save`);
   }
-  await audit(supabase, user.id, "member.grant_access", userId, { programId });
+  await audit(supabase, user.id, "member.grant_access", userId, {
+    programId,
+    scope: membership ? "membership" : "training",
+  });
+  redirect(`/admin/users/${userId}?tab=programs&saved=1`);
+}
+
+/** Takes one hand-given training away from a member (CK Membership is changed separately). */
+export async function removeTrainingAccess(
+  userId: string,
+  programId: string,
+): Promise<void> {
+  const { supabase, user, db } = await requireStaff(OPS);
+  try {
+    await removeGrant(db, userId, programId);
+  } catch {
+    redirect(`/admin/users/${userId}?tab=programs&error=save`);
+  }
+  await audit(supabase, user.id, "member.remove_access", userId, { programId });
   redirect(`/admin/users/${userId}?tab=programs&saved=1`);
 }
 
@@ -1338,12 +1364,15 @@ export async function giveProgramAccess(
   if (!prof) redirect(`${back}&error=nouser`);
   let r: Awaited<ReturnType<typeof grantAccess>>;
   try {
-    r = await grantAccess(db, prof.user_id, programId);
+    r = await grantAccess(db, prof.user_id, programId, { by: user.id });
   } catch {
     redirect(`${back}&error=save`);
   }
-  await audit(supabase, user.id, "member.grant_access", prof.user_id, { programId });
-  redirect(`${back}&granted=${r.membership}&who=${encodeURIComponent(email)}`);
+  await audit(supabase, user.id, "member.grant_access", prof.user_id, {
+    programId,
+    scope: "training",
+  });
+  redirect(`${back}&granted=${r.access}&who=${encodeURIComponent(email)}`);
 }
 
 /** Saves a drag-and-drop reorder: the order of weeks, the lessons in each, and lessons moved between weeks. */
@@ -1458,18 +1487,22 @@ export async function bulkGiveAccess(formData: FormData): Promise<void> {
   const join = safeBack.includes("?") ? "&" : "?";
   const ids = cleanIds(formData.getAll("ids"), 5000);
   const programId = str(formData, "program_id");
+  const membership = str(formData, "scope") === "membership";
   if (!ids.length || !programId) redirect(`${safeBack}${join}bulk=none`);
   if (ids.length > MAX_BULK_ACCESS) redirect(`${safeBack}${join}bulk=toomany`);
   let ok = 0;
   for (const id of ids) {
     try {
-      await grantAccess(db, id, programId);
+      await grantAccess(db, id, programId, { by: user.id, membership });
       ok++;
     } catch {
       /* keep going; the count shows how many worked */
     }
   }
-  await audit(supabase, user.id, "members.bulk_access", programId, { count: ok });
+  await audit(supabase, user.id, "members.bulk_access", programId, {
+    count: ok,
+    scope: membership ? "membership" : "training",
+  });
   redirect(`${safeBack}${join}bulk=access&n=${ok}`);
 }
 

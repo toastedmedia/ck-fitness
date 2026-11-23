@@ -233,6 +233,17 @@ export default async function AdminUsers({
                 ))}
               </select>
             </label>
+            <label className="text-xs font-bold text-brand md:col-span-2">
+              What to give with it
+              <select name="scope" className={aInput} defaultValue="training">
+                <option value="training">
+                  This training only (for example a one-off purchase)
+                </option>
+                <option value="membership">
+                  CK Membership: all member trainings (studio clients)
+                </option>
+              </select>
+            </label>
             <label className="flex items-start gap-3 text-sm md:col-span-2">
               <input
                 name="notify"

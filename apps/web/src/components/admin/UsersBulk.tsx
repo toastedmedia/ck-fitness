@@ -96,6 +96,10 @@ export function UsersBulk({
               </option>
             ))}
           </select>
+          <select name="scope" className={field} aria-label="What to give">
+            <option value="training">This training only</option>
+            <option value="membership">CK Membership (all member trainings)</option>
+          </select>
           <button formAction={accessAction} className={btn}>
             Give access (up to 100)
           </button>

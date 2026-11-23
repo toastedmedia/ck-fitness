@@ -10,6 +10,11 @@ export type AccessLevel = "free" | "member" | "premium_preview" | "coach_only" |
 export interface Viewer {
   entitlement: Entitlement;
   staffRoles: readonly StaffRole[];
+  /**
+   * Trainings given to her one at a time (Admin -> Give access, for example a one-off purchase).
+   * Each opens only that training, never the rest of the Member Library.
+   */
+  programGrants?: readonly string[];
 }
 
 const CONTENT_STAFF: readonly StaffRole[] = [
@@ -19,8 +24,18 @@ const CONTENT_STAFF: readonly StaffRole[] = [
   "content_manager",
 ];
 
-export function canAccess(viewer: Viewer, level: AccessLevel): boolean {
+/**
+ * May she open content at this level? Pass the training's id so a one-training grant counts:
+ * a grant opens everything in that training except hidden content.
+ */
+export function canAccess(
+  viewer: Viewer,
+  level: AccessLevel,
+  programId?: string | null,
+): boolean {
   if (viewer.staffRoles.some((r) => CONTENT_STAFF.includes(r))) return true;
+  if (level !== "hidden" && programId && viewer.programGrants?.includes(programId))
+    return true;
   switch (level) {
     case "free":
       return true;

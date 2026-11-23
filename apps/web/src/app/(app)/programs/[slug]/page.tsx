@@ -47,7 +47,7 @@ export default async function ProgramPage({
   );
   if (!program) notFound();
   const level = program.access_level as AccessLevel;
-  const allowed = canAccess(viewer, level);
+  const allowed = canAccess(viewer, level, program.id);
 
   const [
     { outline, flat },
@@ -240,7 +240,7 @@ export default async function ProgramPage({
               <h2 className="text-[13px] font-bold text-brand">{s.title}</h2>
               <ol className="mt-2 flex flex-col divide-y divide-line">
                 {s.lessons.map((l) => {
-                  const open = canAccess(viewer, l.effective_access);
+                  const open = canAccess(viewer, l.effective_access, program.id);
                   const isDone = doneSet.has(l.id);
                   const inner = (
                     <>

@@ -7,7 +7,12 @@ import {
   type Units,
 } from "@ck/core";
 import { ABtn, Panel, Status, Table, aInput, td } from "@/components/admin/ui";
-import { addMemberTag, giveAccessToUser, removeMemberTag } from "../../actions";
+import {
+  addMemberTag,
+  giveAccessToUser,
+  removeMemberTag,
+  removeTrainingAccess,
+} from "../../actions";
 import type { requireStaff } from "@/lib/admin";
 
 type Ctx = Awaited<ReturnType<typeof requireStaff>>;
@@ -50,7 +55,12 @@ export async function ProgramsTab({
     .eq("user_id", id)
     .maybeSingle();
   const entitlement = resolveMembership(m).entitlement;
-  const viewer = { entitlement, staffRoles: [] as never[] };
+  const { data: grantRows } = await db
+    .from("program_grants")
+    .select("program_id")
+    .eq("user_id", id);
+  const grants = ((grantRows ?? []) as { program_id: string }[]).map((g) => g.program_id);
+  const viewer = { entitlement, staffRoles: [] as never[], programGrants: grants };
 
   const [{ data: programs }, { data: sections }, { data: lessons }] = await Promise.all([
     supabase
@@ -143,6 +153,18 @@ export async function ProgramsTab({
             ? "Free trainings open, member trainings locked."
             : "All member trainings open."}
         </p>
+        {grants.length ? (
+          <p className="mt-2 text-sm">
+            Given one at a time:{" "}
+            <b>
+              {progs
+                .filter((p) => grants.includes(p.id))
+                .map((p) => p.title)
+                .join(", ")}
+            </b>
+            . Only these open for her, on top of her plan.
+          </p>
+        ) : null}
         {!shared ? (
           <p className="mt-2 text-xs text-muted">
             {firstName} has not shared her records, so stage and video progress are
@@ -151,7 +173,8 @@ export async function ProgramsTab({
         ) : null}
       </Panel>
       {progs.map((p) => {
-        const allowed = canAccess(viewer, p.access_level);
+        const allowed = canAccess(viewer, p.access_level, p.id);
+        const granted = grants.includes(p.id);
         const mine = secs.filter((s) => s.program_id === p.id);
         const all = mine.flatMap((s) =>
           lessonRows
@@ -182,6 +205,14 @@ export async function ProgramsTab({
                 <Status tone={allowed ? "ok" : "bad"}>
                   {allowed ? "Has access" : "Locked for her"}
                 </Status>
+                {granted ? (
+                  <>
+                    <Status tone="mute">This training only</Status>
+                    <form action={removeTrainingAccess.bind(null, id, p.id)}>
+                      <ABtn>Remove access</ABtn>
+                    </form>
+                  </>
+                ) : null}
               </div>
             </div>
             {shared ? (
@@ -752,9 +783,11 @@ export async function GiveAccess({
   return (
     <Panel title="Give access to a training">
       <p className="text-sm text-muted">
-        Use this when {firstName} has paid you directly. For a paid training it gives them
-        CK Membership (all member trainings, same as a payment) and adds the training to
-        My Trainings. Take it away later under Overview, Assign manually.
+        Choose <b>This training only</b> when {firstName} bought one training from you:
+        only that training opens, the other member trainings stay locked. Choose{" "}
+        <b>CK Membership</b> for a studio client: every member training opens. Either way
+        the training is added to My Trainings. Take a single training away with Remove
+        access on it below; change CK Membership under Overview, Assign manually.
       </p>
       <form
         action={giveAccessToUser.bind(null, userId)}
@@ -769,6 +802,13 @@ export async function GiveAccess({
                 {p.title} ({p.access_level === "free" ? "free" : "paid"})
               </option>
             ))}
+          </select>
+        </label>
+        <label className="min-w-60 flex-1 text-xs font-bold text-brand">
+          What to give
+          <select name="scope" className={aInput} defaultValue="training">
+            <option value="training">This training only</option>
+            <option value="membership">CK Membership (all member trainings)</option>
           </select>
         </label>
         <ABtn variant="primary">Give access</ABtn>

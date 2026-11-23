@@ -50,15 +50,26 @@ export async function createMember(
   return { id: data.user.id, created: true };
 }
 
+export type GrantResult = {
+  /** granted: newly opened; already: she could already open it; not_needed: free training. */
+  access: "granted" | "already" | "not_needed";
+  /** True when CK Membership (all member trainings) was given as well. */
+  membership: boolean;
+  enrolled: boolean;
+};
+
 /**
- * Gives one member access to a program the way a payment would: a manual CK Membership when the
- * program is paid (never touches a Stripe subscription), and enrols her so it shows under My Programs.
+ * Gives one member a training and puts it under My Trainings.
+ * By default this opens ONLY that training (a "program grant", for example a one-off purchase);
+ * it never gives CK Membership. Pass `membership: true` to also make her a CK Member by hand
+ * (all member trainings), which is what a studio client gets. Never touches a Stripe subscription.
  */
 export async function grantAccess(
   db: Db,
   userId: string,
   programId: string,
-): Promise<{ membership: "granted" | "already" | "not_needed"; enrolled: boolean }> {
+  opts: { membership?: boolean; by?: string | null } = {},
+): Promise<GrantResult> {
   const { data: program } = await db
     .from("programs")
     .select("id,access_level")
@@ -66,15 +77,22 @@ export async function grantAccess(
     .maybeSingle();
   if (!program) throw new Error("Training not found.");
 
-  let membership: "granted" | "already" | "not_needed" = "not_needed";
-  if (program.access_level !== "free") {
+  let access: GrantResult["access"] = "not_needed";
+  let membership = false;
+  // Coach-only trainings are never opened by CK Membership, so they always use a grant.
+  if (
+    program.access_level !== "free" &&
+    program.access_level !== "coach_only" &&
+    opts.membership
+  ) {
+    // CK Membership by hand: every member training, for as long as staff keep it on.
     const { data: m } = await db
       .from("memberships")
-      .select("provider,entitlement,status")
+      .select("provider,entitlement")
       .eq("user_id", userId)
       .maybeSingle();
-    if (m && m.provider !== "manual") membership = "already";
-    else if (m?.entitlement === "ck_premium") membership = "already";
+    if ((m && m.provider !== "manual") || m?.entitlement === "ck_premium")
+      access = "already";
     else {
       await db.from("memberships").upsert(
         {
@@ -89,8 +107,31 @@ export async function grantAccess(
         },
         { onConflict: "user_id" },
       );
-      membership = "granted";
+      access = m?.entitlement === "ck_member" ? "already" : "granted";
+      membership = true;
     }
+  } else if (program.access_level !== "free") {
+    // This training only.
+    const { data: had, error: readError } = await db
+      .from("program_grants")
+      .select("program_id")
+      .eq("user_id", userId)
+      .eq("program_id", programId)
+      .maybeSingle();
+    const { error } = readError
+      ? { error: readError }
+      : await db
+          .from("program_grants")
+          .upsert(
+            { user_id: userId, program_id: programId, granted_by: opts.by ?? null },
+            { onConflict: "user_id,program_id", ignoreDuplicates: true },
+          );
+    // Never fall back to giving full membership: without the 0033 database change, stop.
+    if (error)
+      throw new Error(
+        "One-training access needs database change 0033 (program_grants). Run it in Supabase first.",
+      );
+    access = had ? "already" : "granted";
   }
 
   const { data: enr } = await db
@@ -99,7 +140,7 @@ export async function grantAccess(
     .eq("user_id", userId)
     .eq("program_id", programId)
     .maybeSingle();
-  if (enr) return { membership, enrolled: false };
+  if (enr) return { access, membership, enrolled: false };
   const { data: secs } = await db
     .from("program_sections")
     .select("id")
@@ -124,5 +165,15 @@ export async function grantAccess(
   await db
     .from("program_enrollments")
     .insert({ user_id: userId, program_id: programId, current_lesson_id: first });
-  return { membership, enrolled: true };
+  return { access, membership, enrolled: true };
+}
+
+/** Takes one training away again (only the hand-given grant; membership is separate). */
+export async function removeGrant(db: Db, userId: string, programId: string) {
+  const { error } = await db
+    .from("program_grants")
+    .delete()
+    .eq("user_id", userId)
+    .eq("program_id", programId);
+  if (error) throw new Error(error.message);
 }

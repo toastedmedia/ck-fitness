@@ -104,7 +104,7 @@ export default async function ProgramsPage({
       access_level: p.access_level,
       level: p.level,
       duration_label: p.duration_label,
-      locked: !canAccess(viewer, p.access_level),
+      locked: !canAccess(viewer, p.access_level, p.id),
       tags: p.program_tag_map
         .map((m) => m.content_tags)
         .filter((t) => t.tag_group === "delivery")

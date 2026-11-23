@@ -1896,3 +1896,103 @@ describe("call log and missed-workout texts (0032)", () => {
     ).toHaveLength(0);
   });
 });
+
+describe("one-training access (0033)", () => {
+  const BUYER = "00000000-0000-0000-0000-000000000d01";
+  const OTHER = "00000000-0000-0000-0000-000000000d02";
+  const P_BOUGHT = "10000000-0000-0000-0000-0000000000d1";
+  const P_NOT = "10000000-0000-0000-0000-0000000000d2";
+  const S_BOUGHT = "20000000-0000-0000-0000-0000000000d1";
+  const S_NOT = "20000000-0000-0000-0000-0000000000d2";
+  beforeAll(async () => {
+    for (const u of [BUYER, OTHER]) await addUser(db, u);
+    await db.exec(`
+      insert into public.programs (id, slug, title, access_level, published) values
+        ('${P_BOUGHT}','bought-p','Bought training','member',true),
+        ('${P_NOT}','other-p','Another member training','member',true);
+      insert into public.program_sections (id, program_id, title) values
+        ('${S_BOUGHT}','${P_BOUGHT}','Week 1'), ('${S_NOT}','${P_NOT}','Week 1');
+      insert into public.lessons (id, section_id, title, instructions, access_override) values
+        ('30000000-0000-0000-0000-0000000000d1','${S_BOUGHT}','Bought lesson','text',null),
+        ('30000000-0000-0000-0000-0000000000d2','${S_BOUGHT}','Bought coach lesson','text','coach_only'),
+        ('30000000-0000-0000-0000-0000000000d3','${S_BOUGHT}','Bought hidden lesson','text','hidden'),
+        ('30000000-0000-0000-0000-0000000000d4','${S_NOT}','Other lesson','text',null);
+      insert into public.program_grants (user_id, program_id) values ('${BUYER}','${P_BOUGHT}');
+    `);
+  });
+
+  const lessonTitles = async (who: string) =>
+    (
+      await asUser(db, who, async () =>
+        (
+          await db.query<{ title: string }>(
+            "select l.title from public.lessons l join public.program_sections s on s.id = l.section_id where s.program_id in ($1,$2)",
+            [P_BOUGHT, P_NOT],
+          )
+        ).rows.map((r) => r.title),
+      )
+    ).sort();
+
+  it("opens only the granted training's lessons (not hidden ones), never the rest of the library", async () => {
+    expect(await lessonTitles(BUYER)).toEqual(["Bought coach lesson", "Bought lesson"]);
+    expect(await lessonTitles(OTHER)).toEqual([]);
+  });
+
+  it("does not make her a member", async () => {
+    const r = await asUser(
+      db,
+      BUYER,
+      async () =>
+        (await db.query<{ e: string }>("select public.current_entitlement() as e"))
+          .rows[0],
+    );
+    expect(r?.e).not.toBe("ck_member");
+  });
+
+  it("lets her start the granted training but not another one", async () => {
+    await asUser(db, BUYER, async () => {
+      await db.query(
+        "insert into public.program_enrollments (user_id, program_id) values ($1, $2)",
+        [BUYER, P_BOUGHT],
+      );
+      await expect(
+        db.query(
+          "insert into public.program_enrollments (user_id, program_id) values ($1, $2)",
+          [BUYER, P_NOT],
+        ),
+      ).rejects.toThrow();
+    });
+  });
+
+  it("shows members only their own grants and lets nobody in the browser write them", async () => {
+    await asUser(db, OTHER, async () => {
+      expect((await db.query("select * from public.program_grants")).rows).toHaveLength(
+        0,
+      );
+      await expect(
+        db.query(
+          "insert into public.program_grants (user_id, program_id) values ($1, $2)",
+          [OTHER, P_NOT],
+        ),
+      ).rejects.toThrow();
+    });
+    await asUser(db, BUYER, async () => {
+      expect((await db.query("select * from public.program_grants")).rows).toHaveLength(
+        1,
+      );
+      await db.query("delete from public.program_grants");
+    });
+    expect(
+      (await db.query("select 1 from public.program_grants where user_id = $1", [BUYER]))
+        .rows,
+    ).toHaveLength(1);
+  });
+
+  it("removes grants with the account", async () => {
+    await db.query("delete from auth.users where id = $1", [BUYER]);
+    expect(
+      (await db.query("select 1 from public.program_grants where user_id = $1", [BUYER]))
+        .rows,
+    ).toHaveLength(0);
+  });
+});
