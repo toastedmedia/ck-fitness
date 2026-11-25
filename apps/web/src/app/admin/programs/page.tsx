@@ -30,6 +30,8 @@ export default async function AdminPrograms({
     cover_path: string | null;
     members_included?: boolean;
   }[];
+  // Rows hold a dropdown and buttons, so centre every cell vertically to keep them in line.
+  const tdm = td.replace("align-top", "align-middle");
   return (
     <>
       <H1
@@ -64,7 +66,7 @@ export default async function AdminPrograms({
         <Table head={["Training", "Access", "Duration", "Status", ""]}>
           {rows.map((p) => (
             <tr key={p.id}>
-              <td className={td}>
+              <td className={tdm}>
                 <div className="flex items-center gap-3">
                   {p.cover_path ? (
                     <img
@@ -96,7 +98,7 @@ export default async function AdminPrograms({
                   </div>
                 </div>
               </td>
-              <td className={td}>
+              <td className={tdm}>
                 <form
                   action={updateProgramAccess.bind(null, p.id)}
                   className="flex items-center gap-1"
@@ -118,13 +120,13 @@ export default async function AdminPrograms({
                   </ABtn>
                 </form>
               </td>
-              <td className={td}>{p.duration_label ?? "-"}</td>
-              <td className={td}>
+              <td className={`${tdm} whitespace-nowrap`}>{p.duration_label ?? "-"}</td>
+              <td className={`${tdm} whitespace-nowrap`}>
                 <Status tone={p.published ? "ok" : "warn"}>
                   {p.published ? "Published" : "Draft"}
                 </Status>
               </td>
-              <td className={td}>
+              <td className={`${tdm} whitespace-nowrap text-right`}>
                 <Link
                   className="font-bold text-brand underline"
                   href={`/admin/programs/${p.id}`}
