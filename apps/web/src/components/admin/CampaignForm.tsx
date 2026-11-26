@@ -40,11 +40,27 @@ export function CampaignForm({
   action: (formData: FormData) => void | Promise<void>;
   initial: CampaignValues;
   tags: { id: string; name: string }[];
-  trainings?: { id: string; title: string }[];
+  trainings?: { id: string; title: string; slug: string }[];
   imageUrl: string | null;
   siteUrl: string;
 }) {
   const [v, setV] = useState<CampaignValues>(initial);
+  // Pages inside the app a button can open; anything else is "Another link".
+  const pages: [string, string][] = [
+    ["", "Choose where the button goes"],
+    ["/home", "Home"],
+    ["/programs", "All trainings"],
+    ["/accountability", "My week (accountability)"],
+    ["/accountability/checkin", "Weekly check-in"],
+    ["/accountability/diet", "Meal plan"],
+    ["/progress", "Progress"],
+    ["/progress/photos", "Progress photos"],
+    ["/profile", "Profile"],
+  ];
+  const known = (url: string) =>
+    pages.some(([u]) => u === url) ||
+    trainings.some((t) => `/programs/${t.slug}` === url);
+  const [custom, setCustom] = useState(() => !known(initial.cta_url));
   const [pic, setPic] = useState<string | null>(null);
   const set = (k: keyof CampaignValues) => (e: { target: { value: string } }) =>
     setV((p) => ({ ...p, [k]: e.target.value }));
@@ -104,7 +120,8 @@ export function CampaignForm({
               <button
                 type="button"
                 key={p.key}
-                onClick={() =>
+                onClick={() => {
+                  setCustom(!known(p.ctaUrl));
                   setV((o) => ({
                     ...o,
                     name: o.name || p.label,
@@ -114,8 +131,8 @@ export function CampaignForm({
                     body: p.body,
                     cta_label: p.ctaLabel,
                     cta_url: p.ctaUrl,
-                  }))
-                }
+                  }));
+                }}
                 className="min-h-10 rounded-full border-2 border-line px-3 text-xs font-bold text-brand"
               >
                 {p.label}
@@ -196,14 +213,43 @@ export function CampaignForm({
             />
           </Field>
           <Field label="Button goes to">
-            <input
-              name="cta_url"
-              maxLength={500}
-              value={v.cta_url}
-              onChange={set("cta_url")}
-              placeholder="/programs or https://…"
+            <input type="hidden" name="cta_url" value={v.cta_url} />
+            <select
+              aria-label="Button goes to"
+              value={custom ? "custom" : v.cta_url}
+              onChange={(e) => {
+                const val = e.target.value;
+                setCustom(val === "custom");
+                setV((p) => ({ ...p, cta_url: val === "custom" ? "" : val }));
+              }}
               className={aInput}
-            />
+            >
+              {pages.map(([url, label]) => (
+                <option key={url} value={url}>
+                  {label}
+                </option>
+              ))}
+              {trainings.length ? (
+                <optgroup label="A training">
+                  {trainings.map((t) => (
+                    <option key={t.id} value={`/programs/${t.slug}`}>
+                      {t.title}
+                    </option>
+                  ))}
+                </optgroup>
+              ) : null}
+              <option value="custom">Another link (type it)</option>
+            </select>
+            {custom ? (
+              <input
+                aria-label="Link"
+                maxLength={500}
+                value={v.cta_url}
+                onChange={set("cta_url")}
+                placeholder="https://… or /page"
+                className={`${aInput} mt-2`}
+              />
+            ) : null}
           </Field>
         </div>
         <fieldset className="grid gap-3 rounded-xl border-2 border-line p-3">

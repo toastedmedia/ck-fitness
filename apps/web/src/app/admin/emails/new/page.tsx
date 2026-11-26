@@ -17,7 +17,7 @@ export default async function NewCampaign({
   const { supabase } = await requireStaff(OPS);
   const [{ data: tags }, { data: trainings }] = await Promise.all([
     supabase.from("member_tags").select("id,name").order("name"),
-    supabase.from("programs").select("id,title").order("sort_order"),
+    supabase.from("programs").select("id,title,slug").order("sort_order"),
   ]);
   return (
     <>
