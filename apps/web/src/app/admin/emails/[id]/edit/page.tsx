@@ -27,10 +27,10 @@ export default async function EditCampaign({
   if (!data) notFound();
   const c = data as CampaignRow;
   if (c.status !== "draft") redirect(`/admin/emails/${id}`);
-  const { data: tags } = await supabase
-    .from("member_tags")
-    .select("id,name")
-    .order("name");
+  const [{ data: tags }, { data: trainings }] = await Promise.all([
+    supabase.from("member_tags").select("id,name").order("name"),
+    supabase.from("programs").select("id,title").order("sort_order"),
+  ]);
   return (
     <>
       <Link
@@ -57,8 +57,16 @@ export default async function EditCampaign({
           cta_url: c.cta_url,
           plan: c.audience?.plan ?? "all",
           tag: c.audience?.tag_id ?? "",
+          consent: c.audience?.consent ?? (c.audience?.training ? "news" : "offers"),
+          trainingMode: c.audience?.has_training
+            ? "has"
+            : c.audience?.lacks_training
+              ? "lacks"
+              : "any",
+          training: c.audience?.has_training ?? c.audience?.lacks_training ?? "",
         }}
         tags={tags ?? []}
+        trainings={trainings ?? []}
         imageUrl={imageUrlOf(c.image_path)}
         siteUrl={siteBase()}
       />

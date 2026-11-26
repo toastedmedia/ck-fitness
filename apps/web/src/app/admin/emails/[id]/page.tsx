@@ -5,7 +5,8 @@ import { renderCampaign } from "@ck/core";
 import { ABtn, Flash, H1, Panel } from "@/components/admin/ui";
 import { OPS, requireStaff } from "@/lib/admin";
 import {
-  audienceUserIds,
+  audiencePeople,
+  usesNewsConsent,
   imageUrlOf,
   siteBase,
   toCampaign,
@@ -49,10 +50,37 @@ export default async function CampaignPage({
   const e = renderCampaign(
     { ...toCampaign(c), imageUrl: imageUrlOf(c.image_path) },
     { name: "Priya" },
-    { siteUrl: site, unsubscribeUrl: `${site}/unsubscribe-sample` },
+    {
+      siteUrl: site,
+      unsubscribeUrl: `${site}/unsubscribe-sample`,
+      reason: usesNewsConsent(c.audience ?? {})
+        ? "You are getting this because you get news about trainings and the app."
+        : undefined,
+    },
   );
-  const estimate =
-    c.status === "draft" ? (await audienceUserIds(db, c.audience ?? {})).length : null;
+  const reach = c.status === "draft" ? await audiencePeople(db, c.audience ?? {}) : null;
+  const estimate = reach?.total ?? null;
+  // Plain-English summary of who gets it.
+  const a = c.audience ?? {};
+  const trainingId = a.has_training ?? a.lacks_training ?? a.training;
+  const { data: tp } = trainingId
+    ? await db.from("programs").select("title").eq("id", trainingId).maybeSingle()
+    : { data: null };
+  const { data: tg } = a.tag_id
+    ? await db.from("member_tags").select("name").eq("id", a.tag_id).maybeSingle()
+    : { data: null };
+  const who = [
+    a.plan === "free" ? "Free members" : a.plan === "member" ? "CK Members" : "Everyone",
+    a.has_training ? `who have ${tp?.title ?? "the training"}` : "",
+    a.lacks_training ? `who do NOT have ${tp?.title ?? "the training"}` : "",
+    a.given_only ? `given ${tp?.title ?? "the training"}` : "",
+    tg?.name ? `tagged ${tg.name}` : "",
+    usesNewsConsent(a)
+      ? '(with "New trainings and content" on)'
+      : "(who turned on Offers and news)",
+  ]
+    .filter(Boolean)
+    .join(" ");
   const draft = c.status === "draft";
   return (
     <>
@@ -95,6 +123,23 @@ export default async function CampaignPage({
             </>
           )}
         </p>
+        <p className="mt-1 text-sm">
+          Who gets it: <b>{who}</b>.
+        </p>
+        {reach?.people.length ? (
+          <details className="mt-1">
+            <summary className="cursor-pointer text-xs font-bold text-brand underline">
+              See who ({reach.total})
+            </summary>
+            <ul className="mt-2 max-h-56 overflow-y-auto text-xs">
+              {reach.people.map((p) => (
+                <li key={p.email + p.name} className="py-0.5">
+                  {p.name} <span className="text-muted">{p.email}</span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
         <div className="mt-3 flex flex-wrap gap-2">
           {draft ? (
             <>

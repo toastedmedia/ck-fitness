@@ -1,5 +1,11 @@
 import "server-only";
-import { renderCampaign, resolveMembership, type Campaign } from "@ck/core";
+import {
+  canAccess,
+  renderCampaign,
+  resolveMembership,
+  type AccessLevel,
+  type Campaign,
+} from "@ck/core";
 import { signUnsubscribe } from "@/lib/email/token";
 import { emailConfigured } from "@/lib/email/send";
 import type { createAdminSupabase } from "@/lib/supabase/admin";
@@ -12,7 +18,20 @@ export interface Audience {
   training?: string;
   /** Announcement only to the people given that training one at a time. */
   given_only?: boolean;
+  /**
+   * Which permission the email relies on: "news" = members who keep "New trainings and content"
+   * on (most members); "offers" (default for older emails) = only members who turned on Offers and news.
+   */
+  consent?: "news" | "offers";
+  /** Only people who can open this training (free, their plan, or given to them). */
+  has_training?: string;
+  /** Only people who can NOT open this training. */
+  lacks_training?: string;
 }
+
+/** True when the email relies on the "New trainings and content" switch rather than Offers and news. */
+export const usesNewsConsent = (a: Audience) =>
+  Boolean(a.training) || a.consent === "news";
 export interface CampaignRow {
   id: string;
   name: string;
@@ -63,7 +82,7 @@ export async function audienceUserIds(db: Db, a: Audience): Promise<string[]> {
   const { data: prefs } = await db
     .from("notification_preferences")
     .select("user_id")
-    .eq(a.training ? "new_content" : "marketing", true)
+    .eq(usesNewsConsent(a) ? "new_content" : "marketing", true)
     .eq("email", true)
     .limit(50000);
   let ids = ((prefs ?? []) as { user_id: string }[]).map((p) => p.user_id);
@@ -84,6 +103,52 @@ export async function audienceUserIds(db: Db, a: Audience): Promise<string[]> {
       .limit(50000);
     const tagged = new Set(((tm ?? []) as { user_id: string }[]).map((x) => x.user_id));
     ids = ids.filter((i) => tagged.has(i));
+  }
+  const trainingId = a.has_training || a.lacks_training;
+  if (trainingId && ids.length) {
+    const { data: prog } = await db
+      .from("programs")
+      .select("*")
+      .eq("id", trainingId)
+      .maybeSingle();
+    if (!prog) ids = [];
+    else {
+      const [{ data: ms }, { data: gs }] = await Promise.all([
+        db
+          .from("memberships")
+          .select("user_id,entitlement,status,period_end,cancel_at_period_end")
+          .limit(50000),
+        db
+          .from("program_grants")
+          .select("user_id")
+          .eq("program_id", trainingId)
+          .limit(50000),
+      ]);
+      const ent = new Map(
+        (
+          (ms ?? []) as {
+            user_id: string;
+            entitlement: string;
+            status: string;
+            period_end: string | null;
+            cancel_at_period_end: boolean;
+          }[]
+        ).map((m) => [m.user_id, resolveMembership(m).entitlement]),
+      );
+      const given = new Set(((gs ?? []) as { user_id: string }[]).map((g) => g.user_id));
+      const opens = (uid: string) =>
+        canAccess(
+          {
+            entitlement: ent.get(uid) ?? "free",
+            staffRoles: [],
+            programGrants: given.has(uid) ? [trainingId] : [],
+          },
+          prog.access_level as AccessLevel,
+          trainingId,
+          prog.members_included !== false,
+        );
+      ids = ids.filter((i) => (a.has_training ? opens(i) : !opens(i)));
+    }
   }
   if (a.plan === "free" || a.plan === "member") {
     const { data: ms } = await db
@@ -117,7 +182,8 @@ export async function audienceUserIds(db: Db, a: Audience): Promise<string[]> {
       email: string | null;
       terms_accepted_at: string | null;
     }[])
-      if (p.email && (!a.training || p.terms_accepted_at)) withEmail.push(p.user_id);
+      if (p.email && (!usesNewsConsent(a) || p.terms_accepted_at))
+        withEmail.push(p.user_id);
   }
   return withEmail;
 }
@@ -186,7 +252,7 @@ export async function processCampaign(
     const messages = ids.flatMap((uid) => {
       const p = byId.get(uid);
       if (!p?.email) return [];
-      const training = Boolean(c.audience?.training);
+      const training = usesNewsConsent(c.audience ?? {});
       const unsub = `${siteBase()}/api/email/unsubscribe?c=${training ? "content" : "marketing"}&t=${encodeURIComponent(signUnsubscribe(uid))}`;
       const e = renderCampaign(
         campaign,
@@ -195,7 +261,7 @@ export async function processCampaign(
           siteUrl: siteBase(),
           unsubscribeUrl: unsub,
           reason: training
-            ? "You are getting this because you get news about new trainings."
+            ? "You are getting this because you get news about trainings and the app."
             : undefined,
         },
       );
@@ -273,4 +339,30 @@ export async function processCampaign(
     })
     .eq("id", id);
   return { sent: done, left };
+}
+
+/** Names and emails of who an audience reaches (for the "See who" list), first 300. */
+export async function audiencePeople(
+  db: Db,
+  a: Audience,
+): Promise<{ total: number; people: { name: string; email: string }[] }> {
+  const ids = await audienceUserIds(db, a);
+  const people: { name: string; email: string }[] = [];
+  for (let i = 0; i < Math.min(ids.length, 300); i += 300) {
+    const { data } = await db
+      .from("profiles")
+      .select("first_name,last_name,email")
+      .in("user_id", ids.slice(i, i + 300));
+    for (const p of (data ?? []) as {
+      first_name: string | null;
+      last_name: string | null;
+      email: string | null;
+    }[])
+      people.push({
+        name: [p.first_name, p.last_name].filter(Boolean).join(" ") || "(no name)",
+        email: p.email ?? "",
+      });
+  }
+  people.sort((x, y) => x.name.localeCompare(y.name));
+  return { total: ids.length, people };
 }

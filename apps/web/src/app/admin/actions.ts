@@ -33,6 +33,8 @@ import { CONTENT, OPS, SUPPORT, audit, requireStaff } from "@/lib/admin";
 import { processCrmQueue } from "@/lib/crm";
 import { loadProgramEmail, renderWelcome, sendWelcomeEmails } from "@/lib/email/training";
 import {
+  audiencePeople,
+  usesNewsConsent,
   audienceUserIds,
   imageUrlOf,
   processCampaign,
@@ -1609,6 +1611,19 @@ export async function removeMemberTag(userId: string, tagId: string): Promise<vo
 const planOf = (v: string): Audience["plan"] =>
   v === "free" || v === "member" ? v : "all";
 
+/** "Who gets it" from the Create email form: plan, tag, training access and which permission. */
+function audienceFrom(formData: FormData): Audience {
+  const mode = str(formData, "audience_training_mode");
+  const training = str(formData, "audience_training");
+  return {
+    plan: planOf(str(formData, "audience_plan")),
+    consent: str(formData, "audience_consent") === "offers" ? "offers" : "news",
+    ...(str(formData, "audience_tag") ? { tag_id: str(formData, "audience_tag") } : {}),
+    ...(training && mode === "has" ? { has_training: training } : {}),
+    ...(training && mode === "lacks" ? { lacks_training: training } : {}),
+  };
+}
+
 /** Create or update a marketing email draft. */
 export async function saveCampaign(id: string, formData: FormData): Promise<void> {
   const { supabase, user } = await requireStaff(OPS);
@@ -1624,10 +1639,7 @@ export async function saveCampaign(id: string, formData: FormData): Promise<void
     body,
     cta_label: str(formData, "cta_label", 40),
     cta_url: str(formData, "cta_url", 500),
-    audience: {
-      plan: planOf(str(formData, "audience_plan")),
-      ...(str(formData, "audience_tag") ? { tag_id: str(formData, "audience_tag") } : {}),
-    },
+    audience: audienceFrom(formData),
   };
   const file = formData.get("image");
   if (file instanceof File && file.size > 0) {
@@ -1696,7 +1708,10 @@ export async function sendCampaignTest(id: string): Promise<void> {
     { name: me.first_name ?? undefined },
     {
       siteUrl: site,
-      unsubscribeUrl: `${site}/api/email/unsubscribe?c=marketing&t=sample`,
+      unsubscribeUrl: `${site}/api/email/unsubscribe?c=${usesNewsConsent(c.audience ?? {}) ? "content" : "marketing"}&t=sample`,
+      reason: usesNewsConsent(c.audience ?? {})
+        ? "You are getting this because you get news about trainings and the app."
+        : undefined,
     },
   );
   const ok = await sendRaw({
@@ -1765,6 +1780,14 @@ export async function duplicateCampaign(id: string): Promise<void> {
 export async function countCampaignAudience(a: Audience): Promise<number> {
   const { db } = await requireStaff(OPS);
   return (await audienceUserIds(db, a)).length;
+}
+
+/** Live "This goes to N people" + the names, for the Create email form. */
+export async function previewCampaignAudience(
+  formData: FormData,
+): Promise<{ total: number; people: { name: string; email: string }[] }> {
+  const { db } = await requireStaff(OPS);
+  return audiencePeople(db, audienceFrom(formData));
 }
 
 /* -------------------------------------------------------------- home banners */

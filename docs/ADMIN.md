@@ -81,6 +81,14 @@ Admin -> Trainings -> the training -> **Emails** (owners and admins; needs SQL 0
   and kept Email and "New trainings and content" on receive it (unsubscribe link included); big lists finish in the background
   within minutes. Past announcements are listed there and under Admin -> Emails.
 
+## Email a group (for example everyone who does or does not have a training)
+
+Admin -> Emails -> **Create email** (or a training -> Emails -> "Email people who have this training" / "who do NOT have it").
+Under **Who gets it** choose the plan, a tag, and **Training: Has access to / Does NOT have access to** a training. **Send it as**
+"Training and app news" (members who kept "New trainings and content" on; most members) or "Offers and promotions" (only members
+who turned on Offers and news). The box shows **This goes to N people** and **See who** while you type. Save the draft, send a
+test to yourself, then send.
+
 ## Text messages (welcome text on sign-up)
 
 Admin -> Messages -> **Text messages** (owners and admins). One text per new member after she confirms her email and finishes the

@@ -11,14 +11,14 @@ export const metadata: Metadata = { title: "Create email" };
 export default async function NewCampaign({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; mode?: string; training?: string }>;
 }) {
   const sp = await searchParams;
   const { supabase } = await requireStaff(OPS);
-  const { data: tags } = await supabase
-    .from("member_tags")
-    .select("id,name")
-    .order("name");
+  const [{ data: tags }, { data: trainings }] = await Promise.all([
+    supabase.from("member_tags").select("id,name").order("name"),
+    supabase.from("programs").select("id,title").order("sort_order"),
+  ]);
   return (
     <>
       <Link href="/admin/emails" className="text-sm font-bold text-brand underline">
@@ -42,8 +42,12 @@ export default async function NewCampaign({
           cta_url: "",
           plan: "all",
           tag: "",
+          consent: "news",
+          trainingMode: ["has", "lacks"].includes(sp.mode ?? "") ? sp.mode! : "any",
+          training: sp.training ?? "",
         }}
         tags={tags ?? []}
+        trainings={trainings ?? []}
         imageUrl={null}
         siteUrl={siteBase()}
       />

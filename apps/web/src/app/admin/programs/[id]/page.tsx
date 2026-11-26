@@ -1262,6 +1262,27 @@ export default async function EditProgram({
                 </p>
               </Panel>
 
+              <Panel title="Write your own email">
+                <p className="text-sm text-muted">
+                  Write any email with a live preview and see exactly who gets it before
+                  you send.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link
+                    href={`/admin/emails/new?mode=has&training=${id}`}
+                    className="inline-flex min-h-10 items-center rounded-button bg-brand px-4 text-sm font-bold text-white"
+                  >
+                    Email people who have this training
+                  </Link>
+                  <Link
+                    href={`/admin/emails/new?mode=lacks&training=${id}`}
+                    className="inline-flex min-h-10 items-center rounded-button border-2 border-line px-4 text-sm font-bold text-brand"
+                  >
+                    Email people who do NOT have it
+                  </Link>
+                </div>
+              </Panel>
+
               <Panel title="Announce this training">
                 <p className="text-sm text-muted">
                   Tell people this training is here: a short email (and a note in the app
