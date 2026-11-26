@@ -17,6 +17,14 @@ const FILTERS = [
   ["incomplete", "Not finished onboarding"],
 ] as const;
 
+const SORTS = [
+  ["newest", "Newest sign-ups"],
+  ["oldest", "Oldest sign-ups"],
+  ["active", "Recently active"],
+  ["inactive", "Least active"],
+  ["name", "Name A-Z"],
+] as const;
+
 /** Everyone in one list: contact details, plan and activity. Health records are opened per client, with consent. */
 export default async function AdminUsers({
   searchParams,
@@ -29,10 +37,21 @@ export default async function AdminUsers({
     tag?: string;
     bulk?: string;
     n?: string;
+    s?: string;
   }>;
 }) {
-  const { q = "", f = "all", view, error, tag, bulk, n } = await searchParams;
+  const {
+    q = "",
+    f = "all",
+    view,
+    error,
+    tag,
+    bulk,
+    n,
+    s: sortParam,
+  } = await searchParams;
   const filter = FILTERS.some(([k]) => k === f) ? f : "all";
+  const sort = SORTS.some(([k]) => k === sortParam) ? sortParam! : "newest";
   const { db, roles } = await requireStaff(SUPPORT);
   const isOps = roles.includes("owner") || roles.includes("admin");
   const term = q.trim().replace(/[%,()]/g, "");
@@ -41,6 +60,7 @@ export default async function AdminUsers({
       ? await db.from("programs").select("id,title").order("sort_order")
       : { data: [] };
   const programs = (progList ?? []) as { id: string; title: string }[];
+
   const errors: Record<string, string> = {
     name: "Please enter a first and last name.",
     email: "Please enter a valid email address.",
@@ -76,6 +96,18 @@ export default async function AdminUsers({
     .from("profiles")
     .select(
       "user_id,first_name,last_name,email,phone,onboarding_complete,last_active_at,created_at,coach_access_at",
+    )
+    .order(
+      sort === "name"
+        ? "first_name"
+        : sort === "active" || sort === "inactive"
+          ? "last_active_at"
+          : "created_at",
+      {
+        ascending: sort === "oldest" || sort === "name" || sort === "inactive",
+        // Never-active people go last when sorting by recent activity, first for "least active".
+        nullsFirst: sort === "inactive",
+      },
     )
     .order("created_at", { ascending: false })
     .limit(200);
@@ -157,7 +189,14 @@ export default async function AdminUsers({
       ? `${Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 86_400_000))}d ago`
       : "never";
   const href = (extra: Record<string, string>) =>
-    `/admin/users?${new URLSearchParams({ ...(term ? { q: term } : {}), f: filter, ...(tag ? { tag } : {}), ...extra })}`;
+    `/admin/users?${new URLSearchParams({ ...(term ? { q: term } : {}), f: filter, ...(tag ? { tag } : {}), ...(sort !== "newest" ? { s: sort } : {}), ...extra })}`;
+  const joined = (iso: string) =>
+    new Date(iso).toLocaleDateString("en-CA", {
+      timeZone: "America/Vancouver",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
 
   return (
     <>
@@ -285,8 +324,23 @@ export default async function AdminUsers({
           className={`${aInput} flex-1`}
         />
         <input type="hidden" name="f" value={filter} />
+        {sort !== "newest" ? <input type="hidden" name="s" value={sort} /> : null}
+        {tag ? <input type="hidden" name="tag" value={tag} /> : null}
         <ABtn variant="primary">Search</ABtn>
       </form>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-bold text-muted">Sort by:</span>
+        {SORTS.map(([k, l]) => (
+          <Link
+            key={k}
+            href={href({ s: k })}
+            aria-current={sort === k ? "page" : undefined}
+            className={`inline-flex min-h-9 items-center rounded-full border-2 px-3 text-xs font-semibold ${sort === k ? "border-accent-strong bg-accent-strong text-white" : "border-line bg-surface"}`}
+          >
+            {l}
+          </Link>
+        ))}
+      </div>
       <div className="flex flex-wrap gap-2">
         {FILTERS.map(([k, l]) => (
           <Link
@@ -353,6 +407,7 @@ export default async function AdminUsers({
                 "Phone",
                 "Plan",
                 "Tags",
+                "Joined",
                 "Onboarding",
                 "Last active",
                 "Status",
@@ -407,6 +462,7 @@ export default async function AdminUsers({
                         ))}
                       </div>
                     </td>
+                    <td className={`${td} whitespace-nowrap`}>{joined(r.created_at)}</td>
                     <td className={td}>
                       {r.onboarding_complete ? "Complete" : "Not finished"}
                     </td>
@@ -429,7 +485,9 @@ export default async function AdminUsers({
             ) : null}
             {rows.length >= 100 ? (
               <p className="pt-2 text-xs text-muted">
-                Showing the first 100. Use search, filters or tags to narrow the list.
+                Showing the first 100 (
+                {SORTS.find(([k]) => k === sort)?.[1].toLowerCase()}). Use search, filters
+                or tags to narrow the list.
               </p>
             ) : null}
           </Panel>

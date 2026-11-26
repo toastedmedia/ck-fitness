@@ -124,13 +124,13 @@ export default async function AdminClient({
 
   const head = (
     <>
-      <H1
-        right={
-          <Link href="/admin/users" className="text-sm font-bold text-brand underline">
-            All users
-          </Link>
-        }
+      <Link
+        href="/admin/users"
+        className="inline-flex min-h-9 items-center gap-1 text-sm font-bold text-brand underline"
       >
+        <span aria-hidden="true">&larr;</span> All users
+      </Link>
+      <H1>
         {p.first_name} {p.last_name}
       </H1>
       {sp.saved ? <Flash>Saved.</Flash> : null}
