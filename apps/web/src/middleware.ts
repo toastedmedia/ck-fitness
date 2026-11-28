@@ -20,6 +20,8 @@ const SHORT_LINKS: Record<string, string> = {
 const SITE_PAGES: Record<string, string> = {
   "/": "/site/index.html",
   "/links": "/site/links.html",
+  "/consult": "/site/consult.html",
+  "/book": "/site/consult.html",
 };
 
 export function middleware(request: NextRequest) {
