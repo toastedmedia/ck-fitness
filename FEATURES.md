@@ -89,6 +89,15 @@ Chardikala Fitness & Performance (CK Fitness) is an in-person fitness and perfor
 - ✅ **Emails:** Offers and campaigns (presets for diet plan, limited-time promo, winter offer, new training, news; live preview; test send; confirmed queued send; stop; duplicate) and Automatic emails (preview and test every email)
 - ✅ Community moderation (approvals, reports, hide/restore/remove, mute, ban, pin, audience switch), Support (reply notifies member), CRM sync (Toasted Media CRM adapter with retry queue; 🔌 needs the real API), Settings (price text, referral reward, daily goals and score weights, support email, Nutrition testers), Audit log (times in Vancouver time)
 
+## Public website and ads tracking (since 2026-11-27)
+
+- ✅ **chardikalafitness.com** served by the app (moved off Hostinger): 30-Day Winter Fitness Challenge page ($89 CAD + GST early-bird, Stripe Payment Link, WhatsApp, intro video, weekly live Q&A times in the visitor's time zone)
+- ✅ **chardikalafitness.com/links** (Linktree-style): Book a free consultation ("Speak with Chanveer directly", Toasted Media booking page), highlighted Winter Challenge and free-app cards with images, WhatsApp and Instagram icons
+- ✅ **Short links** with UTM tags: `/dm` (app sign-up, instagram/dm), `/bio` and `/story` (links page, instagram/bio|story)
+- ✅ **Google Analytics 4** (website + app, one property): every page, every button (`button_click`), sign_up, login, onboarding_complete, start_training, lesson_complete, contact, share, book_consultation, view_challenge, generate_lead, begin_checkout, purchase
+- ✅ **Meta Pixel + Conversions API** (same event ID, counted once): PageView, ButtonClick, CompleteRegistration (sign-up), Lead (onboarding done / app sign-up link), Schedule (consultation), Contact (WhatsApp, help request), ViewContent (challenge, intro video), InitiateCheckout + Purchase ($89, Winter Challenge), plus custom StartTraining, LessonComplete, Login, Share, InstagramClick
+- ✅ Never in the iPhone/Android app (Apple tracking rules) or admin; no names or health data; email only hashed (server); Privacy Policy updated
+
 ## Platform
 
 - ✅ Row-level security on every table; staff access to member data enforced in the database; community safety rules in the database
