@@ -2094,3 +2094,65 @@ describe("training emails (0035)", () => {
     ).toHaveLength(0);
   });
 });
+
+describe("CRM and bookings (0036)", () => {
+  const M = "00000000-0000-0000-0000-000000000f11";
+  const C = "20000000-0000-0000-0000-0000000000c1";
+  beforeAll(async () => {
+    await addUser(db, M);
+    await db.exec(`
+      insert into public.crm_contacts (id, user_id, first_name, email, stage) values ('${C}','${M}','Priya','priya@example.com','new');
+      insert into public.crm_activities (contact_id, body) values ('${C}','Called her');
+      insert into public.bookings (contact_id, starts_at, ends_at, email, manage_token)
+        values ('${C}','2026-12-01T03:15:00Z','2026-12-01T03:30:00Z','priya@example.com','tok-1');
+      insert into public.booking_availability (weekday, start_time, end_time) values (0,'19:00','20:00');
+    `);
+  });
+  it("keeps contacts, notes, bookings and settings away from members (server only)", async () => {
+    await asUser(db, M, async () => {
+      for (const t of [
+        "crm_contacts",
+        "crm_activities",
+        "bookings",
+        "booking_settings",
+        "booking_availability",
+      ]) {
+        expect((await db.query(`select * from public.${t}`)).rows).toHaveLength(0);
+      }
+      await expect(
+        db.query(
+          "insert into public.bookings (starts_at, ends_at, email, manage_token) values ('2026-12-02T03:15:00Z','2026-12-02T03:30:00Z','x@example.com','tok-x')",
+        ),
+      ).rejects.toThrow();
+    });
+  });
+  it("lets a time be booked only once, but again after a cancellation", async () => {
+    await expect(
+      db.query(
+        "insert into public.bookings (starts_at, ends_at, email, manage_token) values ('2026-12-01T03:15:00Z','2026-12-01T03:30:00Z','b@example.com','tok-2')",
+      ),
+    ).rejects.toThrow();
+    await db.query(
+      "update public.bookings set status = 'cancelled' where manage_token = 'tok-1'",
+    );
+    await db.query(
+      "insert into public.bookings (starts_at, ends_at, email, manage_token) values ('2026-12-01T03:15:00Z','2026-12-01T03:30:00Z','b@example.com','tok-2')",
+    );
+  });
+  it("keeps one settings row and one contact per email", async () => {
+    expect((await db.query("select * from public.booking_settings")).rows).toHaveLength(
+      1,
+    );
+    await expect(
+      db.query("insert into public.crm_contacts (email) values ('PRIYA@example.com')"),
+    ).rejects.toThrow();
+  });
+  it("keeps the contact but unlinks it when the account is deleted", async () => {
+    await db.query("delete from auth.users where id = $1", [M]);
+    const r = await db.query<{ user_id: string | null }>(
+      "select user_id from public.crm_contacts where id = $1",
+      [C],
+    );
+    expect(r.rows[0]?.user_id).toBeNull();
+  });
+});

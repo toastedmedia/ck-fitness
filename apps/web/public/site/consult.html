@@ -53,6 +53,35 @@ h2{font-family:"Sora",sans-serif;font-size:clamp(1.4rem,4.6vw,1.9rem);margin:0 0
 .steps span{color:var(--muted);font-size:.95rem}
 .cal{border:2px solid var(--line);border-radius:20px;overflow:hidden;background:#fff;min-height:620px}
 .cal iframe{width:100%;border:0;min-height:620px;display:block}
+.bk{border:2px solid var(--line);border-radius:20px;background:#fff;padding:18px}
+.bk[hidden],.cal[hidden]{display:none}
+.bk h3{font-family:"Sora",sans-serif;font-size:1.05rem;margin:0 0 10px}
+.days{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+.day{flex:none;scroll-snap-align:start;min-width:84px;min-height:64px;border:2px solid var(--line);border-radius:14px;background:#fff;color:var(--navy);font:inherit;font-weight:700;cursor:pointer;padding:8px 10px;line-height:1.2}
+.day small{display:block;font-weight:600;color:var(--muted);font-size:.8rem}
+.day[aria-pressed=true]{background:var(--navy);border-color:var(--navy);color:#fff}
+.day[aria-pressed=true] small{color:var(--gold)}
+.times{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin:6px 0 4px}
+.time{min-height:48px;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--navy);font:inherit;font-weight:700;cursor:pointer}
+.time[aria-pressed=true]{background:var(--gold);border-color:var(--gold)}
+.day:focus-visible,.time:focus-visible,.bk input:focus-visible,.bk textarea:focus-visible,.bk button:focus-visible{outline:3px solid rgba(201,168,76,.7);outline-offset:2px}
+.form{display:grid;gap:12px;margin-top:18px}
+@media (min-width:640px){.form .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}}
+.form .two{display:grid;gap:12px}
+.form label{display:block;font-weight:700;font-size:.92rem}
+.form input,.form textarea{display:block;width:100%;margin-top:4px;min-height:50px;border:2px solid var(--line);border-radius:12px;padding:10px 12px;font:inherit;font-size:16px;color:var(--navy)}
+.form textarea{min-height:80px}
+.form .tick{display:flex;gap:10px;align-items:flex-start;font-weight:500;font-size:.9rem;color:var(--muted)}
+.form .tick input{width:22px;min-height:22px;height:22px;margin:2px 0 0;flex:none}
+.chosen{background:var(--gold-soft);border-radius:12px;padding:10px 12px;font-weight:700}
+.err{color:#B3261E;font-weight:700;margin:0}
+.submit{border:0;cursor:pointer;width:100%}
+.submit[disabled]{opacity:.6;cursor:wait}
+.done{text-align:center;padding:10px 4px}
+.done h3{font-size:1.4rem}
+.done .btn{margin-top:8px}
+.ghost{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:.6rem 1.2rem;border-radius:999px;border:2px solid var(--line);color:var(--navy);font-weight:800;text-decoration:none;margin-top:8px}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .alt{text-align:center;color:var(--muted);font-size:.95rem;margin:16px 0 0}
 .alt a{color:var(--gold-deep);font-weight:700}
 .alt a.wa{color:#fff}
@@ -94,8 +123,41 @@ h2{font-family:"Sora",sans-serif;font-size:clamp(1.4rem,4.6vw,1.9rem);margin:0 0
 
   <h2 id="book">Choose your time</h2>
   <p class="sub">Times are shown in Pacific time (Vancouver).</p>
-  <div class="cal">
-    <iframe id="ck-booking" src="https://api.toastedmedia.ca/widget/bookings/register?utm_source=chardikalafitness&amp;utm_medium=consult_page&amp;utm_campaign=book_call" title="Book a free consultation with Chanveer" scrolling="no" loading="eager"></iframe>
+  <div class="bk" id="ck-own" hidden aria-live="polite">
+    <div id="ck-pick">
+      <h3>1. Pick a day</h3>
+      <div class="days" id="ck-days" role="group" aria-label="Days"></div>
+      <h3 id="ck-times-h">2. Pick a time</h3>
+      <div class="times" id="ck-times" role="group" aria-labelledby="ck-times-h"></div>
+      <form class="form" id="ck-form" hidden novalidate>
+        <p class="chosen" id="ck-chosen"></p>
+        <div class="two">
+          <label>First name<input name="first_name" autocomplete="given-name" required maxlength="80"></label>
+          <label>Last name<input name="last_name" autocomplete="family-name" maxlength="80"></label>
+        </div>
+        <div class="two">
+          <label>Phone (we call you)<input name="phone" type="tel" autocomplete="tel" required maxlength="40" inputmode="tel"></label>
+          <label>Email<input name="email" type="email" autocomplete="email" required maxlength="200"></label>
+        </div>
+        <label>Your main goal (optional)<textarea name="goal" maxlength="1000" placeholder="For example: lose 10 lb before summer, get stronger after having a baby"></textarea></label>
+        <label class="tick"><input type="checkbox" name="consent"> Send me training tips and offers by email (you can unsubscribe at any time).</label>
+        <div class="hp" aria-hidden="true"><label>Leave this empty<input name="website" tabindex="-1" autocomplete="off"></label></div>
+        <p class="err" id="ck-err" role="alert" hidden></p>
+        <button class="btn submit" id="ck-submit" type="submit" data-track="Confirm consultation">Confirm my free consultation</button>
+        <p class="sub" style="margin:0;font-size:.85rem">We use your details only to arrange this call. <a href="https://app.chardikalafitness.com/privacy">Privacy</a></p>
+      </form>
+    </div>
+    <div class="done" id="ck-done" hidden>
+      <h3>You're booked in!</h3>
+      <p id="ck-done-when" style="font-weight:700"></p>
+      <p class="sub">We've emailed you the details. Chanveer will call you at the number you gave us.</p>
+      <a class="btn" id="ck-gcal" href="#" target="_blank" rel="noopener" data-track="Add consult to Google Calendar">Add to Google Calendar</a><br>
+      <a class="ghost" id="ck-manage" href="#" data-track="Change consult">Change or cancel</a>
+    </div>
+    <p class="sub" id="ck-none" hidden style="margin:0">No times are open right now. Message us on WhatsApp below and we'll find one for you.</p>
+  </div>
+  <div class="cal" id="ck-cal" hidden>
+    <iframe id="ck-booking" data-src="https://api.toastedmedia.ca/widget/bookings/register?utm_source=chardikalafitness&amp;utm_medium=consult_page&amp;utm_campaign=book_call" title="Book a free consultation with Chanveer" scrolling="no" loading="eager"></iframe>
   </div>
   <p class="alt">Prefer to message first?<br>
     <a class="wa" href="https://wa.me/16729622219?text=Hi%20Chanveer!%20I%27d%20like%20to%20ask%20about%20a%20free%20consultation." target="_blank" rel="noopener" data-track="WhatsApp (consult page)">WhatsApp us</a></p>
@@ -103,35 +165,145 @@ h2{font-family:"Sora",sans-serif;font-size:clamp(1.4rem,4.6vw,1.9rem);margin:0 0
 
 <p class="foot">© <span id="yr">2026</span> Chardikala Fitness &amp; Performance, Surrey, BC · <a href="/links">More links</a> · <a href="https://app.chardikalafitness.com/privacy">Privacy</a></p>
 
-<script src="https://storage.googleapis.com/builder-preview/iframe/iframeResizer.min.js"></script>
 <script>
 document.getElementById("yr").textContent = new Date().getFullYear();
 (function () {
-  var frame = document.getElementById("ck-booking");
-  try { if (window.iFrameResize) iFrameResize({ checkOrigin: false, heightCalculationMethod: "bodyScroll" }, frame); } catch (e) {}
-  // Tracking: the page counts as viewing the consultation offer; the first time someone moves on
-  // inside the calendar (it changes height) counts as starting a booking; a confirmed booking message
-  // from the calendar counts as a booking (Meta "Schedule").
   function ga(n, p) { try { window.gtag && gtag("event", n, p || {}); } catch (e) {} }
+  function $(id) { return document.getElementById(id); }
   window.addEventListener("load", function () {
     if (window.ckSite) ckSite.meta("ViewContent", { content_name: "Free consultation page" });
   });
-  var started = false, booked = false, loadedAt = Date.now();
-  window.addEventListener("message", function (e) {
-    if (!/toastedmedia\.ca|leadconnectorhq\.com|msgsndr\.com|gohighlevel\.com/.test(e.origin || "")) return;
-    var d = e.data, s = typeof d === "string" ? d : (function () { try { return JSON.stringify(d); } catch (x) { return ""; } })();
-    if (!booked && /booking[-_ ]?(complete|success|confirm)|appointment[-_ ]?(booked|confirm)|msgsndr-booking-complete/i.test(s)) {
-      booked = true;
-      if (window.ckSite) ckSite.meta("Schedule", { content_name: "Free consultation booked" });
+
+  /* ---- Old calendar (Toasted Media), shown only while our own booking is switched off ---- */
+  function showOldCalendar() {
+    var frame = $("ck-booking");
+    $("ck-cal").hidden = false;
+    frame.src = frame.getAttribute("data-src");
+    var s = document.createElement("script");
+    s.src = "https://storage.googleapis.com/builder-preview/iframe/iframeResizer.min.js";
+    s.onload = function () { try { iFrameResize({ checkOrigin: false, heightCalculationMethod: "bodyScroll" }, frame); } catch (e) {} };
+    document.body.appendChild(s);
+    var started = false, booked = false, loadedAt = Date.now();
+    window.addEventListener("message", function (e) {
+      if (!/toastedmedia\.ca|leadconnectorhq\.com|msgsndr\.com|gohighlevel\.com/.test(e.origin || "")) return;
+      var d = e.data, str = typeof d === "string" ? d : (function () { try { return JSON.stringify(d); } catch (x) { return ""; } })();
+      if (!booked && /booking[-_ ]?(complete|success|confirm)|appointment[-_ ]?(booked|confirm)|msgsndr-booking-complete/i.test(str)) {
+        booked = true;
+        if (window.ckSite) ckSite.meta("Schedule", { content_name: "Free consultation booked" });
+        ga("book_consultation_complete", { method: "consult_page" });
+        return;
+      }
+      if (!started && Date.now() - loadedAt > 4000 && /iFrameSizer|resize|height/i.test(str)) {
+        started = true;
+        if (window.fbq) fbq("trackCustom", "BookingStarted", { page: "consult" });
+        ga("booking_started", { method: "consult_page" });
+      }
+    });
+  }
+
+  /* ---- Our own booking calendar (Admin -> Calendar) ---- */
+  var data = null, day = null, slot = null, started = false;
+  function btn(cls, html, pressed) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = cls; b.innerHTML = html; b.setAttribute("aria-pressed", pressed ? "true" : "false");
+    b.setAttribute("data-no-track", "");
+    return b;
+  }
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function renderDays() {
+    var box = $("ck-days"); box.innerHTML = "";
+    data.days.forEach(function (d) {
+      var parts = d.label.split(", ");
+      var b = btn("day", esc(parts[0].slice(0, 3)) + "<small>" + esc((parts[1] || "").replace(/^(\w{3})\w*/, "$1")) + "</small>", d === day);
+      b.setAttribute("aria-label", d.label);
+      b.onclick = function () { day = d; slot = null; renderDays(); renderTimes(); $("ck-form").hidden = true; };
+      box.appendChild(b);
+    });
+  }
+  function renderTimes() {
+    var box = $("ck-times"); box.innerHTML = "";
+    day.slots.forEach(function (s) {
+      var b = btn("time", esc(s.label), s === slot);
+      b.setAttribute("aria-label", day.label + ", " + s.label);
+      b.onclick = function () {
+        slot = s; renderTimes();
+        $("ck-chosen").textContent = day.label + " at " + s.label + " (Pacific time), " + data.minutes + " minutes";
+        $("ck-form").hidden = false;
+        if (!started) {
+          started = true;
+          if (window.fbq) fbq("trackCustom", "BookingStarted", { page: "consult" });
+          ga("booking_started", { method: "consult_page" });
+        }
+        setTimeout(function () { $("ck-form").scrollIntoView({ behavior: "smooth", block: "start" }); var f = $("ck-form").querySelector("input"); if (f) f.focus({ preventScroll: true }); }, 50);
+      };
+      box.appendChild(b);
+    });
+  }
+  function utm() {
+    var o = {}, q = new URLSearchParams(location.search);
+    ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "fbclid", "gclid"].forEach(function (k) { if (q.get(k)) o[k] = q.get(k); });
+    try {
+      var saved = JSON.parse(sessionStorage.getItem("ck_utm") || "{}");
+      if (Object.keys(o).length) sessionStorage.setItem("ck_utm", JSON.stringify(o)); else o = saved;
+    } catch (e) {}
+    return o;
+  }
+  var landingUtm = utm();
+  function gcal(startIso, minutes) {
+    function f(d) { return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z"); }
+    var s = new Date(startIso), e = new Date(s.getTime() + minutes * 60000);
+    return "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent("Free consultation, Chardikala Fitness") +
+      "&dates=" + f(s) + "%2F" + f(e) + "&details=" + encodeURIComponent("Coach Chanveer will call you.");
+  }
+  $("ck-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var f = e.target, err = $("ck-err"), sub = $("ck-submit");
+    err.hidden = true;
+    if (!slot) return;
+    if (!f.first_name.value.trim() || !f.phone.value.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.value.trim())) {
+      err.textContent = "Please add your first name, a phone number and a valid email."; err.hidden = false; return;
+    }
+    sub.disabled = true; sub.textContent = "Booking…";
+    var eventId = "Schedule." + Date.now().toString(36) + "." + Math.random().toString(36).slice(2, 10);
+    fetch("/api/booking", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        start: slot.start, first_name: f.first_name.value, last_name: f.last_name.value, email: f.email.value,
+        phone: f.phone.value, goal: f.goal.value, consent: f.consent.checked, website: f.website.value,
+        utm: landingUtm, event_id: eventId, page: location.href,
+      }),
+    }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); }).then(function (r) {
+      if (!r.ok || !r.j.ok) {
+        err.textContent = (r.j && r.j.error) || "Something went wrong. Please try again."; err.hidden = false;
+        sub.disabled = false; sub.textContent = "Confirm my free consultation";
+        if (r.j && r.j.reason === "taken") load();
+        return;
+      }
+      try { if (window.fbq) fbq("track", "Schedule", { content_name: "Free consultation" }, { eventID: eventId }); } catch (x) {}
       ga("book_consultation_complete", { method: "consult_page" });
-      return;
-    }
-    if (!started && Date.now() - loadedAt > 4000 && /iFrameSizer|resize|height/i.test(s)) {
-      started = true;
-      if (window.fbq) fbq("trackCustom", "BookingStarted", { page: "consult" });
-      ga("booking_started", { method: "consult_page" });
-    }
+      $("ck-pick").hidden = true; $("ck-done").hidden = false;
+      $("ck-done-when").textContent = r.j.when;
+      $("ck-gcal").href = gcal(slot.start, data.minutes);
+      $("ck-manage").href = r.j.manage;
+      $("ck-own").scrollIntoView({ behavior: "smooth", block: "start" });
+    }).catch(function () {
+      err.textContent = "No connection. Please try again."; err.hidden = false;
+      sub.disabled = false; sub.textContent = "Confirm my free consultation";
+    });
   });
+  function load() {
+    return fetch("/api/booking/slots", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j.open) { showOldCalendar(); return; }
+      data = j; $("ck-own").hidden = false;
+      if (!j.days.length) { $("ck-pick").hidden = true; $("ck-none").hidden = false; return; }
+      $("ck-pick").hidden = false; $("ck-none").hidden = true;
+      day = (day && j.days.filter(function (d) { return d.day === day.day; })[0]) || j.days[0];
+      slot = null; $("ck-form").hidden = true;
+      renderDays(); renderTimes();
+    }).catch(showOldCalendar);
+  }
+  load();
 })();
 </script>
 </body>

@@ -89,6 +89,32 @@ Under **Who gets it** choose the plan, a tag, and **Training: Has access to / Do
 who turned on Offers and news). The box shows **This goes to N people** and **See who** while you type. Save the draft, send a
 test to yourself, then send.
 
+## Leads and consultation calendar (our own CRM)
+
+**Admin -> Leads** is the pipeline: every person who booked a consultation or contacted us, in columns New lead, Contacted,
+Consult booked, Consult done, Client and Lost. On the phone, swipe sideways between columns. Change a stage with the dropdown
+on the card (it saves at once). Tap a name for the contact page: Call, WhatsApp, Email, Book a consult, tags (type a new tag
+name to create it), follow-ups with a due date, and notes (pick Note, Call, WhatsApp, Email or Met in person first). Add people
+from Instagram, WhatsApp or walk-ins with **+ Add contact**.
+
+**Admin -> Calendar** lists the consultations by day. Use Done or No-show after the call, Move to change the time (they get
+an email) or Cancel. **+ Add a booking** books anyone at any time that is not already taken.
+
+**First-time setup (Calendar -> Hours and settings):**
+
+1. Add the weekly hours (tick the days, pick From and To, Add hours; add a second block for the same day if needed).
+2. Check the length (15 minutes), notice (2 hours) and days ahead (21), and put both owners' emails in "Email these people".
+3. Add any days off.
+4. Tick **Take bookings on the website** and save. chardikalafitness.com/consult now shows our own picker instead of the
+   old Toasted Media calendar (untick to go back).
+5. Make a test booking on the website with your own email, check the emails, then cancel it from the link in the email.
+6. Google Calendar: copy the private address at the bottom, then in Google Calendar on a computer choose Other calendars ->
+   \+ -> From URL, paste and Add calendar. Bookings then show in your Google Calendar on the phone too (Google refreshes it
+   every few hours; the new-booking email has an "Add to Google Calendar" link for instant adding).
+
+People who book get a confirmation email, a reminder the day before and one about an hour before, and a page to move or
+cancel. Every booking is reported to Meta (Schedule) and Google Analytics for the ads.
+
 ## Text messages (welcome text on sign-up)
 
 Admin -> Messages -> **Text messages** (owners and admins). One text per new member after she confirms her email and finishes the

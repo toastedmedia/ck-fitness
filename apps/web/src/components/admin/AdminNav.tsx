@@ -9,6 +9,8 @@ type Group = { label: string; items: { href: string; label: string }[] };
 const ICONS: Record<string, string> = {
   "/admin": "M4 13h6V4H4zM14 20h6V11h-6zM14 4h6v4h-6zM4 20h6v-4H4z",
   "/admin/kpis": "M4 20V10M10 20V4M16 20v-7M22 20H2",
+  "/admin/leads": "M3 4h18l-7 9v6l-4 2v-8z",
+  "/admin/calendar": "M4 6h16v14H4zM4 10h16M8 3v5M16 3v5",
   "/admin/users":
     "M9 4a3 3 0 100 6 3 3 0 000-6zM3 20c.5-3.5 3-5 6-5s5.5 1.5 6 5M17 6a2.4 2.4 0 110 4.8M16 14.2c2.6 0 4.5 1.3 5 4.3",
   "/admin/accountability": "M12 3a9 9 0 100 18 9 9 0 000-18zM8 12.5l3 3 5-6",

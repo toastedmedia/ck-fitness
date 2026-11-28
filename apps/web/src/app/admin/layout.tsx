@@ -13,6 +13,18 @@ const NAV = [
   { group: "Overview", href: "/admin", label: "Dashboard", roles: ALL },
   { group: "Overview", href: "/admin/kpis", label: "KPIs", roles: ["owner", "admin"] },
   {
+    group: "Leads",
+    href: "/admin/leads",
+    label: "Leads",
+    roles: ["owner", "admin", "coach"],
+  },
+  {
+    group: "Leads",
+    href: "/admin/calendar",
+    label: "Calendar",
+    roles: ["owner", "admin", "coach"],
+  },
+  {
     group: "People",
     href: "/admin/users",
     label: "Users",

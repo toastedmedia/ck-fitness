@@ -37,7 +37,11 @@ export function middleware(request: NextRequest) {
       return NextResponse.rewrite(url);
     }
     // Website files and the tracking endpoint stay on the website.
-    if (path.startsWith("/site/") || path === "/api/meta-capi")
+    if (
+      path.startsWith("/site/") ||
+      path === "/api/meta-capi" ||
+      path.startsWith("/api/booking")
+    )
       return NextResponse.next();
     // Anything else (sign-in, app pages) belongs to the app.
     return NextResponse.redirect(

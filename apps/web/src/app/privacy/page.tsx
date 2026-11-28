@@ -21,6 +21,13 @@ export default function PrivacyPage() {
             Account details: first and last name, email, phone number, date of birth.
           </li>
           <li>
+            Consultation bookings (chardikalafitness.com/consult): name, email, phone
+            number, the time you pick and the goal you tell us. We use them to arrange and
+            follow up on your consultation, send you the confirmation and reminders, and
+            keep notes of our conversations with you. We only send you tips and offers by
+            email if you tick that box.
+          </li>
+          <li>
             Health and fitness information you choose to give us: height, weight,
             measurements, goals, training preferences, injuries or limitations, pregnancy
             or postpartum status, check-in answers, water and steps.

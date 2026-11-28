@@ -25,3 +25,4 @@ export * from "./outline";
 export * from "./hls";
 export * from "./sms";
 export * from "./followup";
+export * from "./booking";
