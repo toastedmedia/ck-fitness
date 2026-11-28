@@ -1,5 +1,5 @@
 import { after, NextResponse, type NextRequest } from "next/server";
-import { sendCapi } from "@/lib/meta-capi";
+import { sendCapi, sendCapiDetailed } from "@/lib/meta-capi";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
     event_id?: string;
     event_source_url?: string;
     custom_data?: Record<string, unknown>;
+    test_event_code?: string;
   } | null;
   if (!b?.event_name || !ALLOWED.has(b.event_name))
     return new NextResponse(null, { status: 204 });
@@ -44,6 +45,17 @@ export async function POST(request: NextRequest) {
   if (typeof cd.content_name === "string")
     custom.content_name = cd.content_name.slice(0, 100);
   if (typeof cd.training === "string") custom.content_name = cd.training.slice(0, 100);
+  // Check from Events Manager -> Test events: send one event with its test code and show Meta's answer.
+  if (b.test_event_code && /^TEST\d{3,10}$/.test(b.test_event_code)) {
+    const r = await sendCapiDetailed({
+      event_name: b.event_name,
+      event_id: String(b.event_id ?? "").slice(0, 100) || undefined,
+      event_source_url: OUR_SITES.test(url) ? url.slice(0, 500) : undefined,
+      custom_data: custom,
+      test_event_code: b.test_event_code,
+    });
+    return NextResponse.json(r);
+  }
   after(() =>
     sendCapi({
       event_name: b.event_name!,

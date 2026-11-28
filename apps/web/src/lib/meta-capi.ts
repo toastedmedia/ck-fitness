@@ -30,6 +30,16 @@ export interface CapiEvent {
   email?: string | null;
   /** Our user id, sent hashed, to match the same person across visits. */
   external_id?: string | null;
+  /** Meta "Test events" code (TEST12345): the event only shows under Test events. */
+  test_event_code?: string;
+}
+
+/** Result of one send, for the Test events check. */
+export interface CapiResult {
+  ok: boolean;
+  configured: boolean;
+  status?: number;
+  body?: string;
 }
 
 /** Browser details for matching: IP, user agent and Meta's _fbp/_fbc cookies (or ?fbclid). */
@@ -55,10 +65,15 @@ export async function requestUserData(sourceUrl?: string) {
 }
 
 export async function sendCapi(e: CapiEvent): Promise<boolean> {
-  if (!capiConfigured()) return false;
+  return (await sendCapiDetailed(e)).ok;
+}
+
+export async function sendCapiDetailed(e: CapiEvent): Promise<CapiResult> {
+  if (!capiConfigured()) return { ok: false, configured: false };
   try {
     const ua = await requestUserData(e.event_source_url);
-    if ((ua.client_user_agent ?? "").includes("CKFitnessApp")) return false; // never from the store app
+    if ((ua.client_user_agent ?? "").includes("CKFitnessApp"))
+      return { ok: false, configured: true }; // never from the store app
     const body = {
       data: [
         {
@@ -77,8 +92,8 @@ export async function sendCapi(e: CapiEvent): Promise<boolean> {
             : {}),
         },
       ],
-      ...(process.env.META_CAPI_TEST_CODE
-        ? { test_event_code: process.env.META_CAPI_TEST_CODE }
+      ...(e.test_event_code || process.env.META_CAPI_TEST_CODE
+        ? { test_event_code: e.test_event_code || process.env.META_CAPI_TEST_CODE }
         : {}),
     };
     const res = await fetch(
@@ -89,11 +104,11 @@ export async function sendCapi(e: CapiEvent): Promise<boolean> {
         body: JSON.stringify(body),
       },
     );
-    if (!res.ok)
-      console.error("meta capi failed", res.status, (await res.text()).slice(0, 200));
-    return res.ok;
+    const text = (await res.text()).slice(0, 300);
+    if (!res.ok) console.error("meta capi failed", res.status, text);
+    return { ok: res.ok, configured: true, status: res.status, body: text };
   } catch (err) {
     console.error("meta capi failed", (err as Error).message);
-    return false;
+    return { ok: false, configured: true, body: (err as Error).message.slice(0, 200) };
   }
 }
