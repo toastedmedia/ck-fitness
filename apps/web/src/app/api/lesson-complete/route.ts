@@ -1,3 +1,4 @@
+import { queueBrowserEvent } from "@/lib/ad-events-server";
 import { NextResponse, type NextRequest } from "next/server";
 import { getContext } from "@/lib/app";
 import { markLessonComplete } from "@/lib/lesson-complete";
@@ -35,6 +36,7 @@ export async function POST(request: NextRequest) {
     sec.programs.slug,
     "playback",
   );
+  if (r.ok) await queueBrowserEvent("lesson_complete", { training: sec.programs.slug });
   return r.ok
     ? NextResponse.json({ ok: true, completed: true })
     : NextResponse.json({ error: "Not allowed." }, { status: 403 });

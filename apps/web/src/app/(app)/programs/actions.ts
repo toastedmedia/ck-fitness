@@ -1,5 +1,6 @@
 "use server";
 
+import { queueBrowserEvent } from "@/lib/ad-events-server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getContext } from "@/lib/app";
@@ -25,6 +26,7 @@ export async function startProgram(programId: string, slug: string): Promise<voi
       .insert({ user_id: user.id, program_id: programId, current_lesson_id: first });
     if (error) redirect(`/programs/${slug}?error=locked`);
     await track(user.id, "program_started", { program: slug });
+    await queueBrowserEvent("start_training", { training: slug });
   }
   revalidatePath("/", "layout");
   redirect(first ? `/programs/${slug}/${first}` : `/programs/${slug}`);
@@ -39,5 +41,6 @@ export async function completeLesson(
   const ctx = await getContext();
   const r = await markLessonComplete(ctx, lessonId, programId, slug, "manual");
   if (!r.ok) redirect(`/programs/${slug}?error=locked`);
+  await queueBrowserEvent("lesson_complete", { training: slug });
   redirect(r.nextId ? `/programs/${slug}/${r.nextId}` : `/programs/${slug}?done=1`);
 }

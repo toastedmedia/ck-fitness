@@ -1,5 +1,6 @@
 "use server";
 
+import { queueBrowserEvent } from "@/lib/ad-events-server";
 import { redirect } from "next/navigation";
 import { getContext } from "@/lib/app";
 import { sendMemberEmail } from "@/lib/email/send";
@@ -25,5 +26,6 @@ export async function sendHelpRequest(formData: FormData): Promise<void> {
   await queueCrm(user.id, event, { category, program, message: message.slice(0, 500) });
   await track(user.id, event, { category });
   await sendMemberEmail(user.id, "support_received");
+  await queueBrowserEvent("contact", { topic: category });
   redirect("/accountability/help?sent=1");
 }

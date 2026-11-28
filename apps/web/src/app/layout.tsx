@@ -4,6 +4,8 @@ import "./globals.css";
 import { FormMemory } from "@/components/FormMemory";
 import { NativeShell } from "@/components/NativeShell";
 import { NavProgress } from "@/components/NavProgress";
+import { AdTracking } from "@/components/AdTracking";
+import { Suspense } from "react";
 
 const jakarta = Plus_Jakarta_Sans({ variable: "--font-jakarta", subsets: ["latin"] });
 
@@ -37,6 +39,9 @@ export default function RootLayout({
         <NativeShell />
         <NavProgress />
         <FormMemory />
+        <Suspense fallback={null}>
+          <AdTracking />
+        </Suspense>
         {children}
       </body>
     </html>

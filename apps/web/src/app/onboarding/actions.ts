@@ -1,5 +1,6 @@
 "use server";
 
+import { queueBrowserEvent } from "@/lib/ad-events-server";
 import { after } from "next/server";
 import { sendMemberEmail } from "@/lib/email/send";
 import { sendWelcomeText } from "@/lib/sms";
@@ -80,6 +81,7 @@ export async function saveOnboardingStep(
         location: ob?.training_location,
       });
       await track(id, "onboarding_completed");
+      await queueBrowserEvent("onboarding_complete");
       // One welcome email, the first time she finishes onboarding.
       const { count } = await createAdminSupabase()
         .from("analytics_events")

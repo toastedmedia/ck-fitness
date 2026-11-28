@@ -10,7 +10,7 @@ export default function PrivacyPage() {
       <main id="main" className="mx-auto max-w-2xl px-4 pt-10">
         <h1 className="font-display text-3xl text-brand">Privacy Policy</h1>
         <p className="mt-2 text-muted">
-          Last updated: October 17, 2026. Who we are: Chardikala Fitness &amp;
+          Last updated: November 27, 2026. Who we are: Chardikala Fitness &amp;
           Performance, operating the Chardikala Fitness app, based in Surrey, British
           Columbia, Canada. Contact: support@chardikalafitness.com.
         </p>
@@ -77,9 +77,11 @@ export default function PrivacyPage() {
           and sign-in), Vercel (hosting), Cloudflare (video and file storage), Stripe
           (membership payments, outside the app), OpenAI (AI estimates of meals you choose
           to scan, using only the photo and note you send, never your name or email),
-          Resend (account emails) and Toasted Media CRM (follow-up messages you have
-          agreed to). Some of these may store data outside Canada, including in the United
-          States. We may also share information if the law requires it.
+          Resend (account emails), Toasted Media CRM (follow-up messages you have agreed
+          to), and, on our website only, Google Analytics and Meta (Facebook and
+          Instagram) for measuring visits and our advertising (see Cookies below). Some of
+          these may store data outside Canada, including in the United States. We may also
+          share information if the law requires it.
         </p>
 
         <h2 className={h}>Your choices</h2>
@@ -109,8 +111,20 @@ export default function PrivacyPage() {
 
         <h2 className={h}>Cookies</h2>
         <p className="mt-2">
-          We use only the cookies needed to keep you signed in. We do not use advertising
-          cookies.
+          We use cookies to keep you signed in. On our website (in a web browser, not in
+          the iPhone or Android app) we also use Google Analytics and the Meta Pixel to
+          understand which pages and buttons people use and to measure and improve our
+          ads, including showing our ads to people who visited the site. They record
+          things like the pages you open, the buttons you tap, and when you create an
+          account or start a training, together with your browser and device details. We
+          never send them your health information, measurements, photos, check-ins,
+          messages or meal logs. Our iPhone and Android apps do not use these tools and do
+          not track you across other companies&apos; apps or websites.
+        </p>
+        <p className="mt-2">
+          You can block these cookies in your browser settings, use Google&apos;s opt-out
+          add-on (tools.google.com/dlpage/gaoptout) and choose your ad preferences in your
+          Facebook or Instagram settings. Signing in and using the app still works.
         </p>
 
         <h2 className={h}>Age</h2>

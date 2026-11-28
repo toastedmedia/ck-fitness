@@ -17,6 +17,7 @@ export function ReferralCard({
   async function copy() {
     try {
       await navigator.clipboard.writeText(link);
+      window.ckTrack?.("share", { method: "copy_link" });
       setNote("Link copied. Send it to a friend.");
     } catch {
       setNote("Press and hold the link to copy it.");
@@ -29,6 +30,7 @@ export function ReferralCard({
         text: "Train with me on the Chardikala Fitness App.",
         url: link,
       });
+      window.ckTrack?.("share", { method: "share_sheet" });
     } catch {
       /* closed the share sheet */
     }

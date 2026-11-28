@@ -1,5 +1,6 @@
 "use server";
 
+import { queueBrowserEvent } from "@/lib/ad-events-server";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { safeNext } from "@/lib/auth";
@@ -75,6 +76,7 @@ export async function signUp(_prev: FormState, formData: FormData): Promise<Form
   if (data.user && (data.user.identities?.length ?? 0) > 0) {
     await queueCrm(data.user.id, "free_account_created");
     await track(data.user.id, "signup");
+    await queueBrowserEvent("sign_up", { method: "email" });
   }
   if (data.session) redirect("/onboarding");
   return { message: "Check your email. We sent you a link to confirm your address." };
@@ -87,6 +89,7 @@ export async function logIn(_prev: FormState, formData: FormData): Promise<FormS
   const supabase = await createServerSupabase();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) return { error: "That email and password do not match. Please try again." };
+  await queueBrowserEvent("login", { method: "email" });
   // Go back to where she was heading (for example /admin), otherwise Home.
   redirect(safeNext(String(formData.get("next") ?? ""), "/home"));
 }
