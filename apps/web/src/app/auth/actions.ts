@@ -76,7 +76,11 @@ export async function signUp(_prev: FormState, formData: FormData): Promise<Form
   if (data.user && (data.user.identities?.length ?? 0) > 0) {
     await queueCrm(data.user.id, "free_account_created");
     await track(data.user.id, "signup");
-    await queueBrowserEvent("sign_up", { method: "email" });
+    await queueBrowserEvent(
+      "sign_up",
+      { method: "email" },
+      { email, userId: data.user.id },
+    );
   }
   if (data.session) redirect("/onboarding");
   return { message: "Check your email. We sent you a link to confirm your address." };

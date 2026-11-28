@@ -68,16 +68,51 @@ function boot() {
   }
 }
 
-/** Sends one of our events to Google Analytics and the Meta Pixel. */
+const newId = (n: string) =>
+  `${n}.${Date.now().toString(36)}.${Math.random().toString(36).slice(2, 10)}`;
+
+/** Same event to the Meta Conversions API through our server (same ID, so Meta keeps one copy). */
+function toServer(name: string, id: string, data: Record<string, string | number> = {}) {
+  try {
+    const body = JSON.stringify({
+      event_name: name,
+      event_id: id,
+      event_source_url: location.href,
+      custom_data: data,
+    });
+    if (navigator.sendBeacon)
+      navigator.sendBeacon(
+        "/api/meta-capi",
+        new Blob([body], { type: "application/json" }),
+      );
+    else
+      void fetch("/api/meta-capi", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body,
+        keepalive: true,
+      });
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Sends one of our events to Google Analytics and the Meta Pixel. `serverId` is set when the server
+ * already sent it to the Conversions API (queued events); otherwise the browser forwards it.
+ */
 export function sendEvent(
   name: TrackEvent,
   params: Record<string, string | number> = {},
+  serverId?: string,
 ) {
   if (typeof window === "undefined" || inNativeApp()) return;
   const m = EVENT_MAP[name];
   if (!m) return;
   window.gtag?.("event", m.ga, params);
-  window.fbq?.(m.metaStandard ? "track" : "trackCustom", m.meta, params);
+  const id = serverId ?? newId(m.meta);
+  window.fbq?.(m.metaStandard ? "track" : "trackCustom", m.meta, params, { eventID: id });
+  if (!serverId) toServer(m.meta, id, params);
 }
 
 /** Events a server action queued in a cookie before redirecting here. */
@@ -92,8 +127,9 @@ function flushQueued() {
     const list = JSON.parse(decodeURIComponent(raw)) as {
       n: TrackEvent;
       p?: Record<string, string | number>;
+      id?: string;
     }[];
-    for (const e of list) sendEvent(e.n, e.p ?? {});
+    for (const e of list) sendEvent(e.n, e.p ?? {}, e.id);
   } catch {
     /* ignore a broken cookie */
   }
@@ -128,7 +164,9 @@ export function AdTracking() {
       booted.current = true;
       window.ckTrack = sendEvent;
     }
-    window.fbq?.("track", "PageView");
+    const pv = newId("PageView");
+    window.fbq?.("track", "PageView", {}, { eventID: pv });
+    toServer("PageView", pv);
     flushQueued();
   }, [pathname, search]);
 

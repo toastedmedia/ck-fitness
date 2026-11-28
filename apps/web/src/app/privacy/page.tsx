@@ -118,8 +118,13 @@ export default function PrivacyPage() {
           things like the pages you open, the buttons you tap, and when you create an
           account or start a training, together with your browser and device details. We
           never send them your health information, measurements, photos, check-ins,
-          messages or meal logs. Our iPhone and Android apps do not use these tools and do
-          not track you across other companies&apos; apps or websites.
+          messages or meal logs. We also send the same events to Meta directly from our
+          server (Meta Conversions API) so our ad results are counted correctly; when we
+          do, your email address is only sent as a one-way scrambled code (a hash), never
+          as readable text. This applies to chardikalafitness.com and
+          app.chardikalafitness.com in a web browser. Our iPhone and Android apps do not
+          use these tools and do not track you across other companies&apos; apps or
+          websites.
         </p>
         <p className="mt-2">
           You can block these cookies in your browser settings, use Google&apos;s opt-out

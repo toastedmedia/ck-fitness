@@ -81,7 +81,11 @@ export async function saveOnboardingStep(
         location: ob?.training_location,
       });
       await track(id, "onboarding_completed");
-      await queueBrowserEvent("onboarding_complete");
+      await queueBrowserEvent(
+        "onboarding_complete",
+        {},
+        { email: user.email, userId: id },
+      );
       // One welcome email, the first time she finishes onboarding.
       const { count } = await createAdminSupabase()
         .from("analytics_events")

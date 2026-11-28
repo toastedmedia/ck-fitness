@@ -7,3 +7,6 @@ e2e/playwright-report
 apps/mobile/android
 apps/mobile/ios
 apps/mobile/www
+
+# Public website copied 1:1 from the old Hostinger site (kept as-is)
+apps/web/public/site/
