@@ -110,7 +110,7 @@ Chardikala Fitness & Performance (CK Fitness) is an in-person fitness and perfor
 - ✅ Cron jobs: hourly reminders, nutrition nudges, daily at-risk detection, lifecycle emails, meal-plan announcements, campaign queue (every 5 minutes), consultation reminders and lead email automations (every 15 minutes), CRM sync (every 10 minutes), missed-workout texts, daily cleanup
 - ✅ GitHub Actions CI and daily live smoke tests, security headers, privacy-safe Sentry hooks (needs DSN), PWA icons, error and loading pages, accessibility fixes
 - ✅ Account deletion removes data, photos and nutrition and cancels Stripe; data download includes nutrition
-- ✅ Automated checks: 225 core tests, 37 web tests, 104 database tests, production build (2026-11-27); daily live smoke test on desktop and iPhone-sized screens (fixed 2026-11-13)
+- ✅ Automated checks: 226 core tests, 37 web tests, 104 database tests, production build (2026-11-27); daily live smoke test on desktop and iPhone-sized screens (fixed 2026-11-13)
 
 ## Hidden on purpose until Apple approves iOS 1.0
 

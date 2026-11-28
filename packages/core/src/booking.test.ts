@@ -7,6 +7,7 @@ import {
   DEFAULT_BOOKING_SETTINGS,
   googleCalendarLink,
   isBookable,
+  phoneLabel,
   stageAfterBooking,
   timeLabel,
   zonedTime,
@@ -132,5 +133,12 @@ describe("bookingReminderDue", () => {
     const late = { ...b, created_at: "2026-12-09T20:00:00Z" };
     expect(bookingReminderDue(late, new Date("2026-12-09T21:00:00Z"))).toBeNull();
     expect(bookingReminderDue(late, new Date("2026-12-10T02:00:00Z"))).toBe("hour");
+  });
+});
+
+describe("phoneLabel", () => {
+  it("formats North American numbers and leaves others", () => {
+    expect(phoneLabel("+16729622219")).toBe("+1 672-962-2219");
+    expect(phoneLabel("+447700900123")).toBe("+447700900123");
   });
 });

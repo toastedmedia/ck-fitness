@@ -7,6 +7,7 @@ import {
   dayLabel,
   googleCalendarLink,
   isBookable,
+  phoneLabel,
   renderCampaign,
   timeLabel,
   type AvailabilityWindow,
@@ -345,7 +346,7 @@ export async function sendBookingEmail(
 ) {
   const when = whenText(b.starts_at, s.timezone);
   const phoneLine = b.phone
-    ? `We will call you at ${b.phone}. If that number is wrong, reply to this email.`
+    ? `We will call you at ${phoneLabel(b.phone)}. If that number is wrong, reply to this email.`
     : `How we meet: ${s.location}.`;
   const copy = {
     confirmed: {

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { dayLabel, googleCalendarLink } from "@ck/core";
+import { dayLabel, googleCalendarLink, phoneLabel } from "@ck/core";
 import { SiteFooter } from "@/components/SiteFooter";
 import { freeSlots, whenText, type BookingRow } from "@/lib/bookings";
 import { createAdminSupabase } from "@/lib/supabase/admin";
@@ -82,11 +82,13 @@ export default async function ManageBooking({
                     : "Done"}
               </p>
               <p className="mt-1 text-xl font-bold text-brand">{whenText(b.starts_at)}</p>
-              <p className="mt-2 text-sm">
-                {b.phone
-                  ? `Coach Chanveer will call you at ${b.phone}.`
-                  : st?.row.location}
-              </p>
+              {upcoming ? (
+                <p className="mt-2 text-sm">
+                  {b.phone
+                    ? `Coach Chanveer will call you at ${phoneLabel(b.phone)}.`
+                    : st?.row.location}
+                </p>
+              ) : null}
               {upcoming ? (
                 <div className="mt-4 flex flex-wrap gap-2">
                   <a

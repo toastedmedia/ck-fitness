@@ -323,3 +323,9 @@ export function bookingReminderDue(
     return "day";
   return null;
 }
+
+/** "+16045550101" -> "+1 604-555-0101" (North American numbers); anything else unchanged. */
+export function phoneLabel(phone: string): string {
+  const m = /^\+1(\d{3})(\d{3})(\d{4})$/.exec(phone.trim());
+  return m ? `+1 ${m[1]}-${m[2]}-${m[3]}` : phone;
+}
