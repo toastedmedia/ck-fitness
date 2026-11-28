@@ -94,6 +94,9 @@
     } else if (/app\.chardikalafitness\.com\/signup/i.test(href)) {
       meta("Lead", { content_name: "App sign-up link" });
       gtag("event", "generate_lead", { method: "app_signup_link" });
+    } else if (/^\/?#join$|^\/#join/.test(href)) {
+      meta("ViewContent", { content_name: "30-Day Winter Fitness Challenge" });
+      gtag("event", "view_challenge", { method: "links_page" });
     } else if (el.hasAttribute("data-video")) {
       meta("ViewContent", { content_name: "Winter Challenge intro video" });
       gtag("event", "video_open", { video_title: "Winter Challenge intro" });
