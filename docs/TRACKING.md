@@ -54,6 +54,14 @@ Short links (in `apps/web/src/middleware.ts`, `SHORT_LINKS`):
 Any other link: add `?utm_source=...&utm_medium=...&utm_campaign=...`. Do not add UTMs to links between our own pages
 (they would restart the visit). Paid Meta ads are tagged by Meta automatically.
 
+## Campaigns
+
+| Campaign                                   | Status                             | Goal                           | Budget      | Link and tags                                                                              |
+| ------------------------------------------ | ---------------------------------- | ------------------------------ | ----------- | ------------------------------------------------------------------------------------------ |
+| CK - Free consultation - Surrey - Dec 2026 | Draft (2026-11-27), owners publish | Schedule (booked consultation) | $10 CAD/day | /consult, utm_medium=paid_social, utm_campaign=consult_surrey_dec26, utm_content = ad name |
+
+In GA4 these visits show as source facebook/instagram (from `{{site_source_name}}`), medium paid_social.
+
 ## Where to see results
 
 - **GA4:** Reports -> Acquisition -> Traffic acquisition, first column "Session source / medium"; add a filter on an event
