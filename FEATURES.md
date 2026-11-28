@@ -96,7 +96,7 @@ Chardikala Fitness & Performance (CK Fitness) is an in-person fitness and perfor
 
 - ✅ **chardikalafitness.com** served by the app (moved off Hostinger): 30-Day Winter Fitness Challenge page ($89 CAD + GST early-bird, Stripe Payment Link, WhatsApp, intro video, weekly live Q&A times in the visitor's time zone)
 - ✅ **chardikalafitness.com/consult:** our own booking picker for the free 15-minute consultation (day, time, name, phone, email, goal, optional email-offers tick) once online booking is switched on in Admin -> Calendar (until then the Toasted Media calendar); confirmation, day-before and one-hour reminder emails; client page to add it to their calendar, move or cancel
-- ✅ **chardikalafitness.com/links** (Linktree-style): Book a free consultation ("Speak with Chanveer directly", Toasted Media booking page), highlighted Winter Challenge and free-app cards with images, WhatsApp and Instagram icons
+- ✅ **chardikalafitness.com/links** (Linktree-style): Book a free consultation ("Speak with Chanveer directly", goes to /consult), highlighted Winter Challenge and free-app cards with images, WhatsApp and Instagram icons
 - ✅ **Short links** with UTM tags: `/dm` (app sign-up, instagram/dm), `/bio` and `/story` (links page, instagram/bio|story)
 - ✅ **Google Analytics 4** (website + app, one property): every page, every button (`button_click`), sign_up, login, onboarding_complete, start_training, lesson_complete, contact, share, book_consultation, view_challenge, generate_lead, begin_checkout, purchase
 - ✅ **Meta Pixel + Conversions API** (same event ID, counted once): PageView, ButtonClick, CompleteRegistration (sign-up), Lead (onboarding done / app sign-up link), Schedule (consultation), Contact (WhatsApp, help request), ViewContent (challenge, intro video), InitiateCheckout + Purchase ($89, Winter Challenge), plus custom StartTraining, LessonComplete, Login, Share, InstagramClick
@@ -107,10 +107,10 @@ Chardikala Fitness & Performance (CK Fitness) is an in-person fitness and perfor
 - ✅ Row-level security on every table; staff access to member data enforced in the database; community safety rules in the database
 - ✅ Entitlement rules (free / member / premium, cancel-until-period-end, 3-day grace) in TypeScript and SQL
 - ✅ Video streaming job on GitHub (ffmpeg makes the streaming versions after each upload)
-- ✅ Cron jobs: hourly reminders, nutrition nudges, daily at-risk detection, lifecycle emails, meal-plan announcements, campaign queue (every 5 minutes), CRM sync (every 10 minutes), daily cleanup
+- ✅ Cron jobs: hourly reminders, nutrition nudges, daily at-risk detection, lifecycle emails, meal-plan announcements, campaign queue (every 5 minutes), consultation reminders and lead email automations (every 15 minutes), CRM sync (every 10 minutes), missed-workout texts, daily cleanup
 - ✅ GitHub Actions CI and daily live smoke tests, security headers, privacy-safe Sentry hooks (needs DSN), PWA icons, error and loading pages, accessibility fixes
 - ✅ Account deletion removes data, photos and nutrition and cancels Stripe; data download includes nutrition
-- ✅ Automated checks: 198 core tests, 37 web tests, 86 database tests, production build (2026-11-21); daily live smoke test on desktop and iPhone-sized screens (fixed 2026-11-13)
+- ✅ Automated checks: 225 core tests, 37 web tests, 104 database tests, production build (2026-11-27); daily live smoke test on desktop and iPhone-sized screens (fixed 2026-11-13)
 
 ## Hidden on purpose until Apple approves iOS 1.0
 
@@ -121,8 +121,9 @@ Chardikala Fitness & Performance (CK Fitness) is an in-person fitness and perfor
 
 ## Next (me)
 
+- ⏳ The $10/day consultation ad campaign (after booking is switched on), SMS/WhatsApp steps in lead automations, email open/click stats
 - ⏳ Paid membership again when the owners decide (website and/or In-App Purchase; Apple answers must be updated first), native push for the iPhone app and universal links (1.0.1, needs the Apple push key), in-app camera for meal photos, barcode scanning, Apple Health, logged-in automated tests, week description and image in the builder, Progress-page nutrition charts, Android once Google Play is set up
 
 ## Still to do before launch (owners)
 
-See `CLAUDE.md` Accounts and Pending: Twilio keys and switch for welcome texts, `GITHUB_ACTIONS_TOKEN` (optional, automatic video preparing), OpenAI key, SQL 0020/0021/0028 if missing, Stripe dashboard settings and live payment test, Settings text, support inbox, CRM token, Sentry, production Supabase, landing page, App Store page, Google Play, lawyer-approved Privacy/Terms (including who sees member records and AI/meal photos), live QA, 20-50 person beta.
+See `CLAUDE.md` Accounts and Pending: switch on online consultation booking and make a test booking, Chanveer connects Google Calendar, import the Go High Level leads, Twilio keys and switch for welcome texts, `GITHUB_ACTIONS_TOKEN` (optional, automatic video preparing), OpenAI key, SQL 0020/0021/0028 if missing, Stripe dashboard settings and live payment test, Settings text, support inbox, CRM token, Sentry, production Supabase, landing page, App Store page, Google Play, lawyer-approved Privacy/Terms (including who sees member records and AI/meal photos), live QA, 20-50 person beta.

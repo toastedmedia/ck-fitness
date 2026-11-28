@@ -4,16 +4,20 @@ Everything Kv and Chanveer need so the project does not depend on one developer.
 
 ## Accounts to create (Milestone 1A needs only the first two)
 
-| Service                                                        | Needed for                       | Milestone     |
-| -------------------------------------------------------------- | -------------------------------- | ------------- |
-| GitHub (org `toastedmedia`)                                    | Code hosting, Vercel auto-deploy | 1A            |
-| Supabase (one **staging** project, one **production** project) | Database, logins, files          | 1A            |
-| Vercel                                                         | Hosting (preview + production)   | 1A            |
-| Cloudflare (Stream)                                            | Secure program video             | 1D            |
-| RevenueCat + Stripe                                            | $29.99/month membership          | 1E            |
-| Toasted Media CRM API token                                    | Lifecycle sync                   | 1F            |
-| Sentry                                                         | Error monitoring                 | 1G            |
-| Support inbox + domain                                         | Support email, legal pages       | before launch |
+| Service                                                        | Needed for                                | Milestone     |
+| -------------------------------------------------------------- | ----------------------------------------- | ------------- |
+| GitHub (org `toastedmedia`)                                    | Code hosting, Vercel auto-deploy          | 1A            |
+| Supabase (one **staging** project, one **production** project) | Database, logins, files                   | 1A            |
+| Vercel                                                         | Hosting (preview + production)            | 1A            |
+| Cloudflare (Stream)                                            | Secure program video                      | 1D            |
+| RevenueCat + Stripe                                            | $29.99/month membership                   | 1E            |
+| Toasted Media CRM API token                                    | Lifecycle sync                            | 1F            |
+| Sentry                                                         | Error monitoring                          | 1G            |
+| Support inbox + domain                                         | Support email, legal pages                | before launch |
+| Resend                                                         | All app emails                            | done          |
+| Cloudflare R2                                                  | Video storage (replaced Stream)           | done          |
+| Meta (ad account CK Fitness, Pixel) + Google Analytics 4       | Ads tracking (`docs/TRACKING.md`)         | done          |
+| Google Cloud project "Chardikala Fitness" (OAuth client)       | Two-way Google Calendar for consultations | done          |
 
 ## Local development
 
@@ -34,7 +38,7 @@ development/staging only.
 
 ## Environment variables
 
-See `apps/web/.env.example`. `NEXT_PUBLIC_*` values are visible in the browser.
+See `apps/web/.env.example` (every variable the app reads, with what it is for). `NEXT_PUBLIC_*` values are visible in the browser.
 Everything else is server-only and must be set in Vercel (not committed).
 
 ## More

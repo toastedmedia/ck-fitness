@@ -58,6 +58,18 @@ on a real iPhone (Safari), a real Android phone (Chrome) and a desktop browser. 
 - [ ] Audit log records the changes above
 - [ ] Support role cannot see weight, measurements or safety answers anywhere
 
+## Leads, calendar and lead emails
+
+- [ ] Admin -> Calendar: weekly hours saved; a day off hides its times on chardikalafitness.com/consult
+- [ ] Book on /consult (phone width): confirmation email arrives; the lead appears in Leads as Consult booked; the team email arrives
+- [ ] Manage link: move to another time (email), cancel (email); the time is free again
+- [ ] Google Calendar connected: the booking appears in the coach's calendar; a busy event there hides that time on /consult
+- [ ] Reminder emails the day before and about an hour before (booking made more than 36 h / 3 h ahead)
+- [ ] Leads -> Import CSV with a small Go High Level file: tags, permission, phone-only people, do-not-disturb = unsubscribed; re-import updates, no doubles
+- [ ] Bulk add/remove tag and move stage (ticked, and all in the filter); Export CSV opens in Excel/Sheets
+- [ ] Emails -> Create email -> Leads by tag: count matches; test send; unsubscribe link marks the lead unsubscribed
+- [ ] Automation on a test tag: tag a test lead, the first email arrives within 15 minutes; Stop works
+
 ## Privacy and safety
 
 - [ ] Download my data returns only the member's own records

@@ -21,7 +21,9 @@ Website (`apps/web/public/site/track.js`) and app (`apps/web/src/components/AdTr
 | -------------------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------- |
 | Any page                                                 | page_view (+ scroll, outbound)                         | PageView                                             |
 | Any button or link                                       | button_click (button_text, page_path, link_url)        | ButtonClick                                          |
-| Book a free consultation                                 | book_consultation                                      | Schedule                                             |
+| Click towards the consultation page (/consult, /book)    | book_consultation                                      | (none)                                               |
+| Picks a time on /consult (our own calendar)              | booking_started                                        | BookingStarted (custom)                              |
+| Consultation booked (our own calendar)                   | book_consultation_complete                             | Schedule (browser + server, same id, hashed email)   |
 | WhatsApp                                                 | contact                                                | Contact                                              |
 | Winter Challenge (links card / join)                     | view_challenge                                         | ViewContent                                          |
 | Stripe checkout click                                    | begin_checkout ($89 CAD)                               | InitiateCheckout                                     |
@@ -31,6 +33,10 @@ Website (`apps/web/public/site/track.js`) and app (`apps/web/src/components/AdTr
 | App account created                                      | sign_up                                                | CompleteRegistration (hashed email)                  |
 | App onboarding finished                                  | onboarding_complete                                    | Lead (hashed email)                                  |
 | App: start training / lesson done / login / share / help | start_training, lesson_complete, login, share, contact | StartTraining, LessonComplete, Login, Share, Contact |
+
+Consultation bookings: while online booking is off (Admin -> Calendar), /consult shows the old Toasted Media calendar and
+Schedule is only counted if that calendar reports a finished booking (not certain). With our own booking on, Schedule is
+sent by our page and our server for every confirmed booking. Meta audience "CK - Booked a consultation (180 days)" uses it.
 
 Not tracked on purpose: inside the iPhone/Android app (Apple tracking rules), admin pages, health data, names.
 Add `data-track="Label"` to a link to set its label, `data-no-track` to skip it.

@@ -1,5 +1,9 @@
 # Toasted Media CRM integration
 
+> Since 2026-11-27 the app has its **own CRM** (Admin -> Leads, Automations, Calendar; see `docs/ADMIN.md`). Leads,
+> consultation bookings and lead emails live there. This adapter (member lifecycle events to the Toasted Media CRM) is
+> unchanged and still waits for the CRM token; it is optional now.
+
 The app owns the product experience; Toasted Media CRM owns lifecycle messaging and sales follow-up.
 
 ## How it works

@@ -26,6 +26,20 @@ Account deletion removes all of the above by cascade; export gives the member a 
 | Progress photos (if enabled) | progress_photos + private `progress-photos` bucket | The member only. No staff policy of any kind; deleted with the account |
 | Daily check-in answers | daily_checkins | The member only |
 
+## Leads and consultation bookings (own CRM, 2026-11-27)
+
+| Data                                                                                         | Table                                                    | Who can read                                                                  |
+| -------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Leads: name, email, phone, source, stage, goal, ad tags (UTM), email permission, unsubscribe | crm_contacts                                             | Server only; staff with owner/admin/coach role through Admin -> Leads         |
+| Lead tags, notes and activity, follow-ups                                                    | crm_contact_tags, crm_activities, crm_tasks              | Server only (owner/admin/coach)                                               |
+| Consultation bookings (time, name, email, phone, goal, private team note)                    | bookings                                                 | Server only (owner/admin/coach); the person through their private manage link |
+| Opening hours, days off, booking settings                                                    | booking_availability, booking_blocks, booking_settings   | Server only                                                                   |
+| Lead email sends and automations                                                             | crm_campaign_sends, crm_automations, crm_automation_runs | Server only                                                                   |
+| Google Calendar connection (encrypted refresh token)                                         | google_calendar_link                                     | Server only; the token is sealed with the server key                          |
+
+Leads are kept when a linked app account is deleted (the link is removed); deleting a lead in Admin removes its notes, tags,
+follow-ups and email history. Marketing email to leads needs recorded permission (CASL) and every email has an unsubscribe link.
+
 ## Staff access to member records (changed 2026-10-17)
 
 Database rules `staff_can_view_client()` / `staff_can_view_photos()` / `staff_can_view_nutrition()` let owners, admins and coaches **read** onboarding answers, check-ins, weigh-ins, measurements, activity, photos and nutrition for every member; members no longer choose. `profiles.coach_access_at` and `photo_coach_access_at` are kept only as the historical record of what each member once chose and are no longer used for access. Support and content roles never match. Staff notes live in `client_notes` (staff only). Views are logged in `admin_audit_log`. Phone numbers are stored on `profiles.phone` (optional).
@@ -36,4 +50,6 @@ Database rules `staff_can_view_client()` / `staff_can_view_photos()` / `staff_ca
 | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | Page views, button clicks, key actions (sign-up, onboarding done, training started, consultation/WhatsApp clicks, checkout, purchase) | Google Analytics 4 (G-GV1Q50JX1X), Meta Pixel + Conversions API (3281655158675256) | Never health data, names, photos, messages or meal logs. IP anonymised in GA4.   |
 | Email address, user id                                                                                                                | Meta Conversions API only                                                          | SHA-256 hashed on our server before sending (sign-up and onboarding events only) |
+| Consultation booking: email (hashed) and the booking event                                                                            | Meta Conversions API (Schedule)                                                    | Only when a booking is confirmed on /consult                                     |
+| Consultation time, name, phone, email, goal                                                                                           | Google Calendar of the connected coach (Admin -> Calendar)                         | Only after the coach connects Google; removed from it when cancelled             |
 | Browser cookies `_ga`, `_fbp`, `_fbc`, our `ck_ev` (10-minute event hand-off)                                                         | Set in the browser                                                                 | Explained in the Privacy Policy (Cookies)                                        |
