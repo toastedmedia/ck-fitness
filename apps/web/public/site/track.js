@@ -86,8 +86,8 @@
       meta("Contact", { content_name: "WhatsApp" });
       gtag("event", "contact", { method: "whatsapp" });
     } else if (/toastedmedia\.ca\/widget\/bookings|\/book/i.test(href)) {
-      meta("Schedule", { content_name: "Book a call" });
-      gtag("event", "book_call");
+      meta("Schedule", { content_name: "Book a free consultation" });
+      gtag("event", "book_consultation");
     } else if (/instagram\.com/i.test(href)) {
       fbq("trackCustom", "InstagramClick", p);
       gtag("event", "instagram_click");
