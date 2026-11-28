@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { renderCampaign } from "@ck/core";
+import { renderCampaign, stageLabel } from "@ck/core";
 import { ABtn, Flash, H1, Panel } from "@/components/admin/ui";
 import { OPS, requireStaff } from "@/lib/admin";
 import {
@@ -69,18 +69,46 @@ export default async function CampaignPage({
   const { data: tg } = a.tag_id
     ? await db.from("member_tags").select("name").eq("id", a.tag_id).maybeSingle()
     : { data: null };
-  const who = [
-    a.plan === "free" ? "Free members" : a.plan === "member" ? "CK Members" : "Everyone",
-    a.has_training ? `who have ${tp?.title ?? "the training"}` : "",
-    a.lacks_training ? `who do NOT have ${tp?.title ?? "the training"}` : "",
-    a.given_only ? `given ${tp?.title ?? "the training"}` : "",
-    tg?.name ? `tagged ${tg.name}` : "",
-    usesNewsConsent(a)
-      ? '(with "New trainings and content" on)'
-      : "(who turned on Offers and news)",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const leadTagIds = [...(a.lead_tags ?? []), ...(a.lead_exclude ?? [])];
+  const { data: ltg } = leadTagIds.length
+    ? await db.from("member_tags").select("id,name").in("id", leadTagIds)
+    : { data: [] };
+  const tagNames = (ids: string[] = []) =>
+    ids
+      .map(
+        (i) =>
+          ((ltg ?? []) as { id: string; name: string }[]).find((t) => t.id === i)?.name,
+      )
+      .filter(Boolean)
+      .join(", ");
+  const who =
+    a.kind === "leads"
+      ? [
+          "Leads",
+          a.lead_tags?.length ? `tagged ${tagNames(a.lead_tags)}` : "(all)",
+          a.lead_stages?.length ? `in ${a.lead_stages.map(stageLabel).join(", ")}` : "",
+          a.lead_exclude?.length ? `except ${tagNames(a.lead_exclude)}` : "",
+          "(only those we may email)",
+        ]
+          .filter(Boolean)
+          .join(" ")
+      : [
+          a.plan === "free"
+            ? "Free members"
+            : a.plan === "member"
+              ? "CK Members"
+              : "Everyone",
+          a.has_training ? `who have ${tp?.title ?? "the training"}` : "",
+          a.lacks_training ? `who do NOT have ${tp?.title ?? "the training"}` : "",
+          a.given_only ? `given ${tp?.title ?? "the training"}` : "",
+          tg?.name ? `tagged ${tg.name}` : "",
+          usesNewsConsent(a)
+            ? '(with "New trainings and content" on)'
+            : "(who turned on Offers and news)",
+        ]
+          .filter(Boolean)
+          .join(" ");
+  const unit = a.kind === "leads" ? "lead" : "member";
   const draft = c.status === "draft";
   return (
     <>
@@ -94,7 +122,7 @@ export default async function CampaignPage({
       ) : null}
       {sp.started ? (
         <Flash>
-          Sending started to {sp.started} {sp.started === "1" ? "member" : "members"}. Big
+          Sending started to {sp.started} {sp.started === "1" ? "person" : "people"}. Big
           lists finish in the background within a few minutes.
         </Flash>
       ) : null}
@@ -114,7 +142,8 @@ export default async function CampaignPage({
           {draft ? (
             <>
               {" "}
-              · about <b>{estimate}</b> member{estimate === 1 ? "" : "s"} would receive it
+              · about <b>{estimate}</b> {unit}
+              {estimate === 1 ? "" : "s"} would receive it
             </>
           ) : (
             <>

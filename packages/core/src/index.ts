@@ -26,3 +26,4 @@ export * from "./hls";
 export * from "./sms";
 export * from "./followup";
 export * from "./booking";
+export * from "./leads";

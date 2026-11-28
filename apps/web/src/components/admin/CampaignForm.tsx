@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { CAMPAIGN_PRESETS, renderCampaign } from "@ck/core";
+import { CAMPAIGN_PRESETS, CRM_STAGES, renderCampaign } from "@ck/core";
 import { ABtn, aInput } from "@/components/admin/ui";
 import { previewCampaignAudience } from "@/app/admin/actions";
 
@@ -19,6 +19,11 @@ export interface CampaignValues {
   /** "any" | "has" | "lacks" */
   trainingMode: string;
   training: string;
+  /** "members" (app accounts) or "leads" (Admin -> Leads contacts). */
+  kind?: string;
+  leadTags?: string[];
+  leadExclude?: string[];
+  leadStages?: string[];
 }
 
 const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
@@ -77,6 +82,10 @@ export function CampaignForm({
     fd.set("audience_consent", v.consent);
     fd.set("audience_training_mode", v.trainingMode);
     fd.set("audience_training", v.training);
+    fd.set("audience_kind", v.kind ?? "members");
+    for (const t of v.leadTags ?? []) fd.append("audience_lead_tag", t);
+    for (const t of v.leadExclude ?? []) fd.append("audience_lead_exclude", t);
+    for (const t of v.leadStages ?? []) fd.append("audience_lead_stage", t);
     let live = true;
     setCounting(true);
     const t = setTimeout(() => {
@@ -89,7 +98,25 @@ export function CampaignForm({
       live = false;
       clearTimeout(t);
     };
-  }, [v.plan, v.tag, v.consent, v.trainingMode, v.training]);
+  }, [
+    v.plan,
+    v.tag,
+    v.consent,
+    v.trainingMode,
+    v.training,
+    v.kind,
+    v.leadTags,
+    v.leadExclude,
+    v.leadStages,
+  ]);
+  const leads = v.kind === "leads";
+  const toggle = (k: "leadTags" | "leadExclude" | "leadStages", id: string) =>
+    setV((p) => {
+      const cur = p[k] ?? [];
+      return { ...p, [k]: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] };
+    });
+  const chip = (on: boolean) =>
+    `inline-flex min-h-9 cursor-pointer items-center rounded-full border-2 px-3 text-xs font-bold ${on ? "border-brand bg-brand text-on-brand" : "border-line text-brand"}`;
   const preview = renderCampaign(
     {
       subject: v.subject,
@@ -105,9 +132,11 @@ export function CampaignForm({
       siteUrl,
       unsubscribeUrl: `${siteUrl}/unsubscribe-sample`,
       reason:
-        v.consent !== "offers"
-          ? "You are getting this because you get news about trainings and the app."
-          : undefined,
+        v.kind === "leads"
+          ? "You are getting this because you contacted or trained with Chardikala Fitness & Performance."
+          : v.consent !== "offers"
+            ? "You are getting this because you get news about trainings and the app."
+            : undefined,
     },
   );
   return (
@@ -254,7 +283,97 @@ export function CampaignForm({
         </div>
         <fieldset className="grid gap-3 rounded-xl border-2 border-line p-3">
           <legend className="px-1 text-sm font-bold text-brand">Who gets it</legend>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <input type="hidden" name="audience_kind" value={v.kind ?? "members"} />
+          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Send to">
+            {[
+              ["members", "App members"],
+              ["leads", "Leads (Admin → Leads)"],
+            ].map(([k, label]) => (
+              <button
+                key={k}
+                type="button"
+                role="radio"
+                aria-checked={(v.kind ?? "members") === k}
+                onClick={() => setV((p) => ({ ...p, kind: k }))}
+                className={chip((v.kind ?? "members") === k)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {leads ? (
+            <div className="grid gap-3">
+              <div>
+                <p className="text-xs font-bold text-brand">
+                  Leads with ANY of these tags (none ticked = all leads)
+                </p>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {tags.map((t) => (
+                    <label key={t.id} className={chip((v.leadTags ?? []).includes(t.id))}>
+                      <input
+                        type="checkbox"
+                        name="audience_lead_tag"
+                        value={t.id}
+                        checked={(v.leadTags ?? []).includes(t.id)}
+                        onChange={() => toggle("leadTags", t.id)}
+                        className="sr-only"
+                      />
+                      {t.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-brand">Leave out anyone tagged</p>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {tags.map((t) => (
+                    <label
+                      key={t.id}
+                      className={chip((v.leadExclude ?? []).includes(t.id))}
+                    >
+                      <input
+                        type="checkbox"
+                        name="audience_lead_exclude"
+                        value={t.id}
+                        checked={(v.leadExclude ?? []).includes(t.id)}
+                        onChange={() => toggle("leadExclude", t.id)}
+                        className="sr-only"
+                      />
+                      {t.name}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-brand">
+                  Only these stages (none ticked = every stage)
+                </p>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {CRM_STAGES.map((st) => (
+                    <label
+                      key={st.key}
+                      className={chip((v.leadStages ?? []).includes(st.key))}
+                    >
+                      <input
+                        type="checkbox"
+                        name="audience_lead_stage"
+                        value={st.key}
+                        checked={(v.leadStages ?? []).includes(st.key)}
+                        onChange={() => toggle("leadStages", st.key)}
+                        className="sr-only"
+                      />
+                      {st.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <p className="text-xs text-muted">
+                Only leads we may email are counted: they agreed, or are recent clients or
+                enquiries, and have not unsubscribed. Every email has an unsubscribe link.
+              </p>
+            </div>
+          ) : null}
+          <div className={`grid gap-3 sm:grid-cols-2 ${leads ? "hidden" : ""}`}>
             <Field label="Plan">
               <select
                 name="audience_plan"
@@ -311,7 +430,7 @@ export function CampaignForm({
               </select>
             </Field>
           </div>
-          <div className="grid gap-1 text-sm">
+          <div className={`grid gap-1 text-sm ${leads ? "hidden" : ""}`}>
             <span className="text-xs font-bold text-brand">Send it as</span>
             <label className="flex items-start gap-2">
               <input
@@ -348,7 +467,7 @@ export function CampaignForm({
             </label>
           </div>
           <div className="rounded-xl bg-bg p-3 text-sm">
-            {v.trainingMode !== "any" && !v.training ? (
+            {!leads && v.trainingMode !== "any" && !v.training ? (
               <span className="text-muted">Choose a training to see who it goes to.</span>
             ) : counting && !reach ? (
               <span className="text-muted">Counting…</span>

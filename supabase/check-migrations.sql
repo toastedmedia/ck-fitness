@@ -33,7 +33,8 @@ with need(mig, kind, tbl, col) as (values
   ('0033','table','program_grants',null),
   ('0034','column','programs','members_included'),
   ('0035','table','program_emails',null),('0035','table','program_email_log',null),
-  ('0036','table','crm_contacts',null),('0036','table','bookings',null),('0036','table','booking_availability',null)
+  ('0036','table','crm_contacts',null),('0036','table','bookings',null),('0036','table','booking_availability',null),
+  ('0037','column','crm_contacts','unsubscribed_at'),('0037','table','crm_automations',null),('0037','table','google_calendar_link',null)
 ), found as (
   select n.*, case n.kind
     when 'table' then exists (select 1 from information_schema.tables t where t.table_schema='public' and t.table_name=n.tbl)

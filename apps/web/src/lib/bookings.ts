@@ -15,6 +15,7 @@ import {
 } from "@ck/core";
 import { dayKey } from "@ck/core";
 import { sendRaw } from "@/lib/email/send";
+import { googleBusy, syncBookingEvent } from "@/lib/google-calendar";
 import { contactName, logActivity, stageForBooking, upsertContact } from "@/lib/leads";
 import type { createAdminSupabase } from "@/lib/supabase/admin";
 
@@ -53,6 +54,7 @@ export interface BookingRow {
   cancelled_at: string | null;
   reminder_day_at: string | null;
   reminder_hour_at: string | null;
+  google_event_id: string | null;
 }
 
 export const DEFAULT_SETTINGS_ROW: SettingsRow = {
@@ -76,7 +78,7 @@ export const toSettings = (r: SettingsRow): BookingSettings => ({
 });
 
 /** Everything needed to work out free times. `ready` is false before the database update (0036). */
-export async function loadBookingState(db: Db, now = new Date()) {
+export async function loadBookingState(db: Db, now = new Date(), withGoogle = false) {
   const [s, a, b, k] = await Promise.all([
     db.from("booking_settings").select("*").eq("id", 1).maybeSingle(),
     db.from("booking_availability").select("weekday, start_time, end_time"),
@@ -95,24 +97,34 @@ export async function loadBookingState(db: Db, now = new Date()) {
   const availability: AvailabilityWindow[] = (
     (a.data ?? []) as { weekday: number; start_time: string; end_time: string }[]
   ).map((w) => ({ weekday: w.weekday, start: w.start_time, end: w.end_time }));
+  const settings = toSettings(row);
+  // Busy times in the coach's Google Calendar (two-way sync), treated like blocked time.
+  const outside = withGoogle
+    ? await googleBusy(
+        db,
+        now,
+        new Date(now.getTime() + (settings.maxDaysAhead + 2) * 86400000),
+      )
+    : [];
   return {
     ready: !s.error,
     row,
-    settings: toSettings(row),
+    settings,
     availability,
     blocks: (b.data ?? []) as (TimeRange & { id: string; reason: string })[],
+    outside,
     busy: (k.data ?? []) as TimeRange[],
   };
 }
 
 export async function freeSlots(db: Db, now = new Date()) {
-  const st = await loadBookingState(db, now);
+  const st = await loadBookingState(db, now, true);
   return {
     ...st,
     days: availableSlots({
       settings: st.settings,
       availability: st.availability,
-      blocks: st.blocks,
+      blocks: [...st.blocks, ...st.outside],
       busy: st.busy,
       now,
     }),
@@ -161,7 +173,7 @@ export type BookResult =
 export async function createBooking(db: Db, b: NewBooking): Promise<BookResult> {
   const start = new Date(b.start);
   if (Number.isNaN(start.getTime())) return { ok: false, reason: "invalid" };
-  const st = await loadBookingState(db);
+  const st = await loadBookingState(db, new Date(), !b.byStaff);
   if (!st.ready) return { ok: false, reason: "error" };
   if (!b.byStaff) {
     if (!st.row.enabled) return { ok: false, reason: "closed" };
@@ -169,7 +181,7 @@ export async function createBooking(db: Db, b: NewBooking): Promise<BookResult> 
       !isBookable(start.toISOString(), {
         settings: st.settings,
         availability: st.availability,
-        blocks: st.blocks,
+        blocks: [...st.blocks, ...st.outside],
         busy: st.busy,
         now: new Date(),
       })
@@ -192,6 +204,7 @@ export async function createBooking(db: Db, b: NewBooking): Promise<BookResult> 
     source: b.source ?? "consult_booking",
     utm: b.utm,
     consent: b.consent,
+    enquiry: true,
     created_by: b.byStaff ?? null,
   });
   const { data, error } = await db
@@ -232,6 +245,7 @@ export async function createBooking(db: Db, b: NewBooking): Promise<BookResult> 
   }
   if (!b.silent) await sendBookingEmail(booking, "confirmed", st.row);
   if (!b.byStaff) await notifyTeam(booking, st.row, "new", contact?.id ?? null);
+  await syncBookingEvent(db, booking);
   return { ok: true, booking, contactId: contact?.id ?? null };
 }
 
@@ -247,6 +261,7 @@ export async function cancelBooking(
     .from("bookings")
     .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
     .eq("id", booking.id);
+  await syncBookingEvent(db, { ...booking, status: "cancelled" });
   const st = await loadBookingState(db);
   if (booking.contact_id)
     await logActivity(
@@ -270,7 +285,7 @@ export async function moveBooking(
 ): Promise<"ok" | "taken" | "invalid" | "closed"> {
   const start = new Date(newStart);
   if (Number.isNaN(start.getTime()) || booking.status !== "booked") return "invalid";
-  const st = await loadBookingState(db);
+  const st = await loadBookingState(db, new Date(), by === "member");
   const busy = st.busy.filter(
     (x) =>
       new Date(x.starts_at).toISOString() !== new Date(booking.starts_at).toISOString(),
@@ -281,7 +296,7 @@ export async function moveBooking(
     const ok = isBookable(start.toISOString(), {
       settings: st.settings,
       availability: st.availability,
-      blocks: st.blocks,
+      blocks: [...st.blocks, ...st.outside],
       busy,
       now: new Date(),
     });
@@ -312,6 +327,7 @@ export async function moveBooking(
       `Consultation moved from ${whenText(booking.starts_at)} to ${whenText(moved.starts_at)} by ${by === "member" ? "the client" : "the team"}.`,
       staffId,
     );
+  await syncBookingEvent(db, moved);
   await sendBookingEmail(moved, "moved", st.row);
   if (by === "member") await notifyTeam(moved, st.row, "moved", booking.contact_id);
   return "ok";

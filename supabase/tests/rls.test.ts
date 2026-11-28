@@ -2156,3 +2156,48 @@ describe("CRM and bookings (0036)", () => {
     expect(r.rows[0]?.user_id).toBeNull();
   });
 });
+
+describe("leads email, automations and Google link (0037)", () => {
+  const M = "00000000-0000-0000-0000-000000000f21";
+  const C = "20000000-0000-0000-0000-0000000000c2";
+  const AU = "30000000-0000-0000-0000-0000000000a1";
+  beforeAll(async () => {
+    await addUser(db, M);
+    await db.exec(`
+      insert into public.crm_contacts (id, first_name, email, unsubscribed_at) values ('${C}','Lead','lead@example.com', null);
+      insert into public.crm_automations (id, name, trigger_type, steps) values ('${AU}','Welcome','new_lead','[{"delay_days":0,"subject":"Hi","body":"x"}]');
+      insert into public.crm_automation_runs (automation_id, contact_id, next_at) values ('${AU}','${C}', now());
+      insert into public.google_calendar_link (id, email, refresh_token) values (1,'coach@example.com','v1:secret');
+    `);
+  });
+  it("keeps automations, sends and the Google token away from members", async () => {
+    await asUser(db, M, async () => {
+      for (const t of [
+        "crm_automations",
+        "crm_automation_runs",
+        "crm_campaign_sends",
+        "google_calendar_link",
+      ])
+        expect((await db.query(`select * from public.${t}`)).rows).toHaveLength(0);
+    });
+  });
+  it("lets a lead enter an automation only once and cleans up with the contact", async () => {
+    await expect(
+      db.query(
+        "insert into public.crm_automation_runs (automation_id, contact_id) values ($1, $2)",
+        [AU, C],
+      ),
+    ).rejects.toThrow();
+    await db.query("delete from public.crm_contacts where id = $1", [C]);
+    expect(
+      (await db.query("select * from public.crm_automation_runs")).rows,
+    ).toHaveLength(0);
+  });
+  it("keeps one Google link", async () => {
+    await expect(
+      db.query(
+        "insert into public.google_calendar_link (id, refresh_token) values (2, 'x')",
+      ),
+    ).rejects.toThrow();
+  });
+});

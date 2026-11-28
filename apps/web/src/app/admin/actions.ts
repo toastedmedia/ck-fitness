@@ -1613,6 +1613,20 @@ const planOf = (v: string): Audience["plan"] =>
 
 /** "Who gets it" from the Create email form: plan, tag, training access and which permission. */
 function audienceFrom(formData: FormData): Audience {
+  if (str(formData, "audience_kind") === "leads") {
+    const list = (k: string) =>
+      formData
+        .getAll(k)
+        .map(String)
+        .filter((x) => /^[0-9a-f-]{36}$/.test(x) || /^[a-z_]{2,20}$/.test(x))
+        .slice(0, 50);
+    return {
+      kind: "leads",
+      lead_tags: list("audience_lead_tag"),
+      lead_exclude: list("audience_lead_exclude"),
+      lead_stages: list("audience_lead_stage"),
+    };
+  }
   const mode = str(formData, "audience_training_mode");
   const training = str(formData, "audience_training");
   return {
@@ -1779,7 +1793,7 @@ export async function duplicateCampaign(id: string): Promise<void> {
 
 export async function countCampaignAudience(a: Audience): Promise<number> {
   const { db } = await requireStaff(OPS);
-  return (await audienceUserIds(db, a)).length;
+  return (await audiencePeople(db, a)).total;
 }
 
 /** Live "This goes to N people" + the names, for the Create email form. */

@@ -64,6 +64,10 @@ export default async function EditCampaign({
               ? "lacks"
               : "any",
           training: c.audience?.has_training ?? c.audience?.lacks_training ?? "",
+          kind: c.audience?.kind ?? "members",
+          leadTags: c.audience?.lead_tags ?? [],
+          leadExclude: c.audience?.lead_exclude ?? [],
+          leadStages: c.audience?.lead_stages ?? [],
         }}
         tags={tags ?? []}
         trainings={trainings ?? []}

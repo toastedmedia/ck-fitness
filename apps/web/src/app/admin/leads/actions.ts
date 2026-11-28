@@ -5,12 +5,21 @@ import { redirect } from "next/navigation";
 import {
   ACTIVITY_KINDS,
   CRM_SOURCES,
+  CRM_STAGES,
   cleanEmail,
+  impliedUntil,
   isStage,
   normalizePhone,
 } from "@ck/core";
 import { audit, requireStaff } from "@/lib/admin";
-import { CRM_ROLES, logActivity, setStage, upsertContact } from "@/lib/leads";
+import {
+  CRM_ROLES,
+  logActivity,
+  setStage,
+  tagContacts,
+  untagContacts,
+  upsertContact,
+} from "@/lib/leads";
 import { ensureTag } from "@/lib/member-tags";
 
 const staff = () => requireStaff([...CRM_ROLES]);
@@ -43,6 +52,30 @@ export async function createContact(formData: FormData): Promise<void> {
   if (!c) redirect("/admin/leads?error=save");
   const note = str(formData, "note", 4000);
   if (note) await logActivity(db, c.id, "note", note, user.id);
+  const permission = str(formData, "permission", 20);
+  if (email && ["express", "enquiry", "customer"].includes(permission)) {
+    const now = new Date().toISOString();
+    await db
+      .from("crm_contacts")
+      .update(
+        permission === "express"
+          ? {
+              email_consent_at: now,
+              consent_note: "Agreed to get our emails (added by the team)",
+            }
+          : {
+              implied_consent_until: impliedUntil(
+                now,
+                permission === "customer" ? "customer" : "enquiry",
+              ),
+              consent_note:
+                permission === "customer"
+                  ? "Client of the studio"
+                  : "Asked about our services",
+            },
+      )
+      .eq("id", c.id);
+  }
   await audit(supabase, user.id, "crm.contact_create", c.id);
   redirect(`/admin/leads/${c.id}?saved=1`);
 }
@@ -95,7 +128,7 @@ export async function addContactTag(id: string, formData: FormData): Promise<voi
 
 export async function removeContactTag(id: string, tagId: string): Promise<void> {
   const { db } = await staff();
-  await db.from("crm_contact_tags").delete().eq("contact_id", id).eq("tag_id", tagId);
+  await untagContacts(db, tagId, [id]);
   redirect(`/admin/leads/${id}`);
 }
 
@@ -165,4 +198,99 @@ export async function deleteContact(id: string, formData: FormData): Promise<voi
   await db.from("crm_contacts").delete().eq("id", id);
   await audit(supabase, user.id, "crm.contact_delete", id);
   redirect("/admin/leads?deleted=1");
+}
+
+/** Leads list: add or remove a tag, or move a stage, for the ticked people or everyone in the filter. */
+export async function bulkLeads(formData: FormData): Promise<void> {
+  const { db, user, supabase } = await staff();
+  const backTo = back(formData, "/admin/leads?view=list");
+  const uuid = /^[0-9a-f-]{36}$/;
+  const ids = (
+    str(formData, "scope", 10) === "all"
+      ? str(formData, "all_ids", 200000).split(",")
+      : formData.getAll("ids").map(String)
+  ).filter((x) => uuid.test(x));
+  const op = str(formData, "op", 20);
+  const value = str(formData, "value", 60);
+  if (!ids.length || !value) redirect(`${backTo}&bulk=0`);
+  if (op === "stage") {
+    const stage = CRM_STAGES.find(
+      (s) => s.key === value || s.label.toLowerCase() === value.toLowerCase(),
+    )?.key;
+    if (!stage) redirect(`${backTo}&bulk=0`);
+    for (const id of ids) await setStage(db, id, stage, user.id);
+  } else if (op === "remove_tag") {
+    const { data: t } = await db
+      .from("member_tags")
+      .select("id")
+      .ilike("name", value)
+      .maybeSingle();
+    if (t) await untagContacts(db, t.id as string, ids);
+  } else {
+    const tagId = await ensureTag(db, value, user.id);
+    if (tagId) await tagContacts(db, tagId, ids);
+  }
+  await audit(supabase, user.id, `crm.bulk_${op}`, value, { count: ids.length });
+  revalidatePath("/admin/leads");
+  redirect(`${backTo}&bulk=${ids.length}`);
+}
+
+/** Record or remove email permission for one lead (CASL), with a note on how it was given. */
+export async function setEmailPermission(id: string, formData: FormData): Promise<void> {
+  const { db, user } = await staff();
+  const choice = str(formData, "permission", 20);
+  const note = str(formData, "note", 200);
+  const now = new Date().toISOString();
+  const patch: Record<string, unknown> =
+    choice === "express"
+      ? {
+          email_consent_at: now,
+          unsubscribed_at: null,
+          consent_note: note || "Agreed to get our emails (recorded by the team)",
+        }
+      : choice === "enquiry"
+        ? {
+            implied_consent_until: impliedUntil(now, "enquiry"),
+            consent_note: note || "Asked about our services",
+          }
+        : choice === "customer"
+          ? {
+              implied_consent_until: impliedUntil(now, "customer"),
+              consent_note: note || "Client of the studio",
+            }
+          : { unsubscribed_at: now };
+  await db
+    .from("crm_contacts")
+    .update({ ...patch, updated_at: now })
+    .eq("id", id);
+  if (choice === "unsubscribe")
+    await db
+      .from("crm_automation_runs")
+      .update({ status: "stopped", stop_reason: "Unsubscribed", updated_at: now })
+      .eq("contact_id", id)
+      .eq("status", "active");
+  await logActivity(
+    db,
+    id,
+    "edit",
+    choice === "unsubscribe"
+      ? "Unsubscribed from emails (by the team)"
+      : `Email permission recorded: ${String(patch.consent_note)}`,
+    user.id,
+  );
+  redirect(`/admin/leads/${id}?saved=1`);
+}
+
+export async function stopAutomationRun(id: string, automationId: string): Promise<void> {
+  const { db } = await staff();
+  await db
+    .from("crm_automation_runs")
+    .update({
+      status: "stopped",
+      stop_reason: "Stopped by the team",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("contact_id", id)
+    .eq("automation_id", automationId);
+  redirect(`/admin/leads/${id}`);
 }

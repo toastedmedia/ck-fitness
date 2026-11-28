@@ -115,6 +115,34 @@ an email) or Cancel. **+ Add a booking** books anyone at any time that is not al
 People who book get a confirmation email, a reminder the day before and one about an hour before, and a page to move or
 cancel. Every booking is reported to Meta (Schedule) and Google Analytics for the ads.
 
+### Import your leads (for example from Go High Level)
+
+1. In Go High Level: Contacts -> select all -> Export (all columns), save the CSV.
+2. Admin -> Leads -> **Import CSV** -> choose the file. Check the preview (how many, how many phone-only, do-not-disturb).
+3. Type the tags everyone should get (for example `GHL import Dec 2026`), and keep "their own tags from the file" ticked.
+4. Pick where they came from, the stage, and **may we email them** (Canada's anti-spam law: only "they agreed" never
+   expires; clients 2 years, enquiries 6 months; "not sure" = never emailed until you record permission).
+5. Leave "start matching automations" off for an old list. Import. Running the same file again only updates people.
+
+Change tags later: List view -> tick people (or "All N shown by the filter") -> Add tag / Remove tag / Move to stage.
+Export: Leads -> Export CSV (with a tag filter on, only that tag).
+
+### Email leads and automations
+
+- One-off email: Admin -> Emails -> Create email -> Who gets it -> **Leads** -> tick the tags (and any to leave out).
+  The count shows only people we may email. Or filter Leads by a tag and click "Email the leads tagged ...".
+- Automations: Leads -> **Automations** -> New: choose when it starts (tag added, stage, new lead, booked), write up to
+  10 emails with the days between them, tick On, save. "Send email 1 to me" tests it. Emails go out every 15 minutes.
+- Every email has an unsubscribe link; unsubscribed people and people without permission are skipped automatically.
+
+### Google Calendar (two-way)
+
+One-time setup (Google Cloud, by Kv): create an OAuth client (Web application) with the redirect
+`https://app.chardikalafitness.com/api/google/callback`, put `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in Vercel,
+and set the OAuth consent screen to **In production** (otherwise Google disconnects after 7 days). Then Chanveer:
+Calendar -> Hours and settings -> **Connect Google Calendar**, signs in with her Gmail, Advanced -> Go to Chardikala
+Fitness (unverified is fine for our own accounts), allows calendar access.
+
 ## Text messages (welcome text on sign-up)
 
 Admin -> Messages -> **Text messages** (owners and admins). One text per new member after she confirms her email and finishes the

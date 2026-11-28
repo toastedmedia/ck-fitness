@@ -22,8 +22,8 @@ import {
 } from "@/components/admin/ui";
 import { AutoSubmitSelect } from "@/components/admin/AutoSubmit";
 import { requireStaff } from "@/lib/admin";
-import { CRM_ROLES, contactName, type ContactRow } from "@/lib/leads";
-import { changeStage, createContact } from "./actions";
+import { CRM_ROLES, contactName, readAll, type ContactRow } from "@/lib/leads";
+import { bulkLeads, changeStage, createContact } from "./actions";
 
 export const metadata: Metadata = { title: "Leads" };
 
@@ -60,20 +60,31 @@ export default async function LeadsPage({
     error?: string;
     deleted?: string;
     add?: string;
+    page?: string;
+    bulk?: string;
   }>;
 }) {
   const sp = await searchParams;
   const { db } = await requireStaff([...CRM_ROLES]);
   const view = sp.view === "list" ? "list" : "board";
-  const { data, error } = await db
-    .from("crm_contacts")
-    .select("*")
-    .order("last_activity_at", { ascending: false })
-    .limit(2000);
-  const all = (data ?? []) as ContactRow[];
+  const { rows: all, error } = await readAll<ContactRow>((a, b) =>
+    db
+      .from("crm_contacts")
+      .select("*")
+      .order("last_activity_at", { ascending: false })
+      .order("id")
+      .range(a, b),
+  );
   const [tagRows, mapRows, bookingRows, taskRows] = await Promise.all([
     db.from("member_tags").select("id, name").order("name"),
-    db.from("crm_contact_tags").select("contact_id, tag_id"),
+    readAll<{ contact_id: string; tag_id: string }>((a, b) =>
+      db
+        .from("crm_contact_tags")
+        .select("contact_id, tag_id")
+        .order("contact_id")
+        .order("tag_id")
+        .range(a, b),
+    ).then((r) => ({ data: r.rows })),
     db
       .from("bookings")
       .select("contact_id, starts_at")
@@ -118,6 +129,9 @@ export default async function LeadsPage({
       (view === "board" || !sp.stage || c.stage === sp.stage),
   );
   const weekAgo = Date.now() - 7 * 86400000;
+  const PER_PAGE = 100;
+  const pages = Math.max(1, Math.ceil(list.length / PER_PAGE));
+  const pageNo = Math.min(pages, Math.max(1, Number(sp.page) || 1));
   const here = `/admin/leads?${new URLSearchParams(
     Object.entries({
       view,
@@ -207,7 +221,25 @@ export default async function LeadsPage({
     <>
       <H1
         right={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/admin/leads/import"
+              className="inline-flex min-h-10 items-center rounded-button border-2 border-line px-4 text-xs font-bold text-brand"
+            >
+              Import CSV
+            </Link>
+            <a
+              href={`/admin/leads/export${sp.tag ? `?tag=${sp.tag}` : ""}`}
+              className="inline-flex min-h-10 items-center rounded-button border-2 border-line px-4 text-xs font-bold text-brand"
+            >
+              Export CSV
+            </a>
+            <Link
+              href="/admin/leads/automations"
+              className="inline-flex min-h-10 items-center rounded-button border-2 border-line px-4 text-xs font-bold text-brand"
+            >
+              Automations
+            </Link>
             <Link
               href="/admin/calendar"
               className="inline-flex min-h-10 items-center rounded-button border-2 border-line px-4 text-xs font-bold text-brand"
@@ -233,6 +265,17 @@ export default async function LeadsPage({
         <Flash bad>Leads are not ready yet. Run the latest database update (0036).</Flash>
       ) : null}
       {sp.deleted ? <Flash>Contact deleted.</Flash> : null}
+      {sp.bulk ? <Flash>Done: {sp.bulk} contacts updated.</Flash> : null}
+      {sp.tag && tagFilter ? (
+        <p className="text-sm">
+          <Link
+            href={`/admin/emails/new?leads=1&lead_tag=${sp.tag}`}
+            className="font-bold text-brand underline"
+          >
+            Email the leads tagged &quot;{tagFilter}&quot; →
+          </Link>
+        </p>
+      ) : null}
       {sp.error ? (
         <Flash bad>
           {sp.error === "email"
@@ -368,38 +411,138 @@ export default async function LeadsPage({
         </div>
       ) : (
         <Panel>
-          <Table head={["Name", "Stage", "Source", "Phone", "Tags", "Last activity"]}>
-            {list.slice(0, 500).map((c) => (
-              <tr key={c.id}>
-                <td className={td}>
-                  <Link
-                    href={`/admin/leads/${c.id}`}
-                    className="font-bold text-brand underline"
-                  >
-                    {contactName(c)}
-                  </Link>
-                  <span className="block text-xs text-muted">{c.email}</span>
-                </td>
-                <td className={td}>
-                  <Status tone={STAGE_TONE[c.stage] ?? "mute"}>
-                    {stageLabel(c.stage)}
-                  </Status>
-                </td>
-                <td className={td}>{sourceLabel(c.source)}</td>
-                <td className={td}>
-                  {c.phone ? (
-                    <a className="underline" href={`tel:${c.phone}`}>
-                      {c.phone}
-                    </a>
-                  ) : (
-                    "-"
-                  )}
-                </td>
-                <td className={td}>{(tagsOf.get(c.id) ?? []).join(", ") || "-"}</td>
-                <td className={td}>{ago(c.last_activity_at)}</td>
-              </tr>
-            ))}
-          </Table>
+          <form action={bulkLeads} className="grid gap-3">
+            <input type="hidden" name="back" value={here} />
+            <input type="hidden" name="all_ids" value={list.map((c) => c.id).join(",")} />
+            <div className="sticky top-0 z-10 grid gap-2 rounded-xl border-2 border-line bg-surface p-3 sm:grid-cols-[auto_1fr_auto]">
+              <fieldset className="flex flex-wrap items-center gap-3 text-sm">
+                <legend className="sr-only">Which people</legend>
+                <label className="flex items-center gap-1.5">
+                  <input
+                    type="radio"
+                    name="scope"
+                    value="selected"
+                    defaultChecked
+                    className="size-4 accent-brand"
+                  />
+                  Ticked people
+                </label>
+                <label className="flex items-center gap-1.5">
+                  <input
+                    type="radio"
+                    name="scope"
+                    value="all"
+                    className="size-4 accent-brand"
+                  />
+                  All {list.length} shown by the filter
+                </label>
+              </fieldset>
+              <div className="flex flex-wrap gap-2">
+                <label className="sr-only" htmlFor="bulk-op">
+                  Action
+                </label>
+                <select
+                  id="bulk-op"
+                  name="op"
+                  className={`${aInput} max-w-[12rem]`}
+                  defaultValue="add_tag"
+                >
+                  <option value="add_tag">Add tag</option>
+                  <option value="remove_tag">Remove tag</option>
+                  <option value="stage">Move to stage</option>
+                </select>
+                <label className="sr-only" htmlFor="bulk-tag">
+                  Tag or stage
+                </label>
+                <input
+                  id="bulk-tag"
+                  name="value"
+                  list="bulk-values"
+                  required
+                  placeholder="Tag name (new or existing) or stage"
+                  className={`${aInput} min-w-[12rem] flex-1`}
+                />
+                <datalist id="bulk-values">
+                  {tags.map((t) => (
+                    <option key={t.id} value={t.name} />
+                  ))}
+                  {CRM_STAGES.map((st) => (
+                    <option key={st.key} value={st.label} />
+                  ))}
+                </datalist>
+              </div>
+              <ABtn variant="primary">Apply</ABtn>
+            </div>
+            <Table
+              head={["", "Name", "Stage", "Source", "Phone", "Tags", "Last activity"]}
+            >
+              {list.slice((pageNo - 1) * PER_PAGE, pageNo * PER_PAGE).map((c) => (
+                <tr key={c.id}>
+                  <td className={td}>
+                    <input
+                      type="checkbox"
+                      name="ids"
+                      value={c.id}
+                      aria-label={`Select ${contactName(c)}`}
+                      className="size-5 accent-brand"
+                    />
+                  </td>
+                  <td className={td}>
+                    <Link
+                      href={`/admin/leads/${c.id}`}
+                      className="font-bold text-brand underline"
+                    >
+                      {contactName(c)}
+                    </Link>
+                    <span className="block text-xs text-muted">{c.email}</span>
+                  </td>
+                  <td className={td}>
+                    <Status tone={STAGE_TONE[c.stage] ?? "mute"}>
+                      {stageLabel(c.stage)}
+                    </Status>
+                  </td>
+                  <td className={td}>{sourceLabel(c.source)}</td>
+                  <td className={td}>
+                    {c.phone ? (
+                      <a className="underline" href={`tel:${c.phone}`}>
+                        {c.phone}
+                      </a>
+                    ) : (
+                      "-"
+                    )}
+                  </td>
+                  <td className={td}>{(tagsOf.get(c.id) ?? []).join(", ") || "-"}</td>
+                  <td className={td}>{ago(c.last_activity_at)}</td>
+                </tr>
+              ))}
+            </Table>
+          </form>
+          {pages > 1 ? (
+            <nav
+              aria-label="Pages"
+              className="mt-3 flex flex-wrap items-center gap-2 text-sm"
+            >
+              {pageNo > 1 ? (
+                <Link
+                  className="font-bold text-brand underline"
+                  href={`${here}&page=${pageNo - 1}`}
+                >
+                  ← Previous
+                </Link>
+              ) : null}
+              <span className="text-muted">
+                Page {pageNo} of {pages}
+              </span>
+              {pageNo < pages ? (
+                <Link
+                  className="font-bold text-brand underline"
+                  href={`${here}&page=${pageNo + 1}`}
+                >
+                  Next →
+                </Link>
+              ) : null}
+            </nav>
+          ) : null}
         </Panel>
       )}
 
@@ -460,6 +603,19 @@ export default async function LeadsPage({
               maxLength={1000}
               className={`${aInput} mt-1 font-normal`}
             />
+          </label>
+          <label className="text-xs font-bold text-brand md:col-span-2">
+            May we email them? (Canada&apos;s anti-spam law)
+            <select
+              name="permission"
+              defaultValue="none"
+              className={`${aInput} mt-1 font-normal`}
+            >
+              <option value="none">Not yet (no marketing emails)</option>
+              <option value="express">Yes, they agreed to get our emails</option>
+              <option value="enquiry">They asked about our services (6 months)</option>
+              <option value="customer">They are a client (2 years)</option>
+            </select>
           </label>
           <label className="text-xs font-bold text-brand md:col-span-2">
             First note (optional)

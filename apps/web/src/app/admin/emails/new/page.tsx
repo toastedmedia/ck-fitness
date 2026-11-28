@@ -11,7 +11,13 @@ export const metadata: Metadata = { title: "Create email" };
 export default async function NewCampaign({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; mode?: string; training?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    mode?: string;
+    training?: string;
+    leads?: string;
+    lead_tag?: string;
+  }>;
 }) {
   const sp = await searchParams;
   const { supabase } = await requireStaff(OPS);
@@ -45,6 +51,10 @@ export default async function NewCampaign({
           consent: "news",
           trainingMode: ["has", "lacks"].includes(sp.mode ?? "") ? sp.mode! : "any",
           training: sp.training ?? "",
+          kind: sp.leads ? "leads" : "members",
+          leadTags: sp.lead_tag ? [sp.lead_tag] : [],
+          leadExclude: [],
+          leadStages: [],
         }}
         tags={tags ?? []}
         trainings={trainings ?? []}

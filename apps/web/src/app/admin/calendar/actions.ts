@@ -12,6 +12,7 @@ import {
   type BookingRow,
 } from "@/lib/bookings";
 import { CRM_ROLES, logActivity, setStage } from "@/lib/leads";
+import { disconnectGoogle, syncBookingEvent } from "@/lib/google-calendar";
 
 const staff = () => requireStaff([...CRM_ROLES]);
 const str = (f: FormData, k: string, max = 500) =>
@@ -75,6 +76,7 @@ export async function setBookingStatus(
   const { db, user } = await staff();
   const b = await booking(db, id);
   await db.from("bookings").update({ status }).eq("id", id);
+  await syncBookingEvent(db, { ...b, status });
   if (b.contact_id) {
     if (status === "completed") {
       const { data } = await db
@@ -208,4 +210,34 @@ export async function removeBlock(id: string): Promise<void> {
   const { db } = await staff();
   await db.from("booking_blocks").delete().eq("id", id);
   redirect("/admin/calendar?view=settings&saved=block");
+}
+
+export async function googleDisconnect(): Promise<void> {
+  const { db, user, supabase } = await staff();
+  await disconnectGoogle(db);
+  await audit(supabase, user.id, "booking.google_disconnect", "google_calendar_link");
+  redirect("/admin/calendar?view=settings&saved=google");
+}
+
+export async function googleBlockBusy(formData: FormData): Promise<void> {
+  const { db } = await staff();
+  await db
+    .from("google_calendar_link")
+    .update({ block_busy: formData.get("block_busy") === "on" })
+    .eq("id", 1);
+  redirect("/admin/calendar?view=settings&saved=google");
+}
+
+/** Adds every upcoming booking that is not in Google yet (after connecting). */
+export async function googleSyncUpcoming(): Promise<void> {
+  const { db } = await staff();
+  const { data } = await db
+    .from("bookings")
+    .select("*")
+    .eq("status", "booked")
+    .is("google_event_id", null)
+    .gte("starts_at", new Date().toISOString())
+    .limit(200);
+  for (const b of (data ?? []) as BookingRow[]) await syncBookingEvent(db, b);
+  redirect(`/admin/calendar?view=settings&saved=google_sync&n=${(data ?? []).length}`);
 }

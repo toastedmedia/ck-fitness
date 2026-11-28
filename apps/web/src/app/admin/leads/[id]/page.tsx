@@ -5,6 +5,7 @@ import {
   ACTIVITY_KINDS,
   CRM_SOURCES,
   CRM_STAGES,
+  leadEmailable,
   sourceLabel,
   stageLabel,
 } from "@ck/core";
@@ -21,6 +22,8 @@ import {
   deleteActivity,
   deleteContact,
   removeContactTag,
+  setEmailPermission,
+  stopAutomationRun,
   toggleTask,
   updateContact,
 } from "../actions";
@@ -41,6 +44,7 @@ const KIND_LABEL: Record<string, string> = {
   stage: "Stage",
   booking: "Booking",
   edit: "Edited",
+  sent: "Email sent",
 };
 const digits = (p: string | null) => (p ?? "").replace(/\D/g, "");
 
@@ -58,7 +62,7 @@ export default async function ContactPage({
   const { data } = await db.from("crm_contacts").select("*").eq("id", id).maybeSingle();
   if (!data) notFound();
   const c = data as ContactRow;
-  const [acts, tasks, books, myTags, allTags] = await Promise.all([
+  const [acts, tasks, books, myTags, allTags, runs] = await Promise.all([
     db
       .from("crm_activities")
       .select("id, kind, body, created_at, created_by")
@@ -78,6 +82,10 @@ export default async function ContactPage({
       .order("starts_at", { ascending: false }),
     db.from("crm_contact_tags").select("tag_id").eq("contact_id", id),
     db.from("member_tags").select("id, name").order("name"),
+    db
+      .from("crm_automation_runs")
+      .select("automation_id, step, status, stop_reason, next_at, crm_automations(name)")
+      .eq("contact_id", id),
   ]);
   const tagList = (allTags.data ?? []) as { id: string; name: string }[];
   const mine = new Set(
@@ -250,6 +258,111 @@ export default async function ContactPage({
             <p className="mt-1 text-xs text-muted">
               Same tags as Admin → Users, so a tag means the same thing everywhere.
             </p>
+          </Panel>
+
+          <Panel title="Email">
+            <p className="text-sm">
+              {!c.email ? (
+                "No email address."
+              ) : leadEmailable(c) ? (
+                <>
+                  <Status tone="ok">Can get marketing emails</Status>{" "}
+                  <span className="text-xs text-muted">
+                    {c.email_consent_at
+                      ? `Agreed ${stamp(c.email_consent_at)}`
+                      : `Implied permission until ${stamp(c.implied_consent_until!)}`}
+                    {c.consent_note ? ` · ${c.consent_note}` : ""}
+                  </span>
+                </>
+              ) : c.unsubscribed_at ? (
+                <>
+                  <Status tone="bad">Unsubscribed</Status>{" "}
+                  <span className="text-xs text-muted">{stamp(c.unsubscribed_at)}</span>
+                </>
+              ) : (
+                <>
+                  <Status tone="warn">No permission yet</Status>{" "}
+                  <span className="text-xs text-muted">
+                    Campaigns and automations skip them.
+                  </span>
+                </>
+              )}
+            </p>
+            {c.email ? (
+              <form
+                action={setEmailPermission.bind(null, id)}
+                className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]"
+              >
+                <label className="sr-only" htmlFor="permission">
+                  Email permission
+                </label>
+                <select
+                  id="permission"
+                  name="permission"
+                  className={aInput}
+                  defaultValue="express"
+                >
+                  <option value="express">They agreed to get our emails</option>
+                  <option value="enquiry">
+                    They asked about our services (6 months)
+                  </option>
+                  <option value="customer">They are a client (2 years)</option>
+                  <option value="unsubscribe">
+                    Stop all marketing emails (unsubscribe)
+                  </option>
+                </select>
+                <ABtn>Save</ABtn>
+                <label className="sr-only" htmlFor="pnote">
+                  How (optional)
+                </label>
+                <input
+                  id="pnote"
+                  name="note"
+                  maxLength={200}
+                  placeholder="How (optional): e.g. said yes on WhatsApp 3 Dec"
+                  className={`${aInput} sm:col-span-2`}
+                />
+              </form>
+            ) : null}
+            {(
+              (runs.data ?? []) as unknown as {
+                automation_id: string;
+                step: number;
+                status: string;
+                stop_reason: string | null;
+                next_at: string | null;
+                crm_automations: { name: string } | null;
+              }[]
+            ).length ? (
+              <ul className="mt-3 grid gap-1.5 text-sm">
+                {(
+                  (runs.data ?? []) as unknown as {
+                    automation_id: string;
+                    step: number;
+                    status: string;
+                    stop_reason: string | null;
+                    next_at: string | null;
+                    crm_automations: { name: string } | null;
+                  }[]
+                ).map((r) => (
+                  <li key={r.automation_id} className="flex flex-wrap items-center gap-2">
+                    <b>{r.crm_automations?.name ?? "Automation"}</b>
+                    <span className="text-xs text-muted">
+                      {r.status === "active"
+                        ? `next email ${r.next_at ? stamp(r.next_at) : "soon"}`
+                        : r.status === "done"
+                          ? "finished"
+                          : `stopped${r.stop_reason ? `: ${r.stop_reason}` : ""}`}
+                    </span>
+                    {r.status === "active" ? (
+                      <form action={stopAutomationRun.bind(null, id, r.automation_id)}>
+                        <button className="text-xs text-danger underline">Stop</button>
+                      </form>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </Panel>
 
           <Panel title="Follow-ups">

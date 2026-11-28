@@ -5,6 +5,7 @@ import { ABtn, Flash, H1, Panel, Status, Tile, aInput } from "@/components/admin
 import { requireStaff } from "@/lib/admin";
 import { APP_URL, calendarFeedToken, freeSlots, type BookingRow } from "@/lib/bookings";
 import { CRM_ROLES, contactName } from "@/lib/leads";
+import { googleConfigured, googleRedirectUri, readLink } from "@/lib/google-calendar";
 import {
   addBlock,
   addWindow,
@@ -16,6 +17,9 @@ import {
   staffBook,
   staffCancel,
   staffMove,
+  googleBlockBusy,
+  googleDisconnect,
+  googleSyncUpcoming,
 } from "./actions";
 
 export const metadata: Metadata = { title: "Calendar" };
@@ -33,6 +37,12 @@ const ERRORS: Record<string, string> = {
   block: "Check the dates: the last day must be on or after the first.",
   save: "Could not save. Try again.",
   missing: "That booking no longer exists.",
+  google_setup:
+    "Google is not set up yet: GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are missing in Vercel.",
+  google_denied: "Google access was not given.",
+  google_state:
+    "The Google sign-in took too long or came from another browser. Try Connect again.",
+  google: "Google did not connect.",
 };
 const SAVED: Record<string, string> = {
   booked: "Booked. It is in the calendar and the lead is in Leads.",
@@ -43,6 +53,10 @@ const SAVED: Record<string, string> = {
   settings: "Settings saved.",
   hours: "Opening hours saved.",
   block: "Days off saved.",
+  google: "Google Calendar settings saved.",
+  google_connected:
+    "Google Calendar connected. New bookings now go straight into it, and busy times there block the booking page.",
+  google_sync: "Upcoming bookings added to Google Calendar.",
 };
 
 export default async function CalendarPage({
@@ -54,6 +68,7 @@ export default async function CalendarPage({
     error?: string;
     book?: string;
     past?: string;
+    msg?: string;
   }>;
 }) {
   const sp = await searchParams;
@@ -110,6 +125,7 @@ export default async function CalendarPage({
     end_time: string;
   }[];
   const feed = calendarFeedToken();
+  const google = settingsView ? await readLink(db) : null;
   const feedUrl = feed ? `${APP_URL}/api/booking/feed/${feed}.ics` : null;
   const today = dayKey(now, TZ);
   const upcoming = bookings.filter(
@@ -171,7 +187,12 @@ export default async function CalendarPage({
         </Flash>
       ) : null}
       {sp.saved ? <Flash>{SAVED[sp.saved] ?? "Saved."}</Flash> : null}
-      {sp.error ? <Flash bad>{ERRORS[sp.error] ?? "Could not save."}</Flash> : null}
+      {sp.error ? (
+        <Flash bad>
+          {ERRORS[sp.error] ?? "Could not save."}
+          {sp.msg ? ` ${sp.msg.slice(0, 200)}` : ""}
+        </Flash>
+      ) : null}
       {st.ready && !st.row.enabled ? (
         <Flash bad>
           Online booking is OFF: the website still shows the old booking calendar. Set
@@ -727,7 +748,100 @@ export default async function CalendarPage({
             </form>
           </Panel>
 
-          <Panel title="See bookings in Google Calendar">
+          <Panel title="Google Calendar (two-way)">
+            {google ? (
+              <>
+                <p className="text-sm">
+                  <Status tone={google.last_error ? "bad" : "ok"}>
+                    {google.last_error ? "Needs attention" : "Connected"}
+                  </Status>{" "}
+                  <b>{google.email || "Google account"}</b>
+                  {google.last_ok_at ? (
+                    <span className="text-xs text-muted">
+                      {" "}
+                      · last worked{" "}
+                      {new Date(google.last_ok_at).toLocaleString("en-CA", {
+                        timeZone: TZ,
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  ) : null}
+                </p>
+                {google.last_error ? (
+                  <p className="mt-1 text-sm text-danger">{google.last_error}</p>
+                ) : null}
+                <ul className="mt-2 list-disc pl-5 text-sm">
+                  <li>
+                    Every new, moved or cancelled consultation is added to, moved in or
+                    removed from this calendar at once.
+                  </li>
+                  <li>
+                    Busy times in this calendar are hidden from the booking page (when the
+                    box below is ticked).
+                  </li>
+                </ul>
+                <form
+                  action={googleBlockBusy}
+                  className="mt-3 flex flex-wrap items-center gap-2"
+                >
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      name="block_busy"
+                      defaultChecked={google.block_busy}
+                      className="size-5 accent-brand"
+                    />
+                    Busy times in Google Calendar block the booking page
+                  </label>
+                  <ABtn>Save</ABtn>
+                </form>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <form action={googleSyncUpcoming}>
+                    <ABtn>Add upcoming bookings to Google now</ABtn>
+                  </form>
+                  <a
+                    href="/api/google/connect"
+                    className="inline-flex min-h-10 items-center rounded-button border-2 border-line px-4 text-xs font-bold text-brand"
+                  >
+                    Connect again
+                  </a>
+                  <form action={googleDisconnect}>
+                    <ABtn variant="danger">Disconnect</ABtn>
+                  </form>
+                </div>
+              </>
+            ) : googleConfigured() ? (
+              <>
+                <p className="text-sm">
+                  Connect the Gmail account whose calendar you use (Chanveer&apos;s).
+                  Bookings then appear in it straight away, and anything already in that
+                  calendar (gym sessions, family time) can no longer be booked.
+                </p>
+                <a
+                  href="/api/google/connect"
+                  className="mt-3 inline-flex min-h-11 items-center rounded-button bg-brand px-5 text-sm font-bold text-on-brand"
+                >
+                  Connect Google Calendar
+                </a>
+                <p className="mt-2 text-xs text-muted">
+                  Sign in with that Gmail on the next screen. Google may say the app is
+                  not verified: choose Advanced → Go to Chardikala Fitness, then allow
+                  calendar access.
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-muted">
+                Not set up yet. It needs a Google Cloud OAuth client: GOOGLE_CLIENT_ID and
+                GOOGLE_CLIENT_SECRET in Vercel, with the redirect address{" "}
+                <code className="text-xs">{googleRedirectUri()}</code>.
+              </p>
+            )}
+          </Panel>
+
+          <Panel title="Read-only calendar address (other calendar apps)">
             {feedUrl ? (
               <>
                 <p className="text-sm">

@@ -25,7 +25,10 @@ export default function PrivacyPage() {
             number, the time you pick and the goal you tell us. We use them to arrange and
             follow up on your consultation, send you the confirmation and reminders, and
             keep notes of our conversations with you. We only send you tips and offers by
-            email if you tick that box.
+            email if you tick that box, or for a limited time after you asked about our
+            services, as Canadian law allows; every such email has an unsubscribe link.
+            The consultation time, your name, phone number and goal are also added to our
+            coach&apos;s Google Calendar so she can call you.
           </li>
           <li>
             Health and fitness information you choose to give us: height, weight,

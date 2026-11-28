@@ -1,5 +1,12 @@
 import "server-only";
-import { cleanEmail, isStage, stageAfterBooking, type CrmStage } from "@ck/core";
+import {
+  cleanEmail,
+  impliedUntil,
+  isStage,
+  stageAfterBooking,
+  type CrmStage,
+} from "@ck/core";
+import { stopRunsForStage, triggerAutomations } from "@/lib/automations";
 import type { createAdminSupabase } from "@/lib/supabase/admin";
 
 type Db = ReturnType<typeof createAdminSupabase>;
@@ -20,6 +27,10 @@ export interface ContactRow {
   goal: string | null;
   utm: Record<string, string>;
   email_consent_at: string | null;
+  implied_consent_until: string | null;
+  unsubscribed_at: string | null;
+  consent_note: string | null;
+  external_id: string | null;
   created_at: string;
   last_activity_at: string;
 }
@@ -59,6 +70,8 @@ export async function upsertContact(
     goal?: string;
     utm?: Record<string, string>;
     consent?: boolean;
+    /** They asked about our services (e.g. booked a consultation): CASL implied consent for 6 months. */
+    enquiry?: boolean;
     created_by?: string | null;
   },
 ): Promise<{ id: string; stage: string } | null> {
@@ -83,6 +96,11 @@ export async function upsertContact(
     if (!existing.phone && input.phone) patch.phone = input.phone;
     if (!existing.goal && input.goal) patch.goal = input.goal;
     if (input.consent && !existing.email_consent_at) patch.email_consent_at = now;
+    if (input.enquiry) {
+      const until = impliedUntil(now, "enquiry");
+      if (!existing.implied_consent_until || existing.implied_consent_until < until)
+        patch.implied_consent_until = until;
+    }
     if (!existing.user_id && email) {
       const uid = await appUserId(db, email);
       if (uid) patch.user_id = uid;
@@ -100,6 +118,8 @@ export async function upsertContact(
     goal: input.goal?.slice(0, 1000) || null,
     utm: input.utm ?? {},
     email_consent_at: input.consent ? now : null,
+    implied_consent_until: input.enquiry ? impliedUntil(now, "enquiry") : null,
+    consent_note: input.consent ? 'Ticked "send me tips and offers" when booking' : null,
     created_by: input.created_by ?? null,
   };
   let { data, error } = await db
@@ -127,7 +147,40 @@ export async function upsertContact(
     console.error("crm contact failed", error?.message);
     return null;
   }
+  await triggerAutomations(db, "new_lead", "", [data.id as string]);
+  await triggerAutomations(db, "new_lead", row.source, [data.id as string]);
   return data as { id: string; stage: string };
+}
+
+/** Adds a tag to contacts and starts the automations that wait for that tag (only for new tags). */
+export async function tagContacts(
+  db: Db,
+  tagId: string,
+  contactIds: string[],
+  automations = true,
+) {
+  if (!contactIds.length) return;
+  const fresh: string[] = [];
+  for (let i = 0; i < contactIds.length; i += 500) {
+    const { data } = await db
+      .from("crm_contact_tags")
+      .upsert(
+        contactIds.slice(i, i + 500).map((contact_id) => ({ contact_id, tag_id: tagId })),
+        { onConflict: "contact_id,tag_id", ignoreDuplicates: true },
+      )
+      .select("contact_id");
+    fresh.push(...((data ?? []) as { contact_id: string }[]).map((r) => r.contact_id));
+  }
+  if (automations) await triggerAutomations(db, "tag_added", tagId, fresh);
+}
+
+export async function untagContacts(db: Db, tagId: string, contactIds: string[]) {
+  for (let i = 0; i < contactIds.length; i += 200)
+    await db
+      .from("crm_contact_tags")
+      .delete()
+      .eq("tag_id", tagId)
+      .in("contact_id", contactIds.slice(i, i + 200));
 }
 
 export async function logActivity(
@@ -166,6 +219,8 @@ export async function setStage(
     .update({ stage, stage_changed_at: now, updated_at: now })
     .eq("id", contactId);
   await logActivity(db, contactId, "stage", note ?? `Moved to ${stage}`, by);
+  await stopRunsForStage(db, contactId, stage);
+  await triggerAutomations(db, "stage", stage, [contactId]);
   return true;
 }
 
@@ -174,4 +229,47 @@ export async function stageForBooking(db: Db, contactId: string, current: string
   const next: CrmStage = stageAfterBooking(current);
   if (next !== current)
     await setStage(db, contactId, next, null, "Booked a consultation");
+}
+
+/** Reads every row of a query, 1000 at a time (the database hands out at most 1000 per request). */
+export async function readAll<T>(
+  page: (from: number, to: number) => PromiseLike<{ data: unknown; error: unknown }>,
+  max = 50000,
+): Promise<{ rows: T[]; error: boolean }> {
+  const rows: T[] = [];
+  for (let from = 0; from < max; from += 1000) {
+    const { data, error } = await page(from, from + 999);
+    if (error) return { rows, error: true };
+    const list = (data ?? []) as T[];
+    rows.push(...list);
+    if (list.length < 1000) break;
+  }
+  return { rows, error: false };
+}
+
+/** A member finished signing up in the app: they appear in Leads too (source "App sign-up"). Never throws. */
+export async function leadFromMember(db: Db, userId: string): Promise<void> {
+  try {
+    const { data: p } = await db
+      .from("profiles")
+      .select("first_name,last_name,email,phone")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!p?.email) return;
+    const { data: linked } = await db
+      .from("crm_contacts")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (linked) return;
+    await upsertContact(db, {
+      email: p.email as string,
+      first_name: (p.first_name as string) ?? "",
+      last_name: (p.last_name as string) ?? "",
+      phone: (p.phone as string) ?? "",
+      source: "app",
+    });
+  } catch (e) {
+    console.error("lead from member failed", (e as Error).message);
+  }
 }

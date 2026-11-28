@@ -1,10 +1,32 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { verifyUnsubscribe } from "@/lib/email/token";
+import { verifyLeadUnsubscribe, verifyUnsubscribe } from "@/lib/email/token";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
 async function turnOff(token: string | null, category: string | null) {
+  if (category === "lead") {
+    const cid = token ? verifyLeadUnsubscribe(token) : null;
+    if (!cid) return false;
+    const db = createAdminSupabase();
+    const now = new Date().toISOString();
+    const { error } = await db
+      .from("crm_contacts")
+      .update({ unsubscribed_at: now, updated_at: now })
+      .eq("id", cid)
+      .is("unsubscribed_at", null);
+    await db
+      .from("crm_automation_runs")
+      .update({ status: "stopped", stop_reason: "Unsubscribed", updated_at: now })
+      .eq("contact_id", cid)
+      .eq("status", "active");
+    await db.from("crm_activities").insert({
+      contact_id: cid,
+      kind: "sent",
+      body: "Unsubscribed from emails (link in an email).",
+    });
+    return !error;
+  }
   const id = token ? verifyUnsubscribe(token) : null;
   if (!id) return false;
   // "marketing" stops offers and news only; "content" stops new-training news only;
@@ -33,7 +55,7 @@ const page = (ok: boolean) =>
 <h1 style="font-size:22px">${ok ? "You are unsubscribed" : "That link did not work"}</h1>
 <p style="line-height:1.55">${
       ok
-        ? "We will stop sending reminder and nudge emails. Billing and support emails still come through. You can turn reminders back on any time in Profile."
+        ? "You will not get these emails any more. Emails about a booking or your account still come through."
         : "The link may be old. You can change your email choices any time in Profile inside the app."
     }</p></div></body>`,
     { status: ok ? 200 : 400, headers: { "content-type": "text/html; charset=utf-8" } },
