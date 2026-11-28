@@ -95,7 +95,7 @@ Chardikala Fitness & Performance (CK Fitness) is an in-person fitness and perfor
 ## Public website and ads tracking (since 2026-11-27)
 
 - ✅ **chardikalafitness.com** served by the app (moved off Hostinger): 30-Day Winter Fitness Challenge page ($89 CAD + GST early-bird, Stripe Payment Link, WhatsApp, intro video, weekly live Q&A times in the visitor's time zone)
-- ✅ **chardikalafitness.com/consult:** our own booking picker for the free 15-minute consultation (day, time, name, phone, email, goal, optional email-offers tick) once online booking is switched on in Admin -> Calendar (until then the Toasted Media calendar); confirmation, day-before and one-hour reminder emails; client page to add it to their calendar, move or cancel
+- ✅ **chardikalafitness.com/consult:** our own booking picker for the free 15-minute consultation (day, time, name, phone, email, goal, optional email-offers tick) (on since 2026-11-27: Mon-Fri 6-8 PM Vancouver, changeable in Admin -> Calendar; switching it off brings back the Toasted Media calendar); confirmation, day-before and one-hour reminder emails; client page to add it to their calendar, move or cancel
 - ✅ **chardikalafitness.com/links** (Linktree-style): Book a free consultation ("Speak with Chanveer directly", goes to /consult), highlighted Winter Challenge and free-app cards with images, WhatsApp and Instagram icons
 - ✅ **Short links** with UTM tags: `/dm` (app sign-up, instagram/dm), `/bio` and `/story` (links page, instagram/bio|story)
 - ✅ **Google Analytics 4** (website + app, one property): every page, every button (`button_click`), sign_up, login, onboarding_complete, start_training, lesson_complete, contact, share, book_consultation, view_challenge, generate_lead, begin_checkout, purchase
