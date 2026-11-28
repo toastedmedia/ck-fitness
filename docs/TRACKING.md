@@ -58,5 +58,4 @@ Any other link: add `?utm_source=...&utm_medium=...&utm_campaign=...`. Do not ad
 
 ## Still to do (owners)
 
-See `CLAUDE.md` -> Accounts -> "Pending (owners) for ads" (Page + Instagram sharing, domain verification, Stripe redirect,
-GA4 key events).
+See `CLAUDE.md` -> Accounts -> "Pending (owners) for ads" (Stripe redirect, GA4 key events, optional allow list).
